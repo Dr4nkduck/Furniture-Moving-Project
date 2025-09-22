@@ -343,11 +343,21 @@ UPDATE authentication SET password_hash = '{noop}User@123'  WHERE user_id = 2;
 UPDATE authentication SET password_hash = '{noop}Prov@123'  WHERE user_id = 3;
 
 
-/*
+/* query account
 SELECT u.username, r.role_name, a.password_hash
 FROM users u
 JOIN user_roles ur ON ur.user_id = u.user_id
 JOIN roles r ON r.role_id = ur.role_id
 JOIN authentication a ON a.user_id = u.user_id
  ORDER BY u.user_id;
+ */
+
+ /*
+Tài khoản đăng nhập 
+
+Admin: admin1 / Admin@123 → /admin/dashboard
+
+Customer: johnc / User@123 → /user
+
+Provider: prov1 / Prov@123 → /provider
  */
