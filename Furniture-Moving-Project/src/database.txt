@@ -1,0 +1,335 @@
+/* ============================================================
+   FurnitureTransportPlatform (Clean Version)
+   ============================================================ */
+
+-- 0) DROP & CREATE DATABASE
+IF DB_ID('FurnitureTransportPlatform') IS NOT NULL
+BEGIN
+    ALTER DATABASE FurnitureTransportPlatform SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE FurnitureTransportPlatform;
+END;
+GO
+
+CREATE DATABASE FurnitureTransportPlatform;
+GO
+USE FurnitureTransportPlatform;
+GO
+
+/* ============================================================
+   1) ROLES & USERS
+   ============================================================ */
+
+-- Roles
+CREATE TABLE roles (
+    role_id INT IDENTITY(1,1) PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE,   -- ADMIN, CUSTOMER, PROVIDER, STAFF, SUPPORT
+    description NVARCHAR(255),
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+-- Users
+CREATE TABLE users (
+    user_id INT IDENTITY(1,1) PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',  -- active, suspended, deleted
+    email_verified BIT NOT NULL DEFAULT 0,
+    phone_verified BIT NOT NULL DEFAULT 0,
+    preferences NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+-- User Roles (N-N mapping)
+CREATE TABLE user_roles (
+    user_role_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    role_id INT NOT NULL,
+    is_primary BIT NOT NULL DEFAULT 0,
+    assigned_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_user_roles_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT FK_user_roles_role FOREIGN KEY (role_id) REFERENCES roles(role_id),
+    CONSTRAINT UQ_user_roles UNIQUE (user_id, role_id)
+);
+
+/* ============================================================
+   2) AUTHENTICATION
+   ============================================================ */
+CREATE TABLE authentication (
+    auth_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    mfa_enabled BIT NOT NULL DEFAULT 0,
+    mfa_method VARCHAR(20),
+    failed_attempts INT NOT NULL DEFAULT 0,
+    account_locked_until DATETIME2,
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_authentication_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+/* ============================================================
+   3) CUSTOMER, PROVIDER, ADMIN
+   ============================================================ */
+
+-- Customers
+CREATE TABLE customers (
+    customer_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    loyalty_points INT NOT NULL DEFAULT 0,
+    customer_since DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_customers_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Service Providers
+CREATE TABLE service_providers (
+    provider_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    verification_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    rating DECIMAL(3,2) NOT NULL DEFAULT 0,
+    total_reviews INT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_service_providers_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Admins
+CREATE TABLE admins (
+    admin_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    department VARCHAR(100),
+    access_level VARCHAR(20) NOT NULL DEFAULT 'standard',
+    CONSTRAINT FK_admins_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+/* ============================================================
+   4) ADDRESSES
+   ============================================================ */
+CREATE TABLE addresses (
+    address_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    address_type VARCHAR(20) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    zip_code VARCHAR(10) NOT NULL,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    is_default BIT NOT NULL DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+/* ============================================================
+   5) SERVICE REQUESTS
+   ============================================================ */
+CREATE TABLE service_requests (
+    request_id INT IDENTITY(1,1) PRIMARY KEY,
+    customer_id INT NOT NULL,
+    provider_id INT,
+    pickup_address_id INT NOT NULL,
+    delivery_address_id INT NOT NULL,
+    request_date DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    preferred_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    total_cost DECIMAL(10,2),
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_sr_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    CONSTRAINT FK_sr_provider FOREIGN KEY (provider_id) REFERENCES service_providers(provider_id),
+    CONSTRAINT FK_sr_pickup FOREIGN KEY (pickup_address_id) REFERENCES addresses(address_id),
+    CONSTRAINT FK_sr_delivery FOREIGN KEY (delivery_address_id) REFERENCES addresses(address_id)
+);
+
+/* ============================================================
+   6) FURNITURE
+   ============================================================ */
+CREATE TABLE furniture_items (
+    item_id INT IDENTITY(1,1) PRIMARY KEY,
+    request_id INT NOT NULL,
+    item_type VARCHAR(50) NOT NULL,
+    size VARCHAR(50),
+    quantity INT NOT NULL DEFAULT 1,
+    is_fragile BIT NOT NULL DEFAULT 0,
+    special_handling NVARCHAR(MAX),
+    CONSTRAINT FK_furniture_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id)
+);
+
+/* ============================================================
+   7) PRICE
+   ============================================================ */
+
+-- Price Services
+CREATE TABLE price_services (
+    service_id INT IDENTITY(1,1) PRIMARY KEY,
+    provider_id INT NOT NULL,
+    base_price DECIMAL(10,2) NOT NULL,
+    description NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_price_services_provider FOREIGN KEY (provider_id) REFERENCES service_providers(provider_id)
+);
+
+-- Price Quotations
+CREATE TABLE price_quotations (
+    quote_id INT IDENTITY(1,1) PRIMARY KEY,
+    request_id INT NOT NULL,
+    service_id INT NOT NULL,
+    quoted_price DECIMAL(10,2) NOT NULL,
+    valid_until DATE NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_pq_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id),
+    CONSTRAINT FK_pq_service FOREIGN KEY (service_id) REFERENCES price_services(service_id)
+);
+
+/* ============================================================
+   8) REVIEWS
+   ============================================================ */
+CREATE TABLE reviews (
+    review_id INT IDENTITY(1,1) PRIMARY KEY,
+    request_id INT NOT NULL UNIQUE,
+    customer_id INT NOT NULL,
+    provider_id INT NOT NULL,
+    rating INT NOT NULL,
+    comment NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_reviews_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id),
+    CONSTRAINT FK_reviews_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    CONSTRAINT FK_reviews_provider FOREIGN KEY (provider_id) REFERENCES service_providers(provider_id)
+);
+
+/* ============================================================
+   9) SUPPORT & LOGGING
+   ============================================================ */
+
+-- Support Tickets
+CREATE TABLE support_tickets (
+    ticket_id INT IDENTITY(1,1) PRIMARY KEY,
+    requester_user_id INT NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'open',
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_support_requester FOREIGN KEY (requester_user_id) REFERENCES users(user_id)
+);
+
+-- Security / Activity Logs
+CREATE TABLE activity_logs (
+    log_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT,
+    event_type VARCHAR(50) NOT NULL,
+    event_description NVARCHAR(MAX),
+    ip_address VARCHAR(45),
+    timestamp DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_activity_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+/* ============================================================
+   INSERT SEED DATA
+   ============================================================ */
+
+-- Roles
+INSERT INTO roles (role_name, description) VALUES
+('ADMIN','System administrator'),
+('CUSTOMER','Service customer'),
+('PROVIDER','Furniture transport provider'),
+('STAFF','Internal staff'),
+('SUPPORT','Support agent');
+
+-- Users
+INSERT INTO users (username, email, first_name, last_name, phone) VALUES
+('admin1','admin1@ftp.com','System','Admin','0900000001'),
+('johnc','johnc@mail.com','John','Carter','0900000002'),
+('prov1','prov1@mail.com','Alice','Smith','0900000003');
+
+-- User Roles
+INSERT INTO user_roles (user_id, role_id, is_primary) VALUES
+(1,1,1), -- admin1 -> ADMIN
+(2,2,1), -- johnc -> CUSTOMER
+(3,3,1); -- prov1 -> PROVIDER
+
+-- Authentication
+INSERT INTO authentication (user_id,password_hash) VALUES
+(1,'hashed_admin_pw'),
+(2,'hashed_customer_pw'),
+(3,'hashed_provider_pw');
+
+-- Customers
+INSERT INTO customers (user_id,loyalty_points) VALUES
+(2,100);
+
+-- Service Providers
+INSERT INTO service_providers (user_id,company_name,verification_status) VALUES
+(3,'FastMove Co.','verified');
+
+-- Admins
+INSERT INTO admins (user_id,department,access_level) VALUES
+(1,'IT','super');
+
+-- Addresses
+INSERT INTO addresses (user_id,address_type,street_address,city,state,zip_code) VALUES
+(2,'home','123 Main St','Hanoi','HN','10000'),
+(3,'office','456 Service Rd','HCMC','HCM','70000');
+
+-- Service Requests
+INSERT INTO service_requests (customer_id,provider_id,pickup_address_id,delivery_address_id,preferred_date,total_cost) VALUES
+(1,1,1,2,'2025-10-01',500.00);
+
+-- Furniture Items
+INSERT INTO furniture_items (request_id,item_type,size,quantity,is_fragile) VALUES
+(1,'Sofa','2m x 1m',1,1);
+
+-- Price Services
+INSERT INTO price_services (provider_id,base_price,description) VALUES
+(1,300.00,'Basic moving service');
+
+-- Price Quotations
+INSERT INTO price_quotations (request_id,service_id,quoted_price,valid_until) VALUES
+(1,1,500.00,'2025-10-05');
+
+-- Reviews
+INSERT INTO reviews (request_id,customer_id,provider_id,rating,comment) VALUES
+(1,1,1,5,'Great service, fast and safe!');
+
+-- Support Tickets
+INSERT INTO support_tickets (requester_user_id,subject,description) VALUES
+(2,'Delay in service','My furniture delivery was delayed by 2 hours');
+
+-- Logs
+INSERT INTO activity_logs (user_id,event_type,event_description,ip_address) VALUES
+(2,'LOGIN','Customer logged in','192.168.1.100'),
+(3,'QUOTE','Provider sent quotation','192.168.1.101');
+
+
+
+
+---------------------------------------------------------
+/*
+Tài khoản test & luồng điều hướng
+
+Admin
+
+Username: admin1
+
+Password: Admin@123
+
+Sau login → tự chuyển /admin/dashboard (view dashboard.html)
+
+Khách hàng (user)
+
+Username: johnc
+
+Password: User@123
+
+Sau login → tự chuyển /user (view user.html)
+
+Nhà cung cấp (provider)
+
+Username: prov1
+
+Password: Prov@123
+
+Sau login → cũng chuyển /user (và được phép vào /user/** vì đã cho hasAnyRole("CUSTOMER","PROVIDER","STAFF","SUPPORT"))
+*/
