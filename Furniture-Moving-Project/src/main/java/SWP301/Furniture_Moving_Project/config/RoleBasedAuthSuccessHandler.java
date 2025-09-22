@@ -13,10 +13,10 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res,
                                         Authentication auth) throws IOException, ServletException {
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (isAdmin) {
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             res.sendRedirect(req.getContextPath() + "/admin/dashboard");
+        } else if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PROVIDER"))) {
+            res.sendRedirect(req.getContextPath() + "/provider");
         } else {
             res.sendRedirect(req.getContextPath() + "/user");
         }

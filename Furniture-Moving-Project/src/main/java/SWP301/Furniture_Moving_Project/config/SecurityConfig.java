@@ -23,7 +23,6 @@ public class SecurityConfig {
         this.successHandler = successHandler;
     }
 
-    // Dùng DelegatingPasswordEncoder để có thể lưu {noop}... trong DB cho dễ seed
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
@@ -50,13 +49,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/homepage", "/login", "/css/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("CUSTOMER","PROVIDER","STAFF","SUPPORT") // cho cả provider vào /user
+                .requestMatchers("/user/**").hasRole("CUSTOMER")
+                .requestMatchers("/provider/**").hasRole("PROVIDER")
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login
                 .loginPage("/login")
-                .loginProcessingUrl("/perform_login") // khớp action của form
-                .successHandler(successHandler)       // chuyển trang theo role
+                .loginProcessingUrl("/perform_login")
+                .successHandler(successHandler)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )

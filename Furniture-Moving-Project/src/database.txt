@@ -303,33 +303,49 @@ INSERT INTO activity_logs (user_id,event_type,event_description,ip_address) VALU
 (3,'QUOTE','Provider sent quotation','192.168.1.101');
 
 
+-- ADMIN: admin1 / Admin@123
+UPDATE authentication SET password_hash = '{noop}Admin@123' WHERE user_id = 1;
+
+-- CUSTOMER: johnc / User@123
+UPDATE authentication SET password_hash = '{noop}User@123'  WHERE user_id = 2;
+
+-- PROVIDER: prov1 / Prov@123
+UPDATE authentication SET password_hash = '{noop}Prov@123'  WHERE user_id = 3;
+
+UPDATE authentication SET password_hash = '{noop}Prov@123' WHERE user_id = 3;
 
 
----------------------------------------------------------
+-- --------------------------------------------------------
 /*
-Tài khoản test & luồng điều hướng
-
-Admin
+1. Admin
 
 Username: admin1
 
 Password: Admin@123
 
-Sau login → tự chuyển /admin/dashboard (view dashboard.html)
+Role: ADMIN
 
-Khách hàng (user)
+Sau login → /admin/dashboard
+
+2. Customer (Người dùng thường)
 
 Username: johnc
 
 Password: User@123
 
-Sau login → tự chuyển /user (view user.html)
+Role: CUSTOMER
 
-Nhà cung cấp (provider)
+Sau login → /user
+
+3. Provider (Nhà cung cấp dịch vụ)
 
 Username: prov1
 
 Password: Prov@123
 
-Sau login → cũng chuyển /user (và được phép vào /user/** vì đã cho hasAnyRole("CUSTOMER","PROVIDER","STAFF","SUPPORT"))
+Role: PROVIDER
+
+Sau login → /provider
+
 */
+
