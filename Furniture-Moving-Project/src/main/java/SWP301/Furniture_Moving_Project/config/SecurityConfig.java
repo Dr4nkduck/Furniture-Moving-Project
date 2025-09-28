@@ -47,34 +47,33 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .csrf(csrf -> csrf.disable())
         .authenticationProvider(daoAuthenticationProvider())
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/homepage", "/login",
+            .requestMatchers("/", "/homepage", "/login", "/register",
                     "/css/**", "/js/**", "/images/**",
                     "/accountmanage/**").permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .requestMatchers("/user/**").hasRole("CUSTOMER")
             .requestMatchers("/provider/**").hasRole("PROVIDER")
-            .anyRequest().authenticated())
-
+            .anyRequest().authenticated()   // ✅ luôn đặt cuối cùng
+        )
         .formLogin(login -> login
             .loginPage("/login")
             .loginProcessingUrl("/perform_login")
             .successHandler(successHandler)
             .failureUrl("/login?error=true")
-            .permitAll())
-
+            .permitAll()
+        )
         .logout(logout -> logout
             .logoutUrl("/logout")
             .logoutSuccessUrl("/homepage")
-            .invalidateHttpSession(true)              //  Hủy session
-            .deleteCookies("JSESSIONID")              //  Xóa cookie
-            .permitAll())
-
+            .invalidateHttpSession(true)
+            .deleteCookies("JSESSIONID")
+            .permitAll()
+        )
+        // 👇 chống back sau khi logout
         .headers(headers -> headers
-            .cacheControl(cache -> cache.disable())   // Không dùng cache mặc định
-            .defaultsDisabled()
-            .cacheControl())                          //  Bật cache-control no-store
-        ;
-
+            .cacheControl(cache -> {})
+        );
     return http.build();
 }
+
 }

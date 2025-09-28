@@ -29,13 +29,22 @@
       <button type="submit" class="btn">Login</button>
 
       <div class="register-link">
-        <p>Don't have an account? <a href="#">Register</a></p>
-      </div>
+  <p>Don't have an account? 
+     <a th:href="@{/register}">Register</a>
+  </p>
+</div>
+
 
       <!-- Hiện thông báo lỗi khi login sai -->
       <div th:if="${param.error}" style="color:red; text-align:center;">
         Sai tài khoản hoặc mật khẩu.
       </div>
+
+      <!-- Thông báo đăng ký thành công -->
+      <div th:if="${param.registered}" style="color:green; text-align:center; margin-top:8px;">
+        Đăng ký thành công! Bạn hãy đăng nhập.
+      </div>
+
 
       <!-- ✅ Nút quay lại trang chính -->
       <div style="text-align:center; margin-top:15px;">

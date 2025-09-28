@@ -19,4 +19,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
         WHERE ur.user_id = :userId
         """, nativeQuery = true)
     List<String> findRoleNamesByUserId(Integer userId);
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+
 }

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Đăng ký</title>
+  <!-- Dùng lại file login.css -->
+  <link rel="stylesheet" th:href="@{/accountmanage/css/register.css}">
+</head>
+<body>
+  <div class="wrapper">
+    <form th:action="@{/register}" method="post" th:object="${form}">
+      <h1>Register</h1>
+
+      <div class="input-box">
+        <input type="text" th:field="*{username}" placeholder="Username" required>
+      </div>
+
+      <div class="input-box">
+        <input type="email" th:field="*{email}" placeholder="Email" required>
+      </div>
+
+      <div class="input-box">
+        <input type="password" th:field="*{password}" placeholder="Password" required>
+      </div>
+
+      <div class="input-box">
+        <input type="text" th:field="*{firstName}" placeholder="First name" required>
+      </div>
+
+      <div class="input-box">
+        <input type="text" th:field="*{lastName}" placeholder="Last name" required>
+      </div>
+
+      <div class="input-box">
+        <input type="text" th:field="*{phone}" placeholder="Phone">
+      </div>
+
+      <button type="submit" class="btn">Register</button>
+
+      <!-- Hiện lỗi nếu có -->
+      <div th:if="${error}" style="color:red; text-align:center; margin-top:10px;">
+        <span th:text="${error}"></span>
+      </div>
+
+      <!-- Link quay lại login -->
+      <div class="register-link">
+        <p>Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
+      </div>
+
+      <!-- Nút quay lại homepage -->
+      <div style="text-align:center; margin-top:15px;">
+        <a href="/homepage" class="btn" 
+           style="display:inline-block; padding:10px 20px; border-radius:40px; background:#eee; color:#333; text-decoration:none; font-weight:600;">
+          ← Quay lại Trang chính
+        </a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
