@@ -48,12 +48,12 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .authenticationProvider(daoAuthenticationProvider())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/homepage", "/login", "/register",
-                    "/css/**", "/js/**", "/images/**",
-                    "/accountmanage/**").permitAll()
+                             "/forgot/**",                     // ✅ mở toàn bộ flow forgot
+                             "/css/**", "/js/**", "/images/**", "/accountmanage/**").permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .requestMatchers("/user/**").hasRole("CUSTOMER")
             .requestMatchers("/provider/**").hasRole("PROVIDER")
-            .anyRequest().authenticated()   // ✅ luôn đặt cuối cùng
+            .anyRequest().authenticated()
         )
         .formLogin(login -> login
             .loginPage("/login")
@@ -69,11 +69,11 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .deleteCookies("JSESSIONID")
             .permitAll()
         )
-        // 👇 chống back sau khi logout
-        .headers(headers -> headers
-            .cacheControl(cache -> {})
-        );
+        .headers(headers -> headers.cacheControl(cache -> {}));
+
     return http.build();
 }
+
+
 
 }

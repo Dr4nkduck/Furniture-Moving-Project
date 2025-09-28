@@ -1,7 +1,7 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "authentication")
@@ -26,22 +26,28 @@ public class AuthCredential {
     @Column(name = "failed_attempts")
     private Integer failedAttempts;
 
-    // Trong schema là account_locked_until
+    // ✅ Đổi LocalDateTime -> OffsetDateTime cho đồng bộ
     @Column(name = "account_locked_until")
-    private LocalDateTime accountLockedUntil;
+    private OffsetDateTime accountLockedUntil;
 
     public Integer getAuthId() { return authId; }
     public void setAuthId(Integer authId) { this.authId = authId; }
+
     public Integer getUserId() { return userId; }
     public void setUserId(Integer userId) { this.userId = userId; }
+
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
     public Boolean getMfaEnabled() { return mfaEnabled; }
     public void setMfaEnabled(Boolean mfaEnabled) { this.mfaEnabled = mfaEnabled; }
+
     public String getMfaMethod() { return mfaMethod; }
     public void setMfaMethod(String mfaMethod) { this.mfaMethod = mfaMethod; }
+
     public Integer getFailedAttempts() { return failedAttempts; }
     public void setFailedAttempts(Integer failedAttempts) { this.failedAttempts = failedAttempts; }
-    public LocalDateTime getAccountLockedUntil() { return accountLockedUntil; }
-    public void setAccountLockedUntil(LocalDateTime accountLockedUntil) { this.accountLockedUntil = accountLockedUntil; }
+
+    public OffsetDateTime getAccountLockedUntil() { return accountLockedUntil; }
+    public void setAccountLockedUntil(OffsetDateTime accountLockedUntil) { this.accountLockedUntil = accountLockedUntil; }
 }

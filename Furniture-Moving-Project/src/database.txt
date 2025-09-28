@@ -342,6 +342,18 @@ UPDATE authentication SET password_hash = '{noop}User@123'  WHERE user_id = 2;
 -- PROVIDER: prov1 / Prov@123
 UPDATE authentication SET password_hash = '{noop}Prov@123'  WHERE user_id = 3;
 
+IF OBJECT_ID('password_reset_tokens','U') IS NOT NULL DROP TABLE password_reset_tokens;
+CREATE TABLE password_reset_tokens (
+    token_id   INT IDENTITY(1,1) PRIMARY KEY,
+    user_id    INT NOT NULL,
+    otp_code   VARCHAR(6) NOT NULL,
+    expires_at DATETIME2 NOT NULL,
+    consumed   BIT NOT NULL DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_prt_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_prt_user ON password_reset_tokens(user_id);
+
 
 /* query account
 SELECT u.username, r.role_name, a.password_hash

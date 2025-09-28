@@ -10,7 +10,8 @@
 </head>
 <body>
   <div class="wrapper">
-    <form method="post" action="/perform_login">
+    <!-- Form login -->
+    <form method="post" th:action="@{/perform_login}">
       <h1>Login</h1>
 
       <div class="input-box">
@@ -23,19 +24,21 @@
 
       <div class="remember-forgot">
         <label><input type="checkbox">Remember me</label>
-        <a href="#">Forgot password?</a>
+        <!-- ✅ Chỉnh link forgot -->
+        <a th:href="@{/forgot}">Forgot password</a>
+
       </div>
 
       <button type="submit" class="btn">Login</button>
 
+      <!-- Register link -->
       <div class="register-link">
-  <p>Don't have an account? 
-     <a th:href="@{/register}">Register</a>
-  </p>
-</div>
+        <p>Don't have an account? 
+          <a th:href="@{/register}">Register</a>
+        </p>
+      </div>
 
-
-      <!-- Hiện thông báo lỗi khi login sai -->
+      <!-- Thông báo lỗi login -->
       <div th:if="${param.error}" style="color:red; text-align:center;">
         Sai tài khoản hoặc mật khẩu.
       </div>
@@ -45,8 +48,7 @@
         Đăng ký thành công! Bạn hãy đăng nhập.
       </div>
 
-
-      <!-- ✅ Nút quay lại trang chính -->
+      <!-- Quay lại homepage -->
       <div style="text-align:center; margin-top:15px;">
         <a href="/homepage" class="btn" 
            style="display:inline-block; padding:10px 20px; border-radius:40px; background:#eee; color:#333; text-decoration:none; font-weight:600;">
