@@ -42,30 +42,39 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authenticationProvider(daoAuthenticationProvider())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/homepage", "/login",
-                                "/css/**", "/js/**", "/images/**",
-                                "/accountmanage/**" // 👈 thêm dòng này
-                        ).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/user/**").hasRole("CUSTOMER")
-                        .requestMatchers("/provider/**").hasRole("PROVIDER")
-                        .anyRequest().authenticated())
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authenticationProvider(daoAuthenticationProvider())
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/", "/homepage", "/login",
+                    "/css/**", "/js/**", "/images/**",
+                    "/accountmanage/**").permitAll()
+            .requestMatchers("/admin/**").hasRole("ADMIN")
+            .requestMatchers("/user/**").hasRole("CUSTOMER")
+            .requestMatchers("/provider/**").hasRole("PROVIDER")
+            .anyRequest().authenticated())
 
-                .formLogin(login -> login
-                        .loginPage("/login")
-                        .loginProcessingUrl("/perform_login")
-                        .successHandler(successHandler)
-                        .failureUrl("/login?error=true")
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/homepage")
-                        .permitAll());
-        return http.build();
-    }
+        .formLogin(login -> login
+            .loginPage("/login")
+            .loginProcessingUrl("/perform_login")
+            .successHandler(successHandler)
+            .failureUrl("/login?error=true")
+            .permitAll())
+
+        .logout(logout -> logout
+            .logoutUrl("/logout")
+            .logoutSuccessUrl("/homepage")
+            .invalidateHttpSession(true)              //  Hủy session
+            .deleteCookies("JSESSIONID")              //  Xóa cookie
+            .permitAll())
+
+        .headers(headers -> headers
+            .cacheControl(cache -> cache.disable())   // Không dùng cache mặc định
+            .defaultsDisabled()
+            .cacheControl())                          //  Bật cache-control no-store
+        ;
+
+    return http.build();
+}
 }
