@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Đăng nhập</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" th:href="@{/accountmanage/css/login.css}">
+  <script th:src="@{/js/login.js}"></script>
+</head>
+<body>
+  <div class="wrapper">
+    <form method="post" action="/perform_login">
+      <h1>Login</h1>
+
+      <div class="input-box">
+        <input type="text" name="username" placeholder="Username" required>
+      </div>
+
+      <div class="input-box">
+        <input type="password" name="password" placeholder="Password" required>         
+      </div>
+
+      <div class="remember-forgot">
+        <label><input type="checkbox">Remember me</label>
+        <a href="#">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn">Login</button>
+
+      <div class="register-link">
+        <p>Don't have an account? <a href="#">Register</a></p>
+      </div>
+
+      <!-- Hiện thông báo lỗi khi login sai -->
+      <div th:if="${param.error}" style="color:red; text-align:center;">
+        Sai tài khoản hoặc mật khẩu.
+      </div>
+
+      <!-- ✅ Nút quay lại trang chính -->
+      <div style="text-align:center; margin-top:15px;">
+        <a href="/homepage" class="btn" 
+           style="display:inline-block; padding:10px 20px; border-radius:40px; background:#eee; color:#333; text-decoration:none; font-weight:600;">
+          ← Quay lại Trang chính
+        </a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
