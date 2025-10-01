@@ -12,47 +12,47 @@
   <div class="wrapper">
     <!-- Form login -->
     <form method="post" th:action="@{/perform_login}">
-      <h1>Login</h1>
+      <h1>ĐĂNG NHẬP</h1>
 
       <div class="input-box">
-        <input type="text" name="username" placeholder="Username" required>
+        <input type="text" name="username" placeholder="Tên đăng nhập" required>
       </div>
 
       <div class="input-box">
-        <input type="password" name="password" placeholder="Password" required>         
+        <input type="password" name="password" placeholder="Mật khẩu" required>         
       </div>
 
       <div class="remember-forgot">
-        <label><input type="checkbox">Remember me</label>
+        <label><input type="checkbox">Nhớ tài khoản của tôi</label>
         <!-- ✅ Chỉnh link forgot -->
-        <a th:href="@{/forgot}">Forgot password</a>
+        <a th:href="@{/forgot}">Quên mật khẩu</a>
 
       </div>
 
-      <button type="submit" class="btn">Login</button>
+      <button type="submit" class="btn">Đăng nhập</button>
 
       <!-- Register link -->
       <div class="register-link">
-        <p>Don't have an account? 
-          <a th:href="@{/register}">Register</a>
+        <p>Bạn chưa có tài khoản? 
+          <a th:href="@{/register}">Đăng ký</a>
         </p>
       </div>
 
       <!-- Thông báo lỗi login -->
-      <div th:if="${param.error}" style="color:red; text-align:center;">
+      <div th:if="${param.error}" style="color:#fff; text-align:center;">
         Sai tài khoản hoặc mật khẩu.
       </div>
 
       <!-- Thông báo đăng ký thành công -->
-      <div th:if="${param.registered}" style="color:green; text-align:center; margin-top:8px;">
-        Đăng ký thành công! Bạn hãy đăng nhập.
+      <div th:if="${param.registered}" style="color: #fff; text-align:center; margin-top:8px;">
+        Đăng ký thành công! Hãy đăng nhập.
       </div>
 
       <!-- Quay lại homepage -->
       <div style="text-align:center; margin-top:15px;">
         <a href="/homepage" class="btn" 
            style="display:inline-block; padding:10px 20px; border-radius:40px; background:#eee; color:#333; text-decoration:none; font-weight:600;">
-          ← Quay lại Trang chính
+           Quay lại Trang chính
         </a>
       </div>
     </form>

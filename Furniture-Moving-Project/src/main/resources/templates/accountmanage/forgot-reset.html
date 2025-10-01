@@ -67,7 +67,7 @@
     <div th:if="${error}" class="err" th:text="${error}"></div>
 
     <div class="register-link" style="margin-top:16px;">
-      <p><a th:href="@{/login}">← Quay lại đăng nhập</a></p>
+      <p><a th:href="@{/login}">Quay lại đăng nhập</a></p>
     </div>
   </form>
 </div>
@@ -95,10 +95,10 @@
   function validate() {
     if (!pw.value || !pw2.value) { msg.textContent = ''; btn.disabled = false; return; }
     if (pw.value !== pw2.value) {
-      msg.textContent = '⚠️ Mật khẩu nhập lại không khớp';
+      msg.textContent = 'Mật khẩu nhập lại không khớp';
       btn.disabled = true;
     } else {
-      msg.textContent = '✅ Mật khẩu khớp';
+      msg.textContent = 'Mật khẩu khớp';
       btn.disabled = false;
     }
   }

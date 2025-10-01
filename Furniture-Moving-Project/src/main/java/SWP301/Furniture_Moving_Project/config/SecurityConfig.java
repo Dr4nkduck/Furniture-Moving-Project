@@ -48,7 +48,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .authenticationProvider(daoAuthenticationProvider())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/homepage", "/login", "/register",
-                             "/forgot/**",                     // ✅ mở toàn bộ flow forgot
+                             "/forgot/**",                     //mở toàn bộ flow forgot
                              "/css/**", "/js/**", "/images/**", "/accountmanage/**").permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .requestMatchers("/user/**").hasRole("CUSTOMER")

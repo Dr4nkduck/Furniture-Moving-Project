@@ -14,14 +14,14 @@
 
       <!-- Ô nhập email -->
       <div class="input-box">
-        <input type="email" name="email" th:value="${email}" placeholder="Nhập email của bạn" required>
+        <input type="email" name="email" th:value="${email}" placeholder="Nhập email của bạn đã đăng ký" required>
       </div>
 
       <button type="submit" class="btn">Gửi OTP</button>
 
       <!-- Quay lại login -->
       <div style="text-align:center; margin-top:15px;">
-        <a th:href="@{/login}">← Quay lại đăng nhập</a>
+        <a style="color: aliceblue;" th:href="@{/login}">Quay lại đăng nhập</a>
       </div>
     </form>
   </div>

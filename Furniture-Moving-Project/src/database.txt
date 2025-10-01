@@ -375,3 +375,35 @@ Provider: prov1 / Prov@123 → /provider
  */
 
  -- -- -- -- 
+
+
+ -- Overview tất cả tài khoản
+SELECT 
+    u.user_id,
+    u.username,
+    u.email,
+    u.phone,
+    u.first_name,
+    u.last_name,
+    u.status,
+    u.email_verified,
+    u.phone_verified,
+    u.created_at,
+    u.updated_at,
+    a.failed_attempts,
+    a.account_locked_until,
+    a.mfa_enabled,
+    a.mfa_method,
+    -- Vai trò chính (primary)
+    MAX(CASE WHEN ur.is_primary = 1 THEN r.role_name END) AS primary_role,
+    -- Tất cả vai trò (CSV)
+    STRING_AGG(r.role_name, ', ') WITHIN GROUP (ORDER BY r.role_name) AS roles_csv
+FROM users u
+LEFT JOIN authentication a   ON a.user_id = u.user_id
+LEFT JOIN user_roles   ur    ON ur.user_id = u.user_id
+LEFT JOIN roles        r     ON r.role_id = ur.role_id
+GROUP BY 
+    u.user_id,u.username,u.email,u.phone,u.first_name,u.last_name,
+    u.status,u.email_verified,u.phone_verified,u.created_at,u.updated_at,
+    a.failed_attempts,a.account_locked_until,a.mfa_enabled,a.mfa_method
+ORDER BY u.user_id;
