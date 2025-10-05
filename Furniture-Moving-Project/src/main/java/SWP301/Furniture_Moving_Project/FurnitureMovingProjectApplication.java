@@ -11,5 +11,3 @@ public class FurnitureMovingProjectApplication {
 	}
 
 }
-
-// check up code
