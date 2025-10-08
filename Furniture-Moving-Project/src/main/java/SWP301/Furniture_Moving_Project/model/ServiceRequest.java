@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,13 +15,13 @@ public class ServiceRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "request_id")
-    private Long requestId;
+    private Integer requestId;
     
     @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    private Integer customerId;
     
-    @Column(name = "provider_id", nullable = false)
-    private Long providerId;
+    @Column(name = "provider_id")
+    private Integer providerId; // References service_providers.provider_id
     
     @Column(name = "request_date", nullable = false)
     private LocalDateTime requestDate;
@@ -28,129 +29,189 @@ public class ServiceRequest {
     @Column(name = "preferred_date", nullable = false)
     private LocalDate preferredDate;
     
-    @Column(name = "preferred_time", length = 20)
-    private String preferredTime;
+    @Column(name = "preferred_time_start")
+    private LocalTime preferredTimeStart;
     
-    @Column(name = "status", length = 20, nullable = false)
-    private String status = "Pending";
+    @Column(name = "preferred_time_end")
+    private LocalTime preferredTimeEnd;
     
-    @Column(name = "special_requirements")
+    @Column(name = "status", nullable = false, length = 20)
+    private String status;
+    
+    @Column(name = "special_requirements", columnDefinition = "TEXT")
     private String specialRequirements;
     
-    @Column(name = "total_cost", precision = 10, scale = 2)
-    private BigDecimal totalCost = BigDecimal.ZERO;
+    @Column(name = "estimated_distance", precision = 8, scale = 2)
+    private BigDecimal estimatedDistance;
     
-    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(name = "estimated_duration")
+    private Integer estimatedDuration;
+    
+    @Column(name = "total_cost", precision = 10, scale = 2)
+    private BigDecimal totalCost;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RequestAddress> addresses = new ArrayList<>();
     
-    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FurnitureItem> furnitureItems = new ArrayList<>();
     
-    @PrePersist
-    protected void onCreate() {
-        requestDate = LocalDateTime.now();
-        if (status == null) {
-            status = "Pending";
-        }
-    }
-
     // Constructors
     public ServiceRequest() {
+        this.requestDate = LocalDateTime.now();
+        this.status = "pending";
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
-
-    public ServiceRequest(Long customerId, Long providerId, LocalDate preferredDate, String preferredTime) {
-        this.customerId = customerId;
-        this.providerId = providerId;
-        this.preferredDate = preferredDate;
-        this.preferredTime = preferredTime;
-    }
-
+    
     // Getters and Setters
-    public Long getRequestId() {
+    public Integer getRequestId() {
         return requestId;
     }
-
-    public void setRequestId(Long requestId) {
+    
+    public void setRequestId(Integer requestId) {
         this.requestId = requestId;
     }
-
-    public Long getCustomerId() {
+    
+    public Integer getCustomerId() {
         return customerId;
     }
-
-    public void setCustomerId(Long customerId) {
+    
+    public void setCustomerId(Integer customerId) {
         this.customerId = customerId;
     }
-
-    public Long getProviderId() {
+    
+    public Integer getProviderId() {
         return providerId;
     }
-
-    public void setProviderId(Long providerId) {
+    
+    public void setProviderId(Integer providerId) {
         this.providerId = providerId;
     }
-
+    
     public LocalDateTime getRequestDate() {
         return requestDate;
     }
-
+    
     public void setRequestDate(LocalDateTime requestDate) {
         this.requestDate = requestDate;
     }
-
+    
     public LocalDate getPreferredDate() {
         return preferredDate;
     }
-
+    
     public void setPreferredDate(LocalDate preferredDate) {
         this.preferredDate = preferredDate;
     }
-
-    public String getPreferredTime() {
-        return preferredTime;
+    
+    public LocalTime getPreferredTimeStart() {
+        return preferredTimeStart;
     }
-
-    public void setPreferredTime(String preferredTime) {
-        this.preferredTime = preferredTime;
+    
+    public void setPreferredTimeStart(LocalTime preferredTimeStart) {
+        this.preferredTimeStart = preferredTimeStart;
     }
-
+    
+    public LocalTime getPreferredTimeEnd() {
+        return preferredTimeEnd;
+    }
+    
+    public void setPreferredTimeEnd(LocalTime preferredTimeEnd) {
+        this.preferredTimeEnd = preferredTimeEnd;
+    }
+    
     public String getStatus() {
         return status;
     }
-
+    
     public void setStatus(String status) {
         this.status = status;
     }
-
+    
     public String getSpecialRequirements() {
         return specialRequirements;
     }
-
+    
     public void setSpecialRequirements(String specialRequirements) {
         this.specialRequirements = specialRequirements;
     }
-
+    
+    public BigDecimal getEstimatedDistance() {
+        return estimatedDistance;
+    }
+    
+    public void setEstimatedDistance(BigDecimal estimatedDistance) {
+        this.estimatedDistance = estimatedDistance;
+    }
+    
+    public Integer getEstimatedDuration() {
+        return estimatedDuration;
+    }
+    
+    public void setEstimatedDuration(Integer estimatedDuration) {
+        this.estimatedDuration = estimatedDuration;
+    }
+    
     public BigDecimal getTotalCost() {
         return totalCost;
     }
-
+    
     public void setTotalCost(BigDecimal totalCost) {
         this.totalCost = totalCost;
     }
-
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+    
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    
     public List<RequestAddress> getAddresses() {
         return addresses;
     }
-
+    
     public void setAddresses(List<RequestAddress> addresses) {
         this.addresses = addresses;
     }
-
+    
     public List<FurnitureItem> getFurnitureItems() {
         return furnitureItems;
     }
-
+    
     public void setFurnitureItems(List<FurnitureItem> furnitureItems) {
         this.furnitureItems = furnitureItems;
+    }
+    
+    // Helper methods
+    public void addAddress(RequestAddress address) {
+        addresses.add(address);
+        address.setServiceRequest(this);
+    }
+    
+    public void addFurnitureItem(FurnitureItem item) {
+        furnitureItems.add(item);
+        item.setServiceRequest(this);
+    }
+    
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

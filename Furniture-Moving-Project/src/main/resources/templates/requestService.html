@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Yêu Cầu Vận Chuyển Nội Thất</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .form-content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: #667eea;
+            margin-right: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .address-card,
+        .item-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-add {
+            background: #667eea;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-add:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-remove {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-remove:hover {
+            background: #c0392b;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-content {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚚 Tạo Yêu Cầu Vận Chuyển Nội Thất</h1>
+            <p>Điền đầy đủ thông tin để chúng tôi phục vụ bạn tốt nhất</p>
+        </div>
+
+        <div class="form-content">
+            <div id="alertBox" class="alert"></div>
+
+            <form id="requestForm">
+                <!-- Thông tin chung -->
+                <div class="section">
+                    <h2 class="section-title">Thông Tin Chung</h2>
+                    
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Ngày Vận Chuyển <span class="required">*</span></label>
+                            <input type="date" id="preferredDate" name="preferredDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nhà Cung Cấp (Tùy Chọn)</label>
+                            <select id="providerId" name="providerId">
+                                <option value="">-- Chọn sau --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Giờ Bắt Đầu</label>
+                            <input type="time" id="preferredTimeStart" name="preferredTimeStart">
+                        </div>
+                        <div class="form-group">
+                            <label>Giờ Kết Thúc</label>
+                            <input type="time" id="preferredTimeEnd" name="preferredTimeEnd">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Yêu Cầu Đặc Biệt</label>
+                        <textarea id="specialRequirements" name="specialRequirements" placeholder="Nhập các yêu cầu đặc biệt của bạn..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Địa chỉ lấy hàng -->
+                <div class="section">
+                    <h2 class="section-title">Địa Chỉ Lấy Hàng</h2>
+                    <div id="pickupAddresses">
+                        <div class="address-card" data-type="Pickup">
+                            <div class="card-header">
+                                <span class="card-title">📦 Địa chỉ lấy hàng #1</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Địa Chỉ <span class="required">*</span></label>
+                                <input type="text" class="street-address" placeholder="Số nhà, tên đường" required>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Thành Phố <span class="required">*</span></label>
+                                    <input type="text" class="city" placeholder="Thành phố" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quận/Huyện <span class="required">*</span></label>
+                                    <input type="text" class="state" placeholder="Quận/Huyện" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Mã Bưu Điện <span class="required">*</span></label>
+                                    <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tên Liên Hệ</label>
+                                    <input type="text" class="contact-name" placeholder="Người liên hệ">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Số Điện Thoại</label>
+                                <input type="text" class="contact-phone" placeholder="Số điện thoại liên hệ">
+                            </div>
+                            <div class="form-group">
+                                <label>Hướng Dẫn Đặc Biệt</label>
+                                <textarea class="special-instructions" placeholder="Ví dụ: Tầng 3, không có thang máy..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-add" onclick="addAddress('pickup')">+ Thêm Địa Chỉ Lấy Hàng</button>
+                </div>
+
+                <!-- Địa chỉ giao hàng -->
+                <div class="section">
+                    <h2 class="section-title">Địa Chỉ Giao Hàng</h2>
+                    <div id="deliveryAddresses">
+                        <div class="address-card" data-type="Delivery">
+                            <div class="card-header">
+                                <span class="card-title">🏠 Địa chỉ giao hàng #1</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Địa Chỉ <span class="required">*</span></label>
+                                <input type="text" class="street-address" placeholder="Số nhà, tên đường" required>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Thành Phố <span class="required">*</span></label>
+                                    <input type="text" class="city" placeholder="Thành phố" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quận/Huyện <span class="required">*</span></label>
+                                    <input type="text" class="state" placeholder="Quận/Huyện" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Mã Bưu Điện <span class="required">*</span></label>
+                                    <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tên Liên Hệ</label>
+                                    <input type="text" class="contact-name" placeholder="Người liên hệ">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Số Điện Thoại</label>
+                                <input type="text" class="contact-phone" placeholder="Số điện thoại liên hệ">
+                            </div>
+                            <div class="form-group">
+                                <label>Hướng Dẫn Đặc Biệt</label>
+                                <textarea class="special-instructions" placeholder="Ví dụ: Cần gọi trước 30 phút..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-add" onclick="addAddress('delivery')">+ Thêm Địa Chỉ Giao Hàng</button>
+                </div>
+
+                <!-- Danh sách đồ nội thất -->
+                <div class="section">
+                    <h2 class="section-title">Danh Sách Đồ Nội Thất</h2>
+                    <div id="furnitureItems">
+                        <div class="item-card">
+                            <div class="card-header">
+                                <span class="card-title">🪑 Món đồ #1</span>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Loại Đồ <span class="required">*</span></label>
+                                    <select class="item-type" required>
+                                        <option value="">-- Chọn loại --</option>
+                                        <option value="Sofa">Sofa</option>
+                                        <option value="Bed">Giường</option>
+                                        <option value="Table">Bàn</option>
+                                        <option value="Chair">Ghế</option>
+                                        <option value="Cabinet">Tủ</option>
+                                        <option value="Wardrobe">Tủ quần áo</option>
+                                        <option value="Other">Khác</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tên Món Đồ</label>
+                                    <input type="text" class="item-name" placeholder="Ví dụ: Sofa 3 chỗ">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>Số Lượng <span class="required">*</span></label>
+                                    <input type="number" class="quantity" min="1" value="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Kích Thước</label>
+                                    <select class="size">
+                                        <option value="">-- Chọn --</option>
+                                        <option value="Small">Nhỏ</option>
+                                        <option value="Medium">Trung bình</option>
+                                        <option value="Large">Lớn</option>
+                                        <option value="Extra Large">Rất lớn</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Trọng Lượng Ước Tính (kg)</label>
+                                <input type="number" class="estimated-weight" step="0.1" placeholder="Ví dụ: 50.5">
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" class="is-fragile" id="fragile1">
+                                <label for="fragile1">Đồ dễ vỡ</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" class="requires-disassembly" id="disassembly1">
+                                <label for="disassembly1">Cần tháo rời</label>
+                            </div>
+                            <div class="form-group">
+                                <label>Ghi Chú Đặc Biệt</label>
+                                <textarea class="special-handling-notes" placeholder="Ví dụ: Cần bọc cẩn thận, có khóa..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-add" onclick="addFurnitureItem()">+ Thêm Món Đồ</button>
+                </div>
+
+                <button type="submit" class="btn btn-submit">📤 Gửi Yêu Cầu</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let pickupCount = 1;
+        let deliveryCount = 1;
+        let itemCount = 1;
+
+        // Set min date to today
+        document.getElementById('preferredDate').min = new Date().toISOString().split('T')[0];
+
+        // Add pickup address
+        function addAddress(type) {
+            const container = type === 'pickup' ? document.getElementById('pickupAddresses') : document.getElementById('deliveryAddresses');
+            const count = type === 'pickup' ? ++pickupCount : ++deliveryCount;
+            const icon = type === 'pickup' ? '📦' : '🏠';
+            const label = type === 'pickup' ? 'lấy hàng' : 'giao hàng';
+
+            const addressCard = document.createElement('div');
+            addressCard.className = 'address-card';
+            addressCard.setAttribute('data-type', type === 'pickup' ? 'Pickup' : 'Delivery');
+            addressCard.innerHTML = `
+                <div class="card-header">
+                    <span class="card-title">${icon} Địa chỉ ${label} #${count}</span>
+                    <button type="button" class="btn btn-remove" onclick="this.closest('.address-card').remove()">Xóa</button>
+                </div>
+                <div class="form-group">
+                    <label>Địa Chỉ <span class="required">*</span></label>
+                    <input type="text" class="street-address" placeholder="Số nhà, tên đường" required>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Thành Phố <span class="required">*</span></label>
+                        <input type="text" class="city" placeholder="Thành phố" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quận/Huyện <span class="required">*</span></label>
+                        <input type="text" class="state" placeholder="Quận/Huyện" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Mã Bưu Điện <span class="required">*</span></label>
+                        <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tên Liên Hệ</label>
+                        <input type="text" class="contact-name" placeholder="Người liên hệ">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Số Điện Thoại</label>
+                    <input type="text" class="contact-phone" placeholder="Số điện thoại liên hệ">
+                </div>
+                <div class="form-group">
+                    <label>Hướng Dẫn Đặc Biệt</label>
+                    <textarea class="special-instructions" placeholder="Ví dụ: Cần gọi trước..."></textarea>
+                </div>
+            `;
+            container.appendChild(addressCard);
+        }
+
+        // Add furniture item
+        function addFurnitureItem() {
+            itemCount++;
+            const container = document.getElementById('furnitureItems');
+            const itemCard = document.createElement('div');
+            itemCard.className = 'item-card';
+            itemCard.innerHTML = `
+                <div class="card-header">
+                    <span class="card-title">🪑 Món đồ #${itemCount}</span>
+                    <button type="button" class="btn btn-remove" onclick="this.closest('.item-card').remove()">Xóa</button>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Loại Đồ <span class="required">*</span></label>
+                        <select class="item-type" required>
+                            <option value="">-- Chọn loại --</option>
+                            <option value="Sofa">Sofa</option>
+                            <option value="Bed">Giường</option>
+                            <option value="Table">Bàn</option>
+                            <option value="Chair">Ghế</option>
+                            <option value="Cabinet">Tủ</option>
+                            <option value="Wardrobe">Tủ quần áo</option>
+                            <option value="Other">Khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tên Món Đồ</label>
+                        <input type="text" class="item-name" placeholder="Ví dụ: Sofa 3 chỗ">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Số Lượng <span class="required">*</span></label>
+                        <input type="number" class="quantity" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kích Thước</label>
+                        <select class="size">
+                            <option value="">-- Chọn --</option>
+                            <option value="Small">Nhỏ</option>
+                            <option value="Medium">Trung bình</option>
+                            <option value="Large">Lớn</option>
+                            <option value="Extra Large">Rất lớn</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Trọng Lượng Ước Tính (kg)</label>
+                    <input type="number" class="estimated-weight" step="0.1" placeholder="Ví dụ: 50.5">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="is-fragile" id="fragile${itemCount}">
+                    <label for="fragile${itemCount}">Đồ dễ vỡ</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="requires-disassembly" id="disassembly${itemCount}">
+                    <label for="disassembly${itemCount}">Cần tháo rời</label>
+                </div>
+                <div class="form-group">
+                    <label>Ghi Chú Đặc Biệt</label>
+                    <textarea class="special-handling-notes" placeholder="Ví dụ: Cần bọc cẩn thận..."></textarea>
+                </div>
+            `;
+            container.appendChild(itemCard);
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type}`;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+            alertBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Handle form submission
+        document.getElementById('requestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Collect addresses
+            const pickupAddresses = [];
+            document.querySelectorAll('#pickupAddresses .address-card').forEach(card => {
+                pickupAddresses.push({
+                    addressType: 'Pickup',
+                    streetAddress: card.querySelector('.street-address').value,
+                    city: card.querySelector('.city').value,
+                    state: card.querySelector('.state').value,
+                    zipCode: card.querySelector('.zip-code').value,
+                    contactName: card.querySelector('.contact-name').value || null,
+                    contactPhone: card.querySelector('.contact-phone').value || null,
+                    specialInstructions: card.querySelector('.special-instructions').value || null
+                });
+            });
+
+            const deliveryAddresses = [];
+            document.querySelectorAll('#deliveryAddresses .address-card').forEach(card => {
+                deliveryAddresses.push({
+                    addressType: 'Delivery',
+                    streetAddress: card.querySelector('.street-address').value,
+                    city: card.querySelector('.city').value,
+                    state: card.querySelector('.state').value,
+                    zipCode: card.querySelector('.zip-code').value,
+                    contactName: card.querySelector('.contact-name').value || null,
+                    contactPhone: card.querySelector('.contact-phone').value || null,
+                    specialInstructions: card.querySelector('.special-instructions').value || null
+                });
+            });
+
+            // Collect furniture items
+            const furnitureItems = [];
+            document.querySelectorAll('#furnitureItems .item-card').forEach(card => {
+                furnitureItems.push({
+                    itemType: card.querySelector('.item-type').value,
+                    itemName: card.querySelector('.item-name').value || null,
+                    quantity: parseInt(card.querySelector('.quantity').value),
+                    size: card.querySelector('.size').value || null,
+                    estimatedWeight: card.querySelector('.estimated-weight').value ? parseFloat(card.querySelector('.estimated-weight').value) : null,
+                    isFragile: card.querySelector('.is-fragile').checked,
+                    requiresDisassembly: card.querySelector('.requires-disassembly').checked,
+                    specialHandlingNotes: card.querySelector('.special-handling-notes').value || null
+                });
+            });
+
+            // Build request data
+            const requestData = {
+                customerId: 1, // TODO: Get from session/authentication
+                providerId: document.getElementById('providerId').value || null,
+                preferredDate: document.getElementById('preferredDate').value,
+                preferredTimeStart: document.getElementById('preferredTimeStart').value || null,
+                preferredTimeEnd: document.getElementById('preferredTimeEnd').value || null,
+                specialRequirements: document.getElementById('specialRequirements').value || null,
+                addresses: [...pickupAddresses, ...deliveryAddresses],
+                furnitureItems: furnitureItems
+            };
+
+            console.log('Request Data:', requestData);
+
+            // TODO: Send to backend API
+            // For now, show success message
+            try {
+                // Simulate API call
+                // const response = await fetch('/api/requests', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(requestData)
+                // });
+                
+                // Simulated success
+                showAlert('✅ Yêu cầu của bạn đã được gửi thành công! Mã yêu cầu: #REQ001', 'success');
+                
+                // Reset form after 2 seconds
+                setTimeout(() => {
+                    document.getElementById('requestForm').reset();
+                    // Keep only first address and item
+                    document.querySelectorAll('.address-card').forEach((card, index) => {
+                        if (index > 0) card.remove();
+                    });
+                    document.querySelectorAll('.item-card').forEach((card, index) => {
+                        if (index > 0) card.remove();
+                    });
+                    pickupCount = deliveryCount = itemCount = 1;
+                }, 2000);
+
+            } catch (error) {
+                showAlert('❌ Có lỗi xảy ra. Vui lòng thử lại sau!', 'error');
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
