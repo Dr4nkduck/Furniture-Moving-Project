@@ -53,6 +53,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                               "/js/**",
                                "/images/**",
                                 "/accountmanage/**",
+                                "/homepage/**",   // <— thêm dòng này
                                 "/chatbot/**"
                                 ).permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")

@@ -14,7 +14,14 @@ public class HomeController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @GetMapping({"/", "/homepage"})
+    // Redirect root -> /homepage
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/homepage";
+    }
+
+    // Render templates/homepage/homepage.html
+    @GetMapping("/homepage")
     public String homepage(Model model) {
         boolean dbOk = false;
         String msg = "Không thể kết nối SQL Server";
@@ -27,6 +34,8 @@ public class HomeController {
         }
         model.addAttribute("dbOk", dbOk);
         model.addAttribute("dbMsg", msg);
-        return "homepage";
+
+        // View name khớp với templates/homepage/homepage.html
+        return "homepage/homepage";
     }
 }
