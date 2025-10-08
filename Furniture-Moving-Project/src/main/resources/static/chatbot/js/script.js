@@ -7,7 +7,7 @@ const fileCancelButton = fileUploadWrapper.querySelector("#file-cancel");
 const chatbotToggler = document.querySelector("#chatbot-toggler");
 const closeChatbot = document.querySelector("#close-chatbot");
 // API setup
-const API_KEY = "PASTE-YOUR-API-KEY";
+const API_KEY = "AIzaSyCwsitQMa2wWSluQnN7tHBxs82xQ_795us";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 // Initialize user message and file data
 const userData = {
