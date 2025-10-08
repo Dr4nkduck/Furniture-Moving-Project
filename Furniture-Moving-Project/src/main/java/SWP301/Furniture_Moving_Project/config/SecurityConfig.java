@@ -49,7 +49,12 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/homepage", "/login", "/register",
                              "/forgot/**",                     //mở toàn bộ flow forgot
-                             "/css/**", "/js/**", "/images/**", "/accountmanage/**").permitAll()
+                             "/css/**",
+                              "/js/**",
+                               "/images/**",
+                                "/accountmanage/**",
+                                "/chatbot/**"
+                                ).permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .requestMatchers("/user/**").hasRole("CUSTOMER")
             .requestMatchers("/provider/**").hasRole("PROVIDER")
