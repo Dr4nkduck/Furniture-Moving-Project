@@ -6,5 +6,9 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="bootstrap-icons" level="application" />
+    <orderEntry type="library" name="emoji-mart" level="application" />
+    <orderEntry type="library" name="jquery-3.4.1" level="application" />
+    <orderEntry type="library" name="jquery-validate" level="application" />
+    <orderEntry type="library" name="sweetalert2" level="application" />
   </component>
 </module>
