@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Top Bar Start -->
+<div class="top-bar" th:fragment="topbar">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      <div class="col-lg-4 col-md-12">
+        <div class="logo">
+          <a th:href="@{/homepage}">
+            <h2 style="font-weight: 750;">FURNITURE MOVING</h2>
+            <!-- <img th:src='@{/homepage/img/logo.jpg}' alt="Logo"> -->
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-8 col-md-7 d-none d-lg-block">
+        <div class="row">
+          <div class="col-4">
+            <div class="top-bar-item">
+              <div class="top-bar-icon"><i class="flaticon-calendar"></i></div>
+              <div class="top-bar-text">
+                <h3>Giờ mở cửa</h3>
+                <p>Thứ Hai - Thứ Bảy, 6:00-22:00</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="top-bar-item">
+              <div class="top-bar-icon"><i class="flaticon-call"></i></div>
+              <div class="top-bar-text">
+                <h3>Hotline</h3>
+                <p>+012 345 6789</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="top-bar-item">
+              <div class="top-bar-icon"><i class="flaticon-send-mail"></i></div>
+              <div class="top-bar-text">
+                <h3>Email liên hệ</h3>
+                <p>furniture@gmail.com</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Top Bar End -->
+</body>
+</html>

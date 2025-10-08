@@ -31,6 +31,11 @@
 
       <button type="submit" class="btn">Đăng nhập</button>
 
+<!-- Thông báo lỗi login -->
+      <div th:if="${param.error}" style="color:#fff; text-align:center; padding-top: 20px;">
+        ❌Sai tài khoản hoặc mật khẩu.
+      </div>
+
       <!-- Register link -->
       <div class="register-link">
         <p>Bạn chưa có tài khoản? 
@@ -38,10 +43,7 @@
         </p>
       </div>
 
-      <!-- Thông báo lỗi login -->
-      <div th:if="${param.error}" style="color:#fff; text-align:center;">
-        Sai tài khoản hoặc mật khẩu.
-      </div>
+      
 
       <!-- Thông báo đăng ký thành công -->
       <div th:if="${param.registered}" style="color: #fff; text-align:center; margin-top:8px;">

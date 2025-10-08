@@ -31,86 +31,12 @@
   <body>
     <div class="wrapper">
       <!-- Top Bar Start -->
-      <div class="top-bar">
-        <div class="container-fluid">
-          <div class="row align-items-center">
-            <div class="col-lg-4 col-md-12">
-              <div class="logo">
-                <a th:href="@{/homepage}">
-                  <h2 style="font-weight: 750;">FURNITURE MOVING</h2>
-                  <!-- <img th:src='@{/homepage/img/logo.jpg}' alt="Logo"> -->
-                </a>
-              </div>
-            </div>
-            <div class="col-lg-8 col-md-7 d-none d-lg-block">
-              <div class="row">
-                <div class="col-4">
-                  <div class="top-bar-item">
-                    <div class="top-bar-icon"><i class="flaticon-calendar"></i></div>
-                    <div class="top-bar-text">
-                      <h3>Giờ mở cửa</h3>
-                      <p>Thứ Hai - Thứ Bảy, 6:00-22:00</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-4">
-                  <div class="top-bar-item">
-                    <div class="top-bar-icon"><i class="flaticon-call"></i></div>
-                    <div class="top-bar-text">
-                      <h3>Hotline</h3>
-                      <p>+012 345 6789</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-4">
-                  <div class="top-bar-item">
-                    <div class="top-bar-icon"><i class="flaticon-send-mail"></i></div>
-                    <div class="top-bar-text">
-                      <h3>Email liên hệ</h3>
-                      <p>furniture@gmail.com</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Top Bar End -->
+      <!-- Top Bar -->
+<div th:replace="fragments/header :: topbar"></div>
 
-      <!-- Nav Bar Start -->
-      <div class="nav-bar">
-        <div class="container-fluid">
-          <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
-            <a href="#" class="navbar-brand">MENU</a>
-            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
-              <span class="navbar-toggler-icon"></span>
-            </button>
+<!-- Nav Bar -->
+<div th:replace="fragments/navbar :: navbar"></div>
 
-            <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
-              <div class="navbar-nav mr-auto">
-                <a th:href="@{/homepage}" class="nav-item nav-link active">Home</a>
-                <a th:href="@{/homepage/about}" class="nav-item nav-link">About</a>
-                <a th:href="@{/homepage/service}" class="nav-item nav-link">Service</a>
-                <a th:href="@{/homepage/team}" class="nav-item nav-link">Team</a>
-                <a th:href="@{/homepage/portfolio}" class="nav-item nav-link">Project</a>
-                <div class="nav-item dropdown">
-                  <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Pages</a>
-                  <div class="dropdown-menu">
-                    <a th:href="@{/homepage/blog}" class="dropdown-item">Blog Page</a>
-                    <a th:href="@{/homepage/single}" class="dropdown-item">Single Page</a>
-                  </div>
-                </div>
-                <a th:href="@{/homepage/contact}" class="nav-item nav-link">Contact</a>
-              </div>
-              <div class="ml-auto">
-                <a class="btn" href="/login">Đăng nhập/Đăng ký</a>
-              </div>
-            </div>
-          </nav>
-        </div>
-      </div>
-      <!-- Nav Bar End -->
 
 <!-- Carousel Start -->
 <div id="carousel" class="carousel slide" data-ride="carousel">
@@ -631,97 +557,8 @@
 <!-- Testimonial End -->
 
 
-      <!-- Footer Start -->
-<div class="footer wow fadeIn" data-wow-delay="0.3s">
-  <div class="container">
-    <div class="row">
-      <!-- Contact -->
-      <div class="col-md-6 col-lg-3">
-        <div class="footer-contact">
-          <h2>Liên hệ</h2>
-          <p><i class="fa fa-map-marker-alt"></i>Hòa Lạc - Hà Nội</p>
-          <p><i class="fa fa-phone-alt"></i> <a th:href="'tel:' + '+012 345 6789'">+012 345 6789</a></p>
-          <p><i class="fa fa-envelope"></i> <a th:href="'mailto:' + 'furniture@gmail.com'">furniture@gmail.com</a></p>
-          <div class="footer-social">
-            <a th:href="@{https://twitter.com/}" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>
-            <a th:href="@{https://facebook.com/}" target="_blank" rel="noopener"><i class="fab fa-facebook-f"></i></a>
-            <a th:href="@{https://youtube.com/}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i></a>
-            <a th:href="@{https://instagram.com/}" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>
-            <a th:href="@{https://linkedin.com/}" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Service links (for customers) -->
-      <div class="col-md-6 col-lg-3">
-        <div class="footer-link">
-          <h2>Khu vực dịch vụ</h2>
-          <a th:href="@{/homepage#services}">Chuyển nhà trọn gói</a>
-          <a th:href="@{/homepage#services}">Chuyển văn phòng</a>
-          <a th:href="@{/homepage#services}">Bốc xếp &amp; kho bãi</a>
-          <a th:href="@{/homepage#services}">Tháo lắp &amp; đóng gói</a>
-          <a th:href="@{/homepage#services}">Vận chuyển liên tỉnh</a>
-        </div>
-      </div>
-
-      <!-- Useful pages -->
-      <div class="col-md-6 col-lg-3">
-        <div class="footer-link">
-          <h2>Trang hữu ích</h2>
-          <a th:href="@{/homepage/about}">Về chúng tôi</a>
-          <a th:href="@{/homepage/contact}">Liên hệ</a>
-          <a th:href="@{/homepage/team}">Đối tác vận chuyển</a>
-          <a th:href="@{/homepage/portfolio}">Dự án đã làm</a>
-          <a th:href="@{/homepage/testimonial}">Khách hàng nói gì</a>
-        </div>
-      </div>
-
-      <!-- Newsletter -->
-      <div class="col-md-6 col-lg-3">
-        <div class="newsletter">
-          <h2>Nhận bản tin</h2>
-          <p>Cập nhật ưu đãi, mẹo đóng gói &amp; kinh nghiệm chuyển nhà/văn phòng mỗi tuần.</p>
-          <div class="form">
-            <input class="form-control" type="email" placeholder="Email của bạn">
-            <button class="btn" type="button">Đăng ký</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer menu -->
-  <div class="container footer-menu">
-    <div class="f-menu">
-      <a th:href="@{/homepage/terms}">Điều khoản sử dụng</a>
-      <a th:href="@{/homepage/privacy}">Chính sách bảo mật</a>
-      <a th:href="@{/homepage/cookies}">Cookies</a>
-      <a th:href="@{/homepage/help}">Trợ giúp</a>
-      <a th:href="@{/homepage/faqs}">FAQs</a>
-    </div>
-  </div>
-
-  <!-- Copyright -->
-  <div class="container copyright">
-    <div class="row">
-      <div class="col-md-6">
-        <p>
-          &copy; 
-          <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2025</span>
-          <a th:href="@{/homepage}">Furniture Moving</a>, All Rights Reserved.
-        </p>
-      </div>
-
-      <!--/*** Ghi chú của template gốc giữ nguyên ***/-->
-      <div class="col-md-6">
-        <p>Designed By <a href="https://htmlcodex.com" target="_blank" rel="noopener">HTML Codex</a></p>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Footer End -->
-
-<a href="#" class="back-to-top"><i class="fa fa-chevron-up"></i></a>
+<!-- Footer -->
+<div th:replace="fragments/footer :: footer"></div>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
