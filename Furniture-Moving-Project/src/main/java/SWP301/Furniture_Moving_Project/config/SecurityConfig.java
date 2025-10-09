@@ -42,44 +42,40 @@ public class SecurityConfig {
     }
 
     @Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .authenticationProvider(daoAuthenticationProvider())
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/homepage", "/login", "/register",
-                             "/forgot/**",                     //mở toàn bộ flow forgot
-                             "/css/**",
-                              "/js/**",
-                               "/images/**",
-                                "/accountmanage/**",
-                                "/homepage/**",   // <— thêm dòng này
-                                "/chatbot/**"
-                                ).permitAll()
-            .requestMatchers("/admin/**").hasRole("ADMIN")
-            .requestMatchers("/user/**").hasRole("CUSTOMER")
-            .requestMatchers("/provider/**").hasRole("PROVIDER")
-            .anyRequest().authenticated()
-        )
-        .formLogin(login -> login
-            .loginPage("/login")
-            .loginProcessingUrl("/perform_login")
-            .successHandler(successHandler)
-            .failureUrl("/login?error=true")
-            .permitAll()
-        )
-        .logout(logout -> logout
-            .logoutUrl("/logout")
-            .logoutSuccessUrl("/homepage")
-            .invalidateHttpSession(true)
-            .deleteCookies("JSESSIONID")
-            .permitAll()
-        )
-        .headers(headers -> headers.cacheControl(cache -> {}));
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .authenticationProvider(daoAuthenticationProvider())
+                .authorizeHttpRequests(auth -> auth
+    .requestMatchers("/", "/homepage", "/login", "/register",
+                     "/forgot/**",
+                     "/css/**", "/js/**", "/images/**",
+                     "/accountmanage/**", "/homepage/**", "/chatbot/**")
+        .permitAll()
+    .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
+    // Cho phép cả SUPER_ADMIN lẫn ADMIN vào /admin/**
+    .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+    .requestMatchers("/user/**").hasRole("CUSTOMER")
+    .requestMatchers("/provider/**").hasRole("PROVIDER")
+    .anyRequest().authenticated()
+)
 
-    return http.build();
-}
+                .formLogin(login -> login
+                        .loginPage("/login")
+                        .loginProcessingUrl("/perform_login")
+                        .successHandler(successHandler)
+                        .failureUrl("/login?error=true")
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/homepage")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll())
+                .headers(headers -> headers.cacheControl(cache -> {
+                }));
 
-
+        return http.build();
+    }
 
 }

@@ -70,12 +70,17 @@
   </dependency>
 
   <!--Ctrl s reload web-->
-
   <dependency>
   <groupId>org.springframework.boot</groupId>
   <artifactId>spring-boot-devtools</artifactId>
   <scope>runtime</scope>
   <optional>true</optional>
+</dependency>
+
+<!-- Thymeleaf Security dialect (để sec:authorize)-->
+<dependency>
+  <groupId>org.thymeleaf.extras</groupId>
+  <artifactId>thymeleaf-extras-springsecurity6</artifactId>
 </dependency>
 
 

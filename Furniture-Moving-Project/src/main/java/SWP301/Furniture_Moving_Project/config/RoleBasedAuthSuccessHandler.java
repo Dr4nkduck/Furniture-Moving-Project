@@ -13,12 +13,26 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res,
                                         Authentication auth) throws IOException, ServletException {
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            res.sendRedirect(req.getContextPath() + "/admin/dashboard");
-        } else if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PROVIDER"))) {
-            res.sendRedirect(req.getContextPath() + "/provider");
-        } else {
-            res.sendRedirect(req.getContextPath() + "/user");
+
+        String ctx = req.getContextPath();
+
+        // ƯU TIÊN CAO NHẤT
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"))) {
+            res.sendRedirect(ctx + "/super");
+            return;
         }
+
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            res.sendRedirect(ctx + "/admin/dashboard");
+            return;
+        }
+
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PROVIDER"))) {
+            res.sendRedirect(ctx + "/provider");
+            return;
+        }
+
+        // Mặc định: CUSTOMER hoặc các role khác
+        res.sendRedirect(ctx + "/user");
     }
 }

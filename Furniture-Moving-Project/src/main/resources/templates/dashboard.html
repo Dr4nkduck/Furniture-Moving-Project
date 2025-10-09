@@ -163,6 +163,29 @@
     <a href="#" class="dropdown-item">My Profile</a>
     <a href="#" class="dropdown-item">Settings</a>
 
+
+
+
+
+    <!-- Trong dashboard.html -->
+<div sec:authorize="hasRole('SUPER_ADMIN')" class="mb-3">
+  <a class="btn btn-warning" th:href="@{/super/logs}">
+    🔒 Super Admin: Activity Logs
+  </a>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
     <!-- ✅ Form POST để logout -->
     <form th:action="@{/logout}" method="post" id="logoutForm"></form>
     <a href="#" class="dropdown-item"
