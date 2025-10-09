@@ -55,4 +55,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
         WHERE r.role_name IN ('ADMIN','SUPER_ADMIN')
         """, nativeQuery = true)
     long countAdmins();
+
+    @Query("SELECT u FROM User u WHERE LOWER(u.username) = LOWER(:username)")
+    Optional<User> findByUsernameIgnoreCase(String username);
+
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)")
+    Optional<User> findByEmailIgnoreCase(String email);
 }
