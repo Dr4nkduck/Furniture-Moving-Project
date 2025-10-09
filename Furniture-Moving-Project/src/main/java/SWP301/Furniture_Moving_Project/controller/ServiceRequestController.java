@@ -1,174 +1,75 @@
 package SWP301.Furniture_Moving_Project.controller;
 
 import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
-import SWP301.Furniture_Moving_Project.dto.ServiceRequestResponseDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
+import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
+import SWP301.Furniture_Moving_Project.service.FullRequestService;
 import SWP301.Furniture_Moving_Project.service.ServiceRequestService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+
+import jakarta.validation.Valid; // <<-- IMPORT QUAN TRỌNG
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/requests")
 @CrossOrigin(origins = "*")
 public class ServiceRequestController {
-    
+
     private final ServiceRequestService serviceRequestService;
-    
-    @Autowired
-    public ServiceRequestController(ServiceRequestService serviceRequestService) {
+    private final FullRequestService fullRequestService;          // <<-- THÊM FIELD
+    private final ServiceRequestRepository serviceRequestRepository;
+
+    public ServiceRequestController(ServiceRequestService serviceRequestService,
+                                    FullRequestService fullRequestService,     // <<-- INJECT
+                                    ServiceRequestRepository serviceRequestRepository) {
         this.serviceRequestService = serviceRequestService;
+        this.fullRequestService = fullRequestService;
+        this.serviceRequestRepository = serviceRequestRepository;
     }
-    
-    /**
-     * Create a new service request
-     * POST /api/requests
-     */
+
+    // Tạo request (dùng 2 địa chỉ đã có)
     @PostMapping
-    public ResponseEntity<?> createRequest(@RequestBody CreateServiceRequestDTO requestDTO) {
-        try {
-            ServiceRequestResponseDTO response = serviceRequestService.createServiceRequest(requestDTO);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "Request created successfully");
-            result.put("data", response);
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(result);
-            
-        } catch (IllegalArgumentException e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-            
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "An error occurred while creating the request");
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
+    public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody CreateServiceRequestDTO dto) {
+        Integer id = serviceRequestService.create(dto);
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("requestId", id));
+        return ResponseEntity.status(201).body(body);
     }
-    
-    /**
-     * Get a request by ID
-     * GET /api/requests/{id}
-     */
+
+    // Tạo full (địa chỉ + request) trong 1 transaction
+    @PostMapping("/full")
+    public ResponseEntity<Map<String, Object>> createFull(@Valid @RequestBody CreateFullRequestDTO dto) {
+        Integer id = fullRequestService.createAll(dto);
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("requestId", id));
+        return ResponseEntity.status(201).body(body);
+    }
+
+    // (tuỳ chọn) GET /api/requests/{id} để kiểm tra
     @GetMapping("/{id}")
-    public ResponseEntity<?> getRequestById(@PathVariable Integer id) {
-        try {
-            ServiceRequestResponseDTO response = serviceRequestService.getRequestById(id);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("data", response);
-            
-            return ResponseEntity.ok(result);
-            
-        } catch (RuntimeException e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-            
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "An error occurred while retrieving the request");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-    
-    /**
-     * Get all requests
-     * GET /api/requests
-     */
-    @GetMapping
-    public ResponseEntity<?> getAllRequests(
-            @RequestParam(required = false) Integer customerId,
-            @RequestParam(required = false) String status) {
-        try {
-            List<ServiceRequestResponseDTO> requests;
-            
-            if (customerId != null && status != null) {
-                // Filter by both customer and status (need to add this method to service)
-                requests = serviceRequestService.getRequestsByCustomerId(customerId)
-                        .stream()
-                        .filter(r -> r.getStatus().equalsIgnoreCase(status))
-                        .toList();
-            } else if (customerId != null) {
-                requests = serviceRequestService.getRequestsByCustomerId(customerId);
-            } else if (status != null) {
-                requests = serviceRequestService.getRequestsByStatus(status);
-            } else {
-                requests = serviceRequestService.getAllRequests();
-            }
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("count", requests.size());
-            result.put("data", requests);
-            
-            return ResponseEntity.ok(result);
-            
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "An error occurred while retrieving requests");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-    
-    /**
-     * Get requests by customer ID
-     * GET /api/requests/customer/{customerId}
-     */
-    @GetMapping("/customer/{customerId}")
-    public ResponseEntity<?> getRequestsByCustomerId(@PathVariable Integer customerId) {
-        try {
-            List<ServiceRequestResponseDTO> requests = serviceRequestService.getRequestsByCustomerId(customerId);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("count", requests.size());
-            result.put("data", requests);
-            
-            return ResponseEntity.ok(result);
-            
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "An error occurred while retrieving customer requests");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-    
-    /**
-     * Get requests by status
-     * GET /api/requests/status/{status}
-     */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<?> getRequestsByStatus(@PathVariable String status) {
-        try {
-            List<ServiceRequestResponseDTO> requests = serviceRequestService.getRequestsByStatus(status);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("count", requests.size());
-            result.put("data", requests);
-            
-            return ResponseEntity.ok(result);
-            
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "An error occurred while retrieving requests by status");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable Integer id) {
+        return serviceRequestRepository.findById(id)
+                .map(sr -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("requestId", sr.getRequestId());
+                    data.put("customerId", sr.getCustomerId());
+                    data.put("providerId", sr.getProviderId());
+                    data.put("preferredDate", sr.getPreferredDate());
+                    data.put("status", sr.getStatus());
+                    Map<String, Object> resp = new HashMap<>();
+                    resp.put("success", true);
+                    resp.put("data", data);
+                    return ResponseEntity.ok(resp);
+                })
+                .orElseGet(() -> {
+                    Map<String, Object> resp = new HashMap<>();
+                    resp.put("success", false);
+                    resp.put("message", "Request not found");
+                    return ResponseEntity.status(404).body(resp);
+                });
     }
 }

@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login

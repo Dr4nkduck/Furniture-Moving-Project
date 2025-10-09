@@ -4,95 +4,80 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "providers")
+@Table(name = "providers", schema = "dbo")
 public class Provider {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "provider_id")
-    private Long id;
-    
-    @Column(name = "name", length = 100, nullable = false)
-    private String name;
-    
-    @Column(name = "phone", length = 20)
-    private String phone;
-    
-    @Column(name = "email", length = 100)
-    private String email;
-    
-    @Column(name = "rating", precision = 3, scale = 2)
-    private BigDecimal rating;
-    
-    @Column(name = "experience")
-    private String experience;
-    
-    @Column(name = "is_active")
-    private Boolean isActive = true;
+    private Integer providerId;
 
-    // Constructors
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    @Column(name = "company_name", nullable = false, length = 255)
+    private String companyName;
+
+    @Column(name = "verification_status", nullable = false, length = 20)
+    private String verificationStatus; // pending/verified/rejected
+
+    @Column(name = "rating", precision = 3, scale = 2, nullable = false)
+    private BigDecimal rating;
+
+    @Column(name = "total_reviews", nullable = false)
+    private Integer totalReviews;
+
     public Provider() {
     }
 
-    public Provider(String name, String phone) {
-        this.name = name;
-        this.phone = phone;
+    @PrePersist
+    public void prePersist() {
+        if (verificationStatus == null || verificationStatus.isBlank()) {
+            verificationStatus = "pending";
+        }
+        if (rating == null) {
+            rating = new BigDecimal("0.00");
+        }
+        if (totalReviews == null) {
+            totalReviews = 0;
+        }
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    // ===== Getters & Setters =====
+    public Integer getProviderId() {
+        return providerId;
     }
-
-    public void setId(Long id) {
-        this.id = id;
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
     }
-
-    public String getName() {
-        return name;
+    public Integer getUserId() {
+        return userId;
     }
-
-    public void setName(String name) {
-        this.name = name;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
-
-    public String getPhone() {
-        return phone;
+    public String getCompanyName() {
+        return companyName;
     }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
-
-    public String getEmail() {
-        return email;
+    public String getVerificationStatus() {
+        return verificationStatus;
     }
-
-    public void setEmail(String email) {
-        this.email = email;
+    public void setVerificationStatus(String verificationStatus) {
+        this.verificationStatus = verificationStatus;
     }
-
     public BigDecimal getRating() {
         return rating;
     }
-
     public void setRating(BigDecimal rating) {
         this.rating = rating;
     }
-
-    public String getExperience() {
-        return experience;
+    public Integer getTotalReviews() {
+        return totalReviews;
     }
-
-    public void setExperience(String experience) {
-        this.experience = experience;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+    public void setTotalReviews(Integer totalReviews) {
+        this.totalReviews = totalReviews;
     }
 }
