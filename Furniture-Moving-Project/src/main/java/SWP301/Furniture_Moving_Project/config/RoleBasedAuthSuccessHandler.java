@@ -36,8 +36,8 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
         String ctx = req.getContextPath();
 
         if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"))) {
-            // đẩy thẳng tới trang logs để tránh 404 /super
-            res.sendRedirect(ctx + "/super/logs");
+            // ✅ sau login vào Dashboard của Super Admin
+            res.sendRedirect(ctx + "/super/dashboard");
             return;
         }
         if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
