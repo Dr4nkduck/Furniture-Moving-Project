@@ -1,0 +1,112 @@
+/* =========================================================
+   SUPERADMIN THEME – dùng chung cho dashboard, logs, users, admins, login
+   ========================================================= */
+:root{
+  --sa-bg: #f5f7fb;
+  --sa-card-bg: #ffffff;
+  --sa-text: #1f2937;
+  --sa-muted: #6b7280;
+  --sa-primary: #0d6efd;
+  --sa-primary-soft: rgba(13,110,253,0.08);
+  --sa-accent: #22c55e;
+  --sa-danger: #ef4444;
+  --sa-warning: #f59e0b;
+  --sa-shadow: 0 4px 14px rgba(0,0,0,.07);
+  --sa-radius: 14px;
+}
+
+html, body{
+  background: var(--sa-bg) !important;
+  color: var(--sa-text);
+}
+
+/* ============ NAVBAR ============ */
+.navbar.sa-navbar{
+  background: #0b1220 !important;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.sa-navbar .navbar-brand{
+  letter-spacing:.3px;
+  font-weight:700;
+}
+.sa-navbar .btn{
+  border-radius: 999px;
+}
+
+/* ============ CARD ============ */
+.sa-card{
+  background: var(--sa-card-bg);
+  border: 1px solid #e5e7eb;
+  border-radius: var(--sa-radius);
+  box-shadow: var(--sa-shadow);
+}
+.sa-card .card-header{
+  background: transparent;
+  border-bottom: 1px solid #eef2f7;
+}
+
+/* ============ STATS ============ */
+.sa-stat .label{ color: var(--sa-muted); font-size: .9rem; }
+.sa-stat .value{ font-size: 1.8rem; font-weight: 700; }
+.sa-stat .link{ font-size: .85rem; }
+
+/* ============ TABLES ============ */
+.table.sa-table{
+  background: #fff;
+  border-radius: var(--sa-radius);
+  overflow: hidden;
+}
+.table.sa-table thead{
+  background: #f9fafb;
+}
+.table.sa-table th, .table.sa-table td{
+  vertical-align: middle;
+}
+.table.sa-table tr:hover{
+  background: var(--sa-primary-soft);
+}
+
+/* ============ BADGES ============ */
+.badge-login { background:#0d6efd !important; }
+.badge-quote { background:#20c997 !important; }
+.badge-warn  { background:#ffc107 !important; color:#000 !important; }
+.badge-ok    { background:#6c757d !important; }
+
+/* ============ UTILS ============ */
+.nowrap{ white-space: nowrap; }
+.mono{ font-family: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace; }
+
+/* ============ LOGIN ============ */
+.sa-login-wrap{
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(1200px 400px at 20% -10%, rgba(13,110,253,.12), transparent 40%),
+    radial-gradient(1000px 600px at 110% 110%, rgba(34,197,94,.10), transparent 40%),
+    var(--sa-bg);
+}
+.sa-login-card{
+  width: 100%;
+  max-width: 420px;
+  background: var(--sa-card-bg);
+  border-radius: 18px;
+  box-shadow: var(--sa-shadow);
+  border: 1px solid #e5e7eb;
+}
+.sa-login-card .brand{
+  font-weight: 800;
+  letter-spacing:.3px;
+}
+.form-control.sa-input{
+  border-radius: 12px;
+  border:1px solid #e5e7eb;
+}
+.form-control.sa-input:focus{
+  border-color: var(--sa-primary);
+  box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+}
+.sa-btn{
+  border-radius: 12px !important;
+}
+.sa-muted{ color: var(--sa-muted); font-size:.92rem; }

@@ -377,7 +377,7 @@ Provider: prov1 / Prov@123 → /provider
  -- -- -- -- 
 
 
- -- Overview tất cả tài khoản
+-- Overview tất cả tài khoản (có hiện SUPER_ADMIN)
 SELECT 
     u.user_id,
     u.username,
@@ -394,16 +394,127 @@ SELECT
     a.account_locked_until,
     a.mfa_enabled,
     a.mfa_method,
+
     -- Vai trò chính (primary)
     MAX(CASE WHEN ur.is_primary = 1 THEN r.role_name END) AS primary_role,
-    -- Tất cả vai trò (CSV)
-    STRING_AGG(r.role_name, ', ') WITHIN GROUP (ORDER BY r.role_name) AS roles_csv
+
+    -- Có SUPER_ADMIN hay không (1/0)
+    MAX(CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 1 ELSE 0 END) AS has_super_admin,
+
+    -- Cấp quản trị cao nhất (SUPER_ADMIN > ADMIN)
+    CASE 
+      WHEN MAX(CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 1 ELSE 0 END) = 1 THEN 'SUPER_ADMIN'
+      WHEN MAX(CASE WHEN r.role_name = 'ADMIN' THEN 1 ELSE 0 END) = 1 THEN 'ADMIN'
+      ELSE NULL
+    END AS admin_level,
+
+    -- Tất cả vai trò (CSV) – ưu tiên SUPER_ADMIN, ADMIN lên trước cho dễ đọc
+    STRING_AGG(r.role_name, ', ')
+      WITHIN GROUP (ORDER BY 
+        CASE 
+          WHEN r.role_name = 'SUPER_ADMIN' THEN 0
+          WHEN r.role_name = 'ADMIN'       THEN 1
+          WHEN r.role_name = 'PROVIDER'    THEN 2
+          WHEN r.role_name = 'CUSTOMER'    THEN 3
+          ELSE 9
+        END,
+        r.role_name
+      ) AS roles_csv
+
 FROM users u
-LEFT JOIN authentication a   ON a.user_id = u.user_id
-LEFT JOIN user_roles   ur    ON ur.user_id = u.user_id
-LEFT JOIN roles        r     ON r.role_id = ur.role_id
+LEFT JOIN authentication a ON a.user_id = u.user_id
+LEFT JOIN user_roles   ur  ON ur.user_id = u.user_id
+LEFT JOIN roles        r   ON r.role_id = ur.role_id
 GROUP BY 
     u.user_id,u.username,u.email,u.phone,u.first_name,u.last_name,
     u.status,u.email_verified,u.phone_verified,u.created_at,u.updated_at,
     a.failed_attempts,a.account_locked_until,a.mfa_enabled,a.mfa_method
 ORDER BY u.user_id;
+
+
+
+
+
+
+
+
+/* Them tai khoan super admin*/
+
+/* === Set SUPER ADMIN: superadmin / {noop}Superadmin123 === */
+BEGIN TRY
+    BEGIN TRAN;
+
+    /* 1) Bảo đảm role SUPER_ADMIN tồn tại */
+    IF NOT EXISTS (SELECT 1 FROM roles WHERE role_name='SUPER_ADMIN')
+    BEGIN
+        INSERT INTO roles(role_name, description)
+        VALUES ('SUPER_ADMIN','God admin (all permissions)');
+    END
+
+    /* 2) Tạo user superadmin nếu chưa có */
+    IF NOT EXISTS (SELECT 1 FROM users WHERE username='superadmin')
+    BEGIN
+        INSERT INTO users(username, email, first_name, last_name, phone, status, created_at, updated_at)
+        VALUES ('superadmin','superadmin@ftp.com','Super','Admin','0900000999','active', SYSUTCDATETIME(), SYSUTCDATETIME());
+    END
+
+    /* 3) Lấy user_id & role_id vào biến (trong CÙNG batch) */
+    DECLARE @uid INT = (SELECT TOP 1 user_id FROM users WHERE username='superadmin');
+    DECLARE @rid_super INT = (SELECT TOP 1 role_id FROM roles WHERE role_name='SUPER_ADMIN');
+
+    /* 4) Upsert authentication: dùng {noop} (dev) */
+    IF NOT EXISTS (SELECT 1 FROM authentication WHERE user_id=@uid)
+    BEGIN
+        INSERT INTO authentication(user_id, password_hash, mfa_enabled, failed_attempts, created_at, updated_at)
+        VALUES (@uid, '{noop}Superadmin123', 0, 0, SYSUTCDATETIME(), SYSUTCDATETIME());
+    END
+    ELSE
+    BEGIN
+        UPDATE authentication
+        SET password_hash = '{noop}Superadmin123',
+            failed_attempts = 0,
+            account_locked_until = NULL,
+            updated_at = SYSUTCDATETIME()
+        WHERE user_id=@uid;
+    END
+
+    /* 5) Gán role SUPER_ADMIN cho superadmin (đặt primary) */
+    IF NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id=@uid AND role_id=@rid_super)
+    BEGIN
+        INSERT INTO user_roles(user_id, role_id, is_primary)
+        VALUES (@uid, @rid_super, 1);
+    END
+    ELSE
+    BEGIN
+        UPDATE user_roles SET is_primary = 1
+        WHERE user_id=@uid AND role_id=@rid_super;
+    END
+
+    /* 6) (tuỳ chọn) thêm vào bảng admins với access_level = 'super' */
+    IF NOT EXISTS (SELECT 1 FROM admins WHERE user_id=@uid)
+    BEGIN
+        INSERT INTO admins(user_id, department, access_level)
+        VALUES (@uid, 'IT', 'super');
+    END
+    ELSE
+    BEGIN
+        UPDATE admins SET access_level='super' WHERE user_id=@uid;
+    END
+
+    /* 7) (tuỳ chọn) hạ quyền admin1: xoá SUPER_ADMIN khỏi admin1 nếu đang có */
+    DECLARE @uid_admin1 INT = (SELECT user_id FROM users WHERE username='admin1');
+    IF @uid_admin1 IS NOT NULL
+    BEGIN
+        DELETE ur
+        FROM user_roles ur
+        JOIN roles r ON r.role_id = ur.role_id
+        WHERE ur.user_id=@uid_admin1 AND r.role_name='SUPER_ADMIN';
+    END
+
+    COMMIT TRAN;
+    PRINT 'OK: superadmin đã có ROLE_SUPER_ADMIN (mật khẩu {noop}Superadmin123).';
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+    PRINT 'ERROR: ' + ERROR_MESSAGE();
+END CATCH

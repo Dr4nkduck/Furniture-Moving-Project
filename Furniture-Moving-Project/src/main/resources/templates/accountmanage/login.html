@@ -4,58 +4,80 @@
   <meta charset="UTF-8"/>
   <title>Đăng nhập</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+  <!-- Boxicons cho icon con mắt -->
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- CSS trang login -->
   <link rel="stylesheet" th:href="@{/accountmanage/css/login.css}">
-  <script th:src="@{/js/login.js}"></script>
 </head>
 <body>
   <div class="wrapper">
-    <!-- Form login -->
     <form method="post" th:action="@{/perform_login}">
       <h1>ĐĂNG NHẬP</h1>
 
       <div class="input-box">
-        <input type="text" name="username" placeholder="Tên đăng nhập" required>
-      </div>
+  <input type="text" name="username" placeholder="Tên đăng nhập hoặc Email" required>
+</div>
 
-      <div class="input-box">
-        <input type="password" name="password" placeholder="Mật khẩu" required>         
-      </div>
+<div class="input-box">
+  <input id="passwordInput" type="password" name="password" placeholder="Mật khẩu" required>
+  <i id="togglePassword" class="bx bx-hide" aria-label="Hiện/ẩn mật khẩu" role="button" tabindex="0"></i>
+</div>
+
 
       <div class="remember-forgot">
         <label><input type="checkbox">Nhớ tài khoản của tôi</label>
-        <!-- ✅ Chỉnh link forgot -->
         <a th:href="@{/forgot}">Quên mật khẩu</a>
-
       </div>
 
       <button type="submit" class="btn">Đăng nhập</button>
 
-      <!-- Register link -->
+      <div th:if="${param.error}" class="alert-txt">
+        Sai tài khoản hoặc mật khẩu!
+      </div>
+
       <div class="register-link">
-        <p>Bạn chưa có tài khoản? 
-          <a th:href="@{/register}">Đăng ký</a>
-        </p>
+        <p>Bạn chưa có tài khoản? <a th:href="@{/register}">Đăng ký</a></p>
       </div>
 
-      <!-- Thông báo lỗi login -->
-      <div th:if="${param.error}" style="color:#fff; text-align:center;">
-        Sai tài khoản hoặc mật khẩu.
-      </div>
-
-      <!-- Thông báo đăng ký thành công -->
-      <div th:if="${param.registered}" style="color: #fff; text-align:center; margin-top:8px;">
+      <div th:if="${param.registered}" class="alert-txt">
         Đăng ký thành công! Hãy đăng nhập.
       </div>
 
-      <!-- Quay lại homepage -->
-      <div style="text-align:center; margin-top:15px;">
-        <a href="/homepage" class="btn" 
-           style="display:inline-block; padding:10px 20px; border-radius:40px; background:#eee; color:#333; text-decoration:none; font-weight:600;">
-           Quay lại Trang chính
-        </a>
+      <div class="back-home">
+        <a th:href="@{/homepage}" class="btn btn-secondary">Quay lại Trang chính</a>
       </div>
     </form>
   </div>
+
+  <!-- JS inline: đảm bảo luôn chạy, không lệch path -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const pwd = document.getElementById('passwordInput');
+      const btn = document.getElementById('togglePassword');
+      if (!pwd || !btn) return;
+
+      function toggle() {
+        const show = pwd.type === 'password';
+        pwd.type = show ? 'text' : 'password';
+        btn.classList.toggle('bx-show', show);
+        btn.classList.toggle('bx-hide', !show);
+      }
+
+      btn.addEventListener('click', function (e) {
+        e.preventDefault(); // tránh form submit nếu nhấn Enter trong ô
+        toggle();
+      });
+
+      // Hỗ trợ bàn phím (Enter/Space)
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle();
+        }
+      });
+    });
+  </script>
 </body>
 </html>

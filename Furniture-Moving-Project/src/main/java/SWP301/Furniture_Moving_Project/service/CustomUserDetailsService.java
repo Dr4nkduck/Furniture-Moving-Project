@@ -27,26 +27,39 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // 1) user
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
+        // Cho phép nhập username hoặc email
+        User user = resolveUser(login);
 
-        // 2) credentials
+        // credentials
         AuthCredential auth = authCredentialRepository.findByUserId(user.getUserId())
-                .orElseThrow(() -> new UsernameNotFoundException("Credentials not found for user: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Credentials not found for: " + login));
 
-        // 3) roles -> authorities (ROLE_*)
-        List<String> roleNames = userRepository.findRoleNamesByUserId(user.getUserId()); // ví dụ ["ADMIN"] hoặc ["CUSTOMER"]
+        // roles -> authorities
+        List<String> roleNames = userRepository.findRoleNamesByUserId(user.getUserId());
         List<GrantedAuthority> authorities = roleNames.stream()
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
                 .collect(Collectors.toList());
 
-        // 4) trả UserDetails (password_hash trong DB)
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
+                .withUsername(user.getUsername()) // username “chuẩn” từ DB
                 .password(auth.getPasswordHash())
                 .authorities(authorities)
                 .build();
+    }
+
+    /** Ưu tiên email nếu có ký tự '@', không phân biệt hoa thường; fallback sang cách còn lại. */
+    private User resolveUser(String login) {
+        boolean looksLikeEmail = login != null && login.contains("@");
+
+        if (looksLikeEmail) {
+            return userRepository.findByEmailIgnoreCase(login)
+                    .or(() -> userRepository.findByUsernameIgnoreCase(login))
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + login));
+        } else {
+            return userRepository.findByUsernameIgnoreCase(login)
+                    .or(() -> userRepository.findByEmailIgnoreCase(login))
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + login));
+        }
     }
 }
