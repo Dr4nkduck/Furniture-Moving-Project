@@ -1,4 +1,3 @@
-<!-- src/main/resources/templates/superadmin/logs.html -->
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -6,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Activity Logs</title>
 
-  <!-- (Tùy bạn) dùng Bootstrap cho nhanh gọn -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" th:href="@{/superadmin/superadmin.css}"/>
 
   <style>
-    .badge-login { background:#0d6efd; }  /* xanh dương */
-    .badge-quote { background:#20c997; }  /* xanh ngọc */
-    .badge-warn  { background:#ffc107; color:#000; } /* vàng */
-    .badge-ok    { background:#6c757d; }  /* xám */
+    /* Giữ lại badge sẵn có (đã có trong superadmin.css nhưng để backward compatible) */
+    .badge-login { background:#0d6efd; }
+    .badge-quote { background:#20c997; }
+    .badge-warn  { background:#ffc107; color:#000; }
+    .badge-ok    { background:#6c757d; }
     .nowrap { white-space: nowrap; }
     .ip { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
@@ -25,9 +25,10 @@
 
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="m-0">System Activity Logs</h3>
-    <a class="btn btn-outline-primary btn-sm" th:href="@{/homepage}">Trang chủ</a>
-    <a class="btn btn-outline-secondary btn-sm" th:href="@{/super/dashboard}">Dashboard</a>
-
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary btn-sm" th:href="@{/super/dashboard}">Dashboard</a>
+      <a class="btn btn-outline-primary btn-sm" th:href="@{/homepage}">Trang chủ</a>
+    </div>
   </div>
 
   <!-- Form tìm kiếm -->
@@ -39,7 +40,7 @@
     </div>
     <div class="col-auto">
       <button class="btn btn-primary" type="submit">Tìm</button>
-      <a class="btn btn-outline-secondary" th:href="@{/super/logs}">Clear</a>
+      <a class="btn btn-outline-secondary" th:href="@{/super/logs}">Xóa</a>
     </div>
   </form>
 
@@ -61,6 +62,7 @@
         <th class="text-center">#</th>
         <th class="nowrap">Thời gian (UTC)</th>
         <th>User ID</th>
+        <th>Vai trò</th> <!-- ✅ CỘT MỚI -->
         <th>Type</th>
         <th>Mô tả</th>
         <th>IP</th>
@@ -76,8 +78,23 @@
 
         <td th:text="${log.userId}">2</td>
 
+        <!-- ✅ HIỂN THỊ VAI TRÒ -->
         <td>
-          <!-- FIX: dùng th:switch để chọn class badge -->
+          <span th:if="${log.userId == null}" class="text-muted">System</span>
+          <span th:if="${log.userId != null}">
+            <!-- tách chuỗi rolesMap[userId] thành mảng, rồi render badge theo từng role -->
+            <span th:each="r : ${#strings.arraySplit(rolesMap[log.userId], ', ')}"
+                  th:switch="${r}">
+              <span th:case="'SUPER_ADMIN'" class="badge text-bg-danger me-1" th:text="${r}">SUPER_ADMIN</span>
+              <span th:case="'ADMIN'"       class="badge text-bg-primary me-1" th:text="${r}">ADMIN</span>
+              <span th:case="'PROVIDER'"    class="badge text-bg-info me-1"    th:text="${r}">PROVIDER</span>
+              <span th:case="'CUSTOMER'"    class="badge text-bg-success me-1" th:text="${r}">CUSTOMER</span>
+              <span th:case="*"             class="badge text-bg-secondary me-1" th:text="${r}">OTHER</span>
+            </span>
+          </span>
+        </td>
+
+        <td>
           <span th:switch="${#strings.toUpperCase(log.eventType)}">
             <span th:case="'LOGIN'" class="badge badge-login" th:text="${log.eventType}">LOGIN</span>
             <span th:case="'QUOTE'" class="badge badge-quote" th:text="${log.eventType}">QUOTE</span>
@@ -91,7 +108,7 @@
       </tr>
 
       <tr th:if="${#lists.isEmpty(pageData.content)}">
-        <td colspan="6" class="text-center text-muted py-4">
+        <td colspan="7" class="text-center text-muted py-4">
           Không có dữ liệu.
         </td>
       </tr>
