@@ -1,5 +1,6 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.model.ActivityLog;
 import SWP301.Furniture_Moving_Project.repository.ActivityLogRepository;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Controller;
@@ -21,15 +22,20 @@ public class SuperAdminController {
                        @RequestParam(value = "page", defaultValue = "0") int page,
                        @RequestParam(value = "size", defaultValue = "10") int size,
                        Model model) {
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
-        var pageData = logRepo.search(q, pageable);
+
+        Page<ActivityLog> pageData = (q == null || q.isBlank())
+                ? logRepo.findAll(pageable)   // ✅ nếu không có từ khoá thì lấy hết
+                : logRepo.search(q.trim(), pageable);
+
         model.addAttribute("q", q == null ? "" : q);
         model.addAttribute("pageData", pageData);
-        return "superadmin/logs";
+
+        return "superadmin/logs"; // ✅ khớp templates/superadmin/logs.html
     }
 
-    @GetMapping("")
-    public String home() {
-        return "redirect:/super/logs";
-    }
+    // (Tuỳ chọn debug) /super/logs/count → trả số bản ghi.
+    // @GetMapping("/logs/count") @ResponseBody
+    // public String count() { return "count=" + logRepo.count(); }
 }

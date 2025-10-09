@@ -1,0 +1,84 @@
+:root {
+  --bg: #0f172a;          /* slate-900 */
+  --card: #111827;        /* gray-900 */
+  --text: #e5e7eb;        /* gray-200 */
+  --muted: #9ca3af;       /* gray-400 */
+  --accent: #22d3ee;      /* cyan-400 */
+  --line: #1f2937;        /* gray-800 */
+  --success: #34d399;     /* emerald-400 */
+  --warn: #f59e0b;        /* amber-500 */
+  --info: #60a5fa;        /* blue-400 */
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+}
+
+.container { max-width: 1100px; margin-top: 28px; }
+
+h3 { font-weight: 700; letter-spacing: .2px; }
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+.table {
+  color: var(--text);
+  border-color: var(--line);
+}
+.table thead th {
+  background: #0b1220;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-size: 12px;
+}
+.table tbody tr {
+  border-top: 1px solid var(--line);
+}
+.table tbody tr:hover {
+  background: rgba(255,255,255,.02);
+}
+.badge {
+  font-size: 12px;
+  padding: .35rem .55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.badge-login  { background: rgba(34,211,238,.12); color: var(--accent); }
+.badge-quote  { background: rgba(96,165,250,.12); color: var(--info); }
+.badge-warn   { background: rgba(245,158,11,.12); color: var(--warn); }
+.badge-ok     { background: rgba(52,211,153,.12); color: var(--success); }
+
+.form-control, .btn {
+  border-radius: 10px;
+  border-color: var(--line);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #001018;
+}
+.btn-outline-secondary {
+  border-color: var(--line);
+  color: var(--muted);
+}
+.pagination .page-link {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line);
+}
+.pagination .page-item.active .page-link {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #001018;
+}
+.small-muted { color: var(--muted); font-size: 13px; }

@@ -1,86 +1,126 @@
+<!-- src/main/resources/templates/superadmin/logs.html -->
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Super Admin • Activity Logs</title>
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="stylesheet" th:href="@{/homepage/lib/bootstrap/css/bootstrap.min.css}" />
-  <link rel="stylesheet" th:href="@{/homepage/css/style.css}" />
+  <title>Activity Logs</title>
+
+  <!-- (Tùy bạn) dùng Bootstrap cho nhanh gọn -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+
   <style>
-    .container { max-width: 1100px; margin-top: 24px; }
-    .table thead th { white-space: nowrap; }
-    .pagination { margin-bottom: 0; }
+    .badge-login { background:#0d6efd; }  /* xanh dương */
+    .badge-quote { background:#20c997; }  /* xanh ngọc */
+    .badge-warn  { background:#ffc107; color:#000; } /* vàng */
+    .badge-ok    { background:#6c757d; }  /* xám */
+    .nowrap { white-space: nowrap; }
+    .ip { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
-<body>
-<div class="container">
-  <h3 class="mb-3">Activity Logs</h3>
+<body class="bg-light">
 
-  <form class="row g-2 mb-3" method="get" th:action="@{/super/logs}">
-    <div class="col-auto">
-      <input class="form-control" type="text" name="q" placeholder="Tìm theo type/description/IP"
-             th:value="${q}"/>
+<div class="container py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">System Activity Logs</h3>
+    <a class="btn btn-outline-primary btn-sm" th:href="@{/homepage}">Trang chủ</a>
+  </div>
+
+  <!-- Form tìm kiếm -->
+  <form class="row g-2 align-items-center mb-3" th:action="@{/super/logs}" method="get">
+    <div class="col-sm-8 col-md-6">
+      <input class="form-control" type="text" name="q"
+             placeholder="Tìm theo type / description / IP…"
+             th:value="${q}">
     </div>
     <div class="col-auto">
       <button class="btn btn-primary" type="submit">Tìm</button>
-      <a class="btn btn-outline-secondary" th:href="@{/super/logs}">Xoá lọc</a>
-    </div>
-    <div class="col text-end">
-      <a class="btn btn-secondary" th:href="@{/admin/dashboard}" sec:authorize="hasAnyRole('ADMIN','SUPER_ADMIN')">← Về Dashboard</a>
+      <a class="btn btn-outline-secondary" th:href="@{/super/logs}">Clear</a>
     </div>
   </form>
 
-  <div class="table-responsive">
-    <table class="table table-striped table-bordered align-middle">
+  <!-- Tổng quan -->
+  <div class="mb-2 small text-muted">
+    <span th:text="'Trang ' + (${pageData.number}+1) + ' / ' + ${pageData.totalPages}">Trang</span>
+    ·
+    <span th:text="'Tổng: ' + ${pageData.totalElements} + ' bản ghi'">Tổng</span>
+    <span th:if="${q != null and !#strings.isEmpty(q)}">
+      · Từ khóa: <code th:text="${q}">kw</code>
+    </span>
+  </div>
+
+  <!-- Bảng log -->
+  <div class="table-responsive shadow-sm">
+    <table class="table table-hover align-middle bg-white">
       <thead class="table-light">
       <tr>
-        <th>#</th>
+        <th class="text-center">#</th>
+        <th class="nowrap">Thời gian (UTC)</th>
         <th>User ID</th>
         <th>Type</th>
-        <th>Description</th>
+        <th>Mô tả</th>
         <th>IP</th>
-        <th>Time (UTC)</th>
       </tr>
       </thead>
       <tbody>
-      <tr th:each="log, iStat : ${pageData.content}">
-        <td th:text="${pageData.pageable.offset + iStat.index + 1}">1</td>
+      <tr th:each="log, idx : ${pageData.content}">
+        <td class="text-center"
+            th:text="${pageData.number * pageData.size + idx.index + 1}">1</td>
+
+        <td class="nowrap"
+            th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">2025-01-01 00:00:00</td>
+
         <td th:text="${log.userId}">2</td>
-        <td th:text="${log.eventType}">LOGIN</td>
-        <td th:text="${log.eventDescription}">User logged in</td>
-        <td th:text="${log.ipAddress}">127.0.0.1</td>
-        <td th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ssxxx')}">...</td>
+
+        <td>
+          <!-- FIX: dùng th:switch để chọn class badge -->
+          <span th:switch="${#strings.toUpperCase(log.eventType)}">
+            <span th:case="'LOGIN'" class="badge badge-login" th:text="${log.eventType}">LOGIN</span>
+            <span th:case="'QUOTE'" class="badge badge-quote" th:text="${log.eventType}">QUOTE</span>
+            <span th:case="'WARN'"  class="badge badge-warn"  th:text="${log.eventType}">WARN</span>
+            <span th:case="*"       class="badge badge-ok"    th:text="${log.eventType}">OTHER</span>
+          </span>
+        </td>
+
+        <td th:text="${log.eventDescription}">Chi tiết sự kiện…</td>
+        <td class="ip" th:text="${log.ipAddress}">127.0.0.1</td>
       </tr>
-      <tr th:if="${pageData.totalElements == 0}">
-        <td colspan="6" class="text-center text-muted">Không có log nào.</td>
+
+      <tr th:if="${#lists.isEmpty(pageData.content)}">
+        <td colspan="6" class="text-center text-muted py-4">
+          Không có dữ liệu.
+        </td>
       </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Pagination -->
-  <nav th:if="${pageData.totalPages > 1}">
-    <ul class="pagination justify-content-center gap-1">
-      <li class="page-item" th:classappend="${pageData.first}? 'disabled'">
+  <!-- Phân trang -->
+  <nav class="mt-3" th:if="${pageData.totalPages > 1}">
+    <ul class="pagination pagination-sm">
+      <li class="page-item" th:classappend="${pageData.first} ? ' disabled'">
         <a class="page-link"
-           th:href="@{/super/logs(page=${pageData.number - 1}, size=${pageData.size}, q=${q})}">«</a>
+           th:href="@{/super/logs(page=${pageData.number - 1}, q=${q})}">&laquo;</a>
       </li>
-      <li class="page-item" th:each="p : ${#numbers.sequence(0, pageData.totalPages-1)}"
-          th:classappend="${p == pageData.number}? 'active'">
+
+      <li class="page-item"
+          th:each="p : ${#numbers.sequence(0, pageData.totalPages-1)}"
+          th:classappend="${p == pageData.number} ? ' active'">
         <a class="page-link"
            th:text="${p + 1}"
-           th:href="@{/super/logs(page=${p}, size=${pageData.size}, q=${q})}">1</a>
+           th:href="@{/super/logs(page=${p}, q=${q})}">1</a>
       </li>
-      <li class="page-item" th:classappend="${pageData.last}? 'disabled'">
+
+      <li class="page-item" th:classappend="${pageData.last} ? ' disabled'">
         <a class="page-link"
-           th:href="@{/super/logs(page=${pageData.number + 1}, size=${pageData.size}, q=${q})}">»</a>
+           th:href="@{/super/logs(page=${pageData.number + 1}, q=${q})}">&raquo;</a>
       </li>
     </ul>
   </nav>
+
 </div>
 
-<script th:src="@{/homepage/lib/jquery/jquery.min.js}"></script>
-<script th:src="@{/homepage/lib/bootstrap/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>
