@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Furniture Moving</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <!-- CSS riêng -->
+
+    <link rel="stylesheet" href="../css/style.css">
+
+</head>
+<body>
+<!-- 🔑 Nút đăng nhập/đăng xuất -->
+<div class="topbar" id="authArea">
+    <a href="login.html" class="login-btn">Đăng nhập</a>
+</div>
+
+<div class="container">
+    <h2>Furniture Moving</h2>
+    <form action="/submitAddresses" method="post">
+        <label>Địa chỉ lấy hàng:</label>
+        <input type="text" id="pickup" name="pickup" placeholder="Nhập địa chỉ lấy hàng">
+
+        <label>Địa chỉ giao hàng:</label>
+        <input type="text" id="destination" name="destination" placeholder="Nhập địa chỉ giao hàng">
+
+        <button type="submit">Gửi</button>
+    </form>
+
+
+    <!--    <label>Địa chỉ lấy hàng:</label>-->
+<!--&lt;!&ndash;    <input type="text" id="pickup" placeholder="Nhập địa chỉ lấy hàng">&ndash;&gt;-->
+<!--    <form action="/submitPickup" method="post">-->
+<!--        <input type="text" id="pickup" name="pickup" placeholder="Nhập địa chỉ lấy hàng">-->
+<!--        <button type="submit">Gửi</button>-->
+<!--    </form>-->
+
+<!--    <label>Địa chỉ giao hàng:</label>-->
+<!--    <input type="text" id="destination" placeholder="Nhập địa chỉ giao hàng">-->
+
+    <button onclick="findRoute()">🔍 Tìm đường</button>
+
+    <label>Dịch vụ vận chuyển:</label>
+    <select id="serviceSelect" onchange="updateService()">
+        <option value="">-- Chọn dịch vụ --</option>
+        <option value="Xe bán tải nhỏ">Xe bán tải nhỏ</option>
+        <option value="Xe 3.5 tấn">Xe 3.5 tấn</option>
+        <option value="Xe 5 tấn">Xe 5 tấn</option>
+    </select>
+    <label>
+        <input type="checkbox" id="hasElevator" onchange="updateResult()">
+        🏢 Chung cư có thang máy (giảm 20% chi phí bốc vác)
+    </label>
+
+    <label>Ngày và giờ vận chuyển:</label>
+    <input type="datetime-local" id="pickupTime">
+
+    <label>Chụp ảnh hàng hóa (AI ước lượng):</label>
+    <input type="file" id="uploadImage" accept="image/*" onchange="analyzeImage()">
+    <div id="aiNote"></div>
+
+
+    <div id="map"></div>
+
+    <div id="result"> Kết quả sẽ hiển thị ở đây...</div>
+
+    <div id="payment"> Tổng thanh toán: 0 đ</div>
+    <button class="pay-btn" onclick="confirmPayment()">✅ Xác nhận thanh toán</button>
+
+</div>
+
+<!-- JS riêng -->
+<script src="../js/script.js"></script>
+</body>
+</html>
