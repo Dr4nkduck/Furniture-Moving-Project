@@ -13,62 +13,17 @@ const closeChatbot = document.querySelector("#close-chatbot");
 // ==============
 // API setup
 // ==============
-// IMPORTANT: For production, don't expose your key in client JS.
-// Use a tiny backend proxy and keep the key server-side.
-const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSocY"; // <- replace with your Gemini (AI Studio) key
+// IMPORTANT: For production, do not expose your key in the browser.
+// Use a tiny backend proxy and store the key server-side.
+const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // <-- paste a fresh AI Studio key here
 
-// Prefer a stronger model first; fall back to the lighter one if overloaded or unavailable.
+// Prefer a stronger model first; fall back to the lighter one if overloaded/unavailable.
 let MODEL = "gemini-2.0-flash";               // primary
 let FALLBACK_MODEL = "gemini-2.0-flash-lite"; // fallback (usually more available)
 
 // Build URL from the current MODEL each request (so fallback updates take effect)
 const buildApiUrl = () =>
     `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
-
-// Simple sleep
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Generic fetch with exponential backoff + one-time model fallback on 429/503 overloads
-async function fetchWithBackoff(options, { maxRetries = 3, baseDelay = 700 } = {}) {
-    let attempt = 0;
-    let switched = false;
-    while (true) {
-        const url = buildApiUrl();
-        const res = await fetch(url, options);
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-        if (res.ok) return data;
-
-        const status = res.status;
-        const msg = data?.error?.message || `HTTP ${status}`;
-        const overload = status === 429 || status === 503 || /overloaded/i.test(msg);
-
-        // If model alias isn't found (404) or "not supported", try fallback immediately once.
-        const notFound = status === 404 || /not found|not supported/i.test(msg);
-
-        if ((overload || notFound) && !switched && MODEL !== FALLBACK_MODEL) {
-            MODEL = FALLBACK_MODEL; // switch once
-            switched = true;
-            // small jitter before retry after switching model
-            await delay(250);
-            continue;
-        }
-
-        if (overload && attempt < maxRetries) {
-            attempt += 1;
-            const wait = baseDelay * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 250);
-            await delay(wait);
-            continue;
-        }
-
-        const err = new Error(msg);
-        err.status = status;
-        err.payload = data;
-        throw err;
-    }
-}
 
 // ===============================
 // Initialize user message and file
@@ -97,6 +52,76 @@ const createMessageElement = (content, ...classes) => {
     return div;
 };
 
+// ========================
+// Small utility functions
+// ========================
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Generic fetch with exponential backoff + model fallback on 404/overload
+async function fetchWithBackoff(options, { maxRetries = 3, baseDelay = 700 } = {}) {
+    let attempt = 0;
+    let switched = false;
+    while (true) {
+        const url = buildApiUrl();
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+        if (res.ok) return data;
+
+        const status = res.status;
+        const msg = data?.error?.message || `HTTP ${status}`;
+        const overload = status === 429 || status === 503 || /overloaded/i.test(msg);
+        const notFoundOrUnsupported = status === 404 || /not found|not supported/i.test(msg);
+
+        // One-time immediate switch to fallback model if current model isn't available
+        if ((notFoundOrUnsupported || overload) && !switched && MODEL !== FALLBACK_MODEL) {
+            MODEL = FALLBACK_MODEL;
+            switched = true;
+            await delay(250);
+            continue;
+        }
+
+        // Retry on overload/rate-limit with backoff
+        if (overload && attempt < maxRetries) {
+            attempt += 1;
+            const wait = baseDelay * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 250);
+            await delay(wait);
+            continue;
+        }
+
+        // Give up with a useful error
+        const err = new Error(msg);
+        err.status = status;
+        err.payload = data;
+        throw err;
+    }
+}
+
+// Preflight: validate API key and pick an available model for this key
+async function preflight() {
+    const url = `https://generativelanguage.googleapis.com/v1/models?key=${API_KEY}`;
+    const r = await fetch(url);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+        const msg = data?.error?.message || `HTTP ${r.status}`;
+        throw new Error(`API key check failed: ${msg}`);
+    }
+    const names = (data.models || data).map((m) => m.name?.replace(/^models\//, "")).filter(Boolean);
+
+    // Prefer flash, else flash-lite, else first available
+    if (names.includes("gemini-2.0-flash")) {
+        MODEL = "gemini-2.0-flash";
+    } else if (names.includes("gemini-2.0-flash-lite")) {
+        MODEL = "gemini-2.0-flash-lite";
+    } else if (names.length) {
+        MODEL = names[0];
+    } else {
+        throw new Error("No available models found for this API key.");
+    }
+}
+
 // ==================================
 // Generate bot response using API
 // ==================================
@@ -111,7 +136,7 @@ const generateBotResponse = async (incomingMessageDiv) => {
     chatHistory.push({ role: "user", parts });
 
     // Keep only the most recent N messages to reduce request size (helps during load)
-    const MAX_TURNS = 8; // user+model messages (tune as you like)
+    const MAX_TURNS = 8; // user+model messages
     const trimmedHistory = chatHistory.slice(-MAX_TURNS);
 
     const requestOptions = {
@@ -134,15 +159,15 @@ const generateBotResponse = async (incomingMessageDiv) => {
         chatHistory.push({ role: "model", parts: [{ text: apiResponseText }] });
     } catch (error) {
         console.error(error);
-        if (error.status === 429 || error.status === 503 || /overloaded/i.test(error.message)) {
+        if (/API key not valid|API_KEY_INVALID/i.test(error.message)) {
             messageElement.innerText =
-                "The model is busy right now. I tried a few times automatically and also switched to a lighter model. Please try again in a moment.";
+                "Your API key is invalid for this endpoint. Create a Gemini API key in Google AI Studio and paste it into script.js.";
         } else if (error.status === 404 || /not found|not supported/i.test(error.message)) {
             messageElement.innerText =
-                "This model alias isn’t available for your key. Try switching to gemini-2.0-flash-lite.";
-        } else if (error.status === 400 && /API key not valid|API_KEY_INVALID/i.test(error.message)) {
+                "This model alias isn’t available for your key. I tried switching to a lighter alias automatically.";
+        } else if (error.status === 429 || error.status === 503 || /overloaded/i.test(error.message)) {
             messageElement.innerText =
-                "Your API key seems invalid for this endpoint. Make sure it’s an AI Studio Gemini key.";
+                "The model is busy right now. I retried with backoff and switched models, but it’s still overloaded. Try again shortly.";
         } else {
             messageElement.innerText = error.message || "Something went wrong calling the API.";
         }
@@ -280,3 +305,11 @@ sendMessage.addEventListener("click", (e) => handleOutgoingMessage(e));
 document.querySelector("#file-upload").addEventListener("click", () => fileInput.click());
 closeChatbot.addEventListener("click", () => document.body.classList.remove("show-chatbot"));
 chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
+
+// ===========================
+// Kick off a key preflight
+// ===========================
+preflight().catch((err) => {
+    console.error(err);
+    alert("Your Gemini API key isn’t valid for this endpoint. Create a new AI Studio key and paste it into script.js.");
+});
