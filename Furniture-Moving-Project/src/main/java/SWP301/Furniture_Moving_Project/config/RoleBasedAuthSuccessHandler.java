@@ -31,7 +31,7 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
         String username = auth.getName();
         Integer userId = userRepo.findByUsername(username).map(u -> u.getUserId()).orElse(null);
         String ip = IpUtils.clientIp(req);
-        activityLogService.log(userId, "LOGIN", "User logged in", ip);
+        activityLogService.log(userId, "LOGIN", "Đăng nhập", ip);
 
         String ctx = req.getContextPath();
 
