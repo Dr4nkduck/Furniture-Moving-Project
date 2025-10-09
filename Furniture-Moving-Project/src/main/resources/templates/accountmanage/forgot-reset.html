@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Đặt mật khẩu mới</title>
+  <link rel="stylesheet" th:href="@{/accountmanage/css/login.css}">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    .hint { font-size:13px; opacity:.9; margin-top:6px; text-align:center; }
+    .err  { color:#ffb3b3; text-align:center; margin-top:12px; }
+
+    /* Đặt NÚT CON MẮT bên PHẢI, BÊN TRONG ô nhập đầu tiên */
+    .input-box { position: relative; }
+    /* Tăng padding-right để chữ không bị đè bởi nút con mắt */
+    .input-box input {
+      padding-right: 52px; /* > kích thước nút + khoảng hở */
+    }
+    .toggle-eye {
+      position: absolute;
+      right: 12px;           /* bám sát mép phải input */
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      width: 32px;           /* vùng bấm đủ rộng */
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      border-radius: 6px;
+    }
+    .toggle-eye:focus { outline: 2px solid rgba(255,255,255,.35); outline-offset: 2px; }
+    /* GHI ĐÈ rule toàn cục ".input-box i { position:absolute; ... }" trong login.css */
+    .input-box .toggle-eye i {
+      position: static !important;
+      transform: none !important;
+      font-size: 20px;
+      line-height: 1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <form th:action="@{/forgot/reset}" method="post" id="resetForm" novalidate>
+    <h1>Đặt mật khẩu mới</h1>
+
+    <!-- Ô 1: Mật khẩu mới (CÓ nút con mắt ở bên phải, bên trong ô) -->
+    <div class="input-box">
+      <input id="pw" type="password" name="newPassword" placeholder="Mật khẩu mới" minlength="6" required>
+      <button type="button" class="toggle-eye" id="eye" aria-label="Hiện/ẩn mật khẩu" title="Hiện/ẩn mật khẩu">
+        <i class='bx bx-show-alt' aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- Ô 2: Nhập lại mật khẩu (KHÔNG có nút con mắt) -->
+    <div class="input-box">
+      <input id="pw2" type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu" minlength="6" required>
+    </div>
+
+    <div id="matchMsg" class="hint"></div>
+
+    <button type="submit" class="btn" id="submitBtn">Đặt lại mật khẩu</button>
+
+    <div th:if="${error}" class="err" th:text="${error}"></div>
+
+    <div class="register-link" style="margin-top:16px;">
+      <p><a th:href="@{/login}">Quay lại đăng nhập</a></p>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Toggle hiện/ẩn cho CẢ HAI ô bằng 1 nút
+  const eyeBtn = document.getElementById('eye');
+  const icon   = eyeBtn.querySelector('i');
+  const pw     = document.getElementById('pw');
+  const pw2    = document.getElementById('pw2');
+
+  eyeBtn.addEventListener('click', () => {
+    const isShowing = pw.type === 'text';
+    const nextType = isShowing ? 'password' : 'text';
+    pw.type  = nextType;
+    pw2.type = nextType;
+    icon.classList.toggle('bx-show-alt', isShowing);
+    icon.classList.toggle('bx-hide', !isShowing);
+  });
+
+  // Check khớp phía client (giữ kiểm tra server ở controller)
+  const msg = document.getElementById('matchMsg');
+  const btn = document.getElementById('submitBtn');
+
+  function validate() {
+    if (!pw.value || !pw2.value) { msg.textContent = ''; btn.disabled = false; return; }
+    if (pw.value !== pw2.value) {
+      msg.textContent = 'Mật khẩu nhập lại không khớp';
+      btn.disabled = true;
+    } else {
+      msg.textContent = 'Mật khẩu khớp';
+      btn.disabled = false;
+    }
+  }
+  pw.addEventListener('input', validate);
+  pw2.addEventListener('input', validate);
+</script>
+</body>
+</html>
