@@ -365,7 +365,7 @@ JOIN authentication a ON a.user_id = u.user_id
  */
 
  /*
-Tài khoản đăng nhập 
+Tài khoản đăng nhập
 
 Admin: admin1 / Admin@123 → /admin/dashboard
 

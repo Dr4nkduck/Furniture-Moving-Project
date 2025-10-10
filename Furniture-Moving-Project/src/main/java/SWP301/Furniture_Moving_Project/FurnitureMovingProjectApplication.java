@@ -10,4 +10,4 @@ public class FurnitureMovingProjectApplication {
 		SpringApplication.run(FurnitureMovingProjectApplication.class, args);
 	}
 
-}
+}	
