@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tạo Yêu Cầu Vận Chuyển Nội Thất - Furniture Transport</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; padding: 20px;
+    }
+    .container {
+      max-width: 900px; margin: 0 auto; background: #fff;
+      border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,.3); overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color:#fff; padding:30px; text-align:center;
+    }
+    .header h1 { font-size:28px; margin-bottom:10px; }
+    .header p { font-size:14px; opacity:.9; }
+    .form-content { padding: 40px; }
+    .section { margin-bottom: 35px; }
+    .section-title {
+      font-size:20px; color:#333; margin-bottom:20px; padding-bottom:10px;
+      border-bottom:2px solid #667eea; display:flex; align-items:center;
+    }
+    .section-title::before { content:''; width:4px; height:24px; background:#667eea; margin-right:10px; }
+    .form-group { margin-bottom:20px; }
+    label { display:block; margin-bottom:8px; color:#555; font-weight:600; font-size:14px; }
+    .required { color:#e74c3c; }
+    input[type="text"], input[type="date"], input[type="number"], select, textarea {
+      width:100%; padding:12px 15px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px; transition: all .3s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline:none; border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.1);
+    }
+    textarea { resize: vertical; min-height:80px; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+    .address-card, .item-card {
+      background:#f8f9fa; padding:20px; border-radius:10px; margin-bottom:15px; border:2px solid #e0e0e0; position:relative;
+    }
+    .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+    .card-title { font-weight:600; color:#667eea; font-size:16px; }
+    .btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all .3s; }
+    .btn-add { background:#667eea; color:#fff; width:100%; margin-top:10px; }
+    .btn-add:hover { background:#5568d3; transform: translateY(-2px); box-shadow:0 5px 15px rgba(102,126,234,.3); }
+    .btn-remove { background:#e74c3c; color:#fff; padding:6px 12px; font-size:12px; }
+    .btn-remove:hover { background:#c0392b; }
+    .btn-submit {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color:#fff; width:100%; padding:15px; font-size:16px; margin-top:20px;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,.4); }
+    .checkbox-group { display:flex; align-items:center; gap:10px; margin-top:10px; }
+    .checkbox-group input[type="checkbox"] { width:18px; height:18px; cursor:pointer; }
+    .checkbox-group label { margin:0; cursor:pointer; font-weight:normal; }
+    .alert { padding:15px 20px; border-radius:8px; margin-bottom:20px; display:none; }
+    .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+    .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    @media (max-width: 768px) {
+      .row { grid-template-columns: 1fr; }
+      .form-content { padding:20px; }
+      .header h1 { font-size:22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚚 Tạo Yêu Cầu Vận Chuyển Nội Thất</h1>
+      <p>Điền đầy đủ thông tin để chúng tôi phục vụ bạn tốt nhất</p>
+    </div>
+
+    <div class="form-content">
+      <div id="alertBox" class="alert"></div>
+
+      <form id="requestForm">
+        <!-- Thông tin chung -->
+        <div class="section">
+          <h2 class="section-title">Thông Tin Chung</h2>
+          <div class="row">
+            <div class="form-group">
+              <label>Ngày Vận Chuyển <span class="required">*</span></label>
+              <input type="date" id="preferredDate" name="preferredDate" required>
+            </div>
+            <div class="form-group">
+              <label>Nhà Cung Cấp (Tùy Chọn)</label>
+              <select id="providerId" name="providerId">
+                <option value="">-- Chọn sau --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Địa chỉ lấy hàng (1 card duy nhất) -->
+        <div class="section">
+          <h2 class="section-title">Địa Chỉ Lấy Hàng</h2>
+          <div id="pickupAddresses">
+            <div class="address-card" data-type="Pickup">
+              <div class="card-header">
+                <span class="card-title">📦 Địa chỉ lấy hàng</span>
+              </div>
+              <div class="form-group">
+                <label>Địa Chỉ <span class="required">*</span></label>
+                <input type="text" class="street-address" placeholder="Số nhà, tên đường" required>
+              </div>
+              <div class="row">
+                <div class="form-group">
+                  <label>Thành Phố <span class="required">*</span></label>
+                  <input type="text" class="city" placeholder="Thành phố" required>
+                </div>
+                <div class="form-group">
+                  <label>Quận/Huyện <span class="required">*</span></label>
+                  <input type="text" class="state" placeholder="Quận/Huyện" required>
+                </div>
+              </div>
+              <div class="row">
+                <div class="form-group">
+                  <label>Mã Bưu Điện <span class="required">*</span></label>
+                  <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
+                </div>
+                <div class="form-group">
+                  <label>Tên Liên Hệ</label>
+                  <input type="text" class="contact-name" placeholder="(Không bắt buộc)">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Số Điện Thoại</label>
+                <input type="text" class="contact-phone" placeholder="(Không bắt buộc)">
+              </div>
+              <div class="form-group">
+                <label>Hướng Dẫn Đặc Biệt</label>
+                <textarea class="special-instructions" placeholder="Ví dụ: Tầng 3, không có thang máy..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Địa chỉ giao hàng (1 card duy nhất) -->
+        <div class="section">
+          <h2 class="section-title">Địa Chỉ Giao Hàng</h2>
+          <div id="deliveryAddresses">
+            <div class="address-card" data-type="Delivery">
+              <div class="card-header">
+                <span class="card-title">🏠 Địa chỉ giao hàng</span>
+              </div>
+              <div class="form-group">
+                <label>Địa Chỉ <span class="required">*</span></label>
+                <input type="text" class="street-address" placeholder="Số nhà, tên đường" required>
+              </div>
+              <div class="row">
+                <div class="form-group">
+                  <label>Thành Phố <span class="required">*</span></label>
+                  <input type="text" class="city" placeholder="Thành phố" required>
+                </div>
+                <div class="form-group">
+                  <label>Quận/Huyện <span class="required">*</span></label>
+                  <input type="text" class="state" placeholder="Quận/Huyện" required>
+                </div>
+              </div>
+              <div class="row">
+                <div class="form-group">
+                  <label>Mã Bưu Điện <span class="required">*</span></label>
+                  <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
+                </div>
+                <div class="form-group">
+                  <label>Tên Liên Hệ</label>
+                  <input type="text" class="contact-name" placeholder="(Không bắt buộc)">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Số Điện Thoại</label>
+                <input type="text" class="contact-phone" placeholder="(Không bắt buộc)">
+              </div>
+              <div class="form-group">
+                <label>Hướng Dẫn Đặc Biệt</label>
+                <textarea class="special-instructions" placeholder="Ví dụ: Cần gọi trước 30 phút..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danh sách đồ nội thất -->
+        <div class="section">
+          <h2 class="section-title">Danh Sách Đồ Nội Thất</h2>
+          <div id="furnitureItems">
+            <div class="item-card">
+              <div class="card-header">
+                <span class="card-title">🪑 Món đồ #1</span>
+              </div>
+              <div class="row">
+                <div class="form-group">
+                  <label>Loại Đồ <span class="required">*</span></label>
+                  <select class="item-type" required>
+                    <option value="">-- Chọn loại --</option>
+                    <option value="Sofa">Sofa</option>
+                    <option value="Bed">Giường</option>
+                    <option value="Table">Bàn</option>
+                    <option value="Chair">Ghế</option>
+                    <option value="Cabinet">Tủ</option>
+                    <option value="Wardrobe">Tủ quần áo</option>
+                    <option value="Other">Khác</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Tên Món Đồ</label>
+                  <input type="text" class="item-name" placeholder="Ví dụ: Sofa 3 chỗ">
+                </div>
+              </div>
+              <div class="row">
+                <div class="form-group">
+                  <label>Số Lượng <span class="required">*</span></label>
+                  <input type="number" class="quantity" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                  <label>Kích Thước</label>
+                  <select class="size">
+                    <option value="">-- Chọn --</option>
+                    <option value="Small">Nhỏ</option>
+                    <option value="Medium">Trung bình</option>
+                    <option value="Large">Lớn</option>
+                    <option value="Extra Large">Rất lớn</option>
+                  </select>
+                </div>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" class="is-fragile" id="fragile1">
+                <label for="fragile1">Đồ dễ vỡ</label>
+              </div>
+              <div class="form-group">
+                <label>Ghi Chú Đặc Biệt</label>
+                <textarea class="special-handling-notes" placeholder="Ví dụ: Cần bọc cẩn thận..."></textarea>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-add" onclick="addFurnitureItem()">+ Thêm Món Đồ</button>
+        </div>
+
+        <button type="submit" class="btn btn-submit">📤 Gửi Yêu Cầu</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+  // ==== CẤU HÌNH API ====
+  const API_BASE = 'http://localhost:8080'; // đổi nếu backend chạy port khác/context-path
+
+  let itemCount = 1;
+  let currentUser = null;
+
+  // ==== MOCK LOGIN (chỉ để demo) ====
+  function mockLogin() {
+    const key = 'currentUser';
+    const exists = localStorage.getItem(key);
+    if (exists) return JSON.parse(exists);
+    const mock = { userId: 2, customerId: 1, username: 'test_customer' };
+    localStorage.setItem(key, JSON.stringify(mock));
+    return mock;
+  }
+
+  // ==== TIỆN ÍCH UI ====
+  function showAlert(message, type) {
+    const alertBox = document.getElementById('alertBox');
+    alertBox.textContent = message;
+    alertBox.className = `alert alert-${type}`;
+    alertBox.style.display = 'block';
+    setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function setSubmitting(isSubmitting) {
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.disabled = isSubmitting;
+    submitBtn.textContent = isSubmitting ? '⏳ Đang gửi...' : '📤 Gửi Yêu Cầu';
+  }
+
+  // ==== NẠP PROVIDERS ====
+  async function loadProviders() {
+    try {
+      const url = `${API_BASE}/api/providers`;
+      const res = await fetch(url, { method: 'GET' });
+      const text = await res.text();
+
+      let result;
+      try { result = JSON.parse(text); } catch { result = null; }
+
+      const select = document.getElementById('providerId');
+      select.innerHTML = '<option value="">-- Chọn sau --</option>';
+
+      const list =
+        Array.isArray(result) ? result :
+        (result && Array.isArray(result.data)) ? result.data : [];
+
+      list.forEach(p => {
+        const opt = document.createElement('option');
+        const id = p.providerId ?? p.id ?? p.provider_id;
+        const name = p.companyName ?? p.name ?? p.company_name ?? 'Nhà cung cấp';
+        const rating = (p.rating != null) ? ` ⭐ ${p.rating}` : '';
+        opt.value = id;
+        opt.textContent = `${name}${rating}`;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      console.error('Load providers error:', e);
+    }
+  }
+
+  // ==== THÊM ITEM UI ====
+  function addFurnitureItem() {
+    itemCount++;
+    const container = document.getElementById('furnitureItems');
+    const itemCard = document.createElement('div');
+    itemCard.className = 'item-card';
+    itemCard.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">🪑 Món đồ #${itemCount}</span>
+        <button type="button" class="btn btn-remove" onclick="this.closest('.item-card').remove()">Xóa</button>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Loại Đồ <span class="required">*</span></label>
+          <select class="item-type" required>
+            <option value="">-- Chọn loại --</option>
+            <option value="Sofa">Sofa</option>
+            <option value="Bed">Giường</option>
+            <option value="Table">Bàn</option>
+            <option value="Chair">Ghế</option>
+            <option value="Cabinet">Tủ</option>
+            <option value="Wardrobe">Tủ quần áo</option>
+            <option value="Other">Khác</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tên Món Đồ</label>
+          <input type="text" class="item-name" placeholder="Ví dụ: Sofa 3 chỗ">
+        </div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Số Lượng <span class="required">*</span></label>
+          <input type="number" class="quantity" min="1" value="1" required>
+        </div>
+        <div class="form-group">
+          <label>Kích Thước</label>
+          <select class="size">
+            <option value="">-- Chọn --</option>
+            <option value="Small">Nhỏ</option>
+            <option value="Medium">Trung bình</option>
+            <option value="Large">Lớn</option>
+            <option value="Extra Large">Rất lớn</option>
+          </select>
+        </div>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" class="is-fragile" id="fragile${itemCount}">
+        <label for="fragile${itemCount}">Đồ dễ vỡ</label>
+      </div>
+      <div class="form-group">
+        <label>Ghi Chú Đặc Biệt</label>
+        <textarea class="special-handling-notes" placeholder="Ví dụ: Cần bọc cẩn thận..."></textarea>
+      </div>
+    `;
+    container.appendChild(itemCard);
+  }
+
+  // ==== VALIDATION PHÍA CLIENT ====
+  function isFutureOrToday(dateStr) {
+    if (!dateStr) return false;
+    const d = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return d.getTime() >= today.getTime();
+  }
+
+  function validateForm() {
+    // 1) preferredDate
+    const preferredDate = document.getElementById('preferredDate').value;
+    if (!isFutureOrToday(preferredDate)) {
+      showAlert('❌ Ngày vận chuyển phải hôm nay hoặc tương lai.', 'error');
+      return false;
+    }
+
+    // 2) địa chỉ pickup
+    const pickupCard = document.querySelector('#pickupAddresses .address-card');
+    const deliveryCard = document.querySelector('#deliveryAddresses .address-card');
+    if (!pickupCard || !deliveryCard) {
+      showAlert('❌ Thiếu địa chỉ lấy hàng hoặc giao hàng.', 'error');
+      return false;
+    }
+    const required = s => s && s.trim().length > 0;
+
+    const pickup = {
+      street: pickupCard.querySelector('.street-address')?.value,
+      city: pickupCard.querySelector('.city')?.value,
+      state: pickupCard.querySelector('.state')?.value,
+      zip: pickupCard.querySelector('.zip-code')?.value
+    };
+    const delivery = {
+      street: deliveryCard.querySelector('.street-address')?.value,
+      city: deliveryCard.querySelector('.city')?.value,
+      state: deliveryCard.querySelector('.state')?.value,
+      zip: deliveryCard.querySelector('.zip-code')?.value
+    };
+
+    if (![pickup.street, pickup.city, pickup.state, pickup.zip].every(required)) {
+      showAlert('❌ Vui lòng nhập đủ địa chỉ LẤY HÀNG (đường, thành phố, quận/huyện, mã bưu điện).', 'error');
+      return false;
+    }
+    if (![delivery.street, delivery.city, delivery.state, delivery.zip].every(required)) {
+      showAlert('❌ Vui lòng nhập đủ địa chỉ GIAO HÀNG (đường, thành phố, quận/huyện, mã bưu điện).', 'error');
+      return false;
+    }
+
+    // 3) items
+    const cards = [...document.querySelectorAll('#furnitureItems .item-card')];
+    if (cards.length === 0) {
+      showAlert('❌ Vui lòng thêm ít nhất 1 món đồ.', 'error');
+      return false;
+    }
+    for (const c of cards) {
+      const type = c.querySelector('.item-type')?.value;
+      const qty = parseInt(c.querySelector('.quantity')?.value || '0', 10);
+      if (!required(type)) {
+        showAlert('❌ Mỗi món đồ phải chọn Loại Đồ.', 'error');
+        return false;
+      }
+      if (!(qty >= 1)) {
+        showAlert('❌ Số lượng món đồ phải ≥ 1.', 'error');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // ==== API TẠO ADDRESS ====
+  async function createAddress(addr, type) {
+    const payload = {
+      userId: currentUser.customerId,
+      addressType: (type === 'pickup') ? 'home' : 'office',
+      streetAddress: addr.streetAddress,
+      city: addr.city,
+      state: addr.state,
+      zipCode: addr.zipCode,
+      latitude: null,
+      longitude: null,
+      isDefault: false
+    };
+    const res = await fetch(`${API_BASE}/api/addresses`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success || !result.data?.addressId) {
+      throw new Error(result.message || 'Create address failed');
+    }
+    return result.data.addressId;
+  }
+
+  // ==== SUBMIT FORM ====
+  document.getElementById('requestForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setSubmitting(true);
+
+    // lấy địa chỉ (card đầu tiên mỗi nhóm)
+    const pickupCard = document.querySelector('#pickupAddresses .address-card');
+    const deliveryCard = document.querySelector('#deliveryAddresses .address-card');
+
+    const pickupAddress = {
+      streetAddress: pickupCard.querySelector('.street-address').value,
+      city: pickupCard.querySelector('.city').value,
+      state: pickupCard.querySelector('.state').value,
+      zipCode: pickupCard.querySelector('.zip-code').value
+    };
+    const deliveryAddress = {
+      streetAddress: deliveryCard.querySelector('.street-address').value,
+      city: deliveryCard.querySelector('.city').value,
+      state: deliveryCard.querySelector('.state').value,
+      zipCode: deliveryCard.querySelector('.zip-code').value
+    };
+
+    // gom items gửi đúng schema backend
+    const furnitureItems = [];
+    document.querySelectorAll('#furnitureItems .item-card').forEach(card => {
+      furnitureItems.push({
+        itemType: card.querySelector('.item-type').value,
+        size: card.querySelector('.size')?.value || null,
+        quantity: parseInt(card.querySelector('.quantity').value),
+        isFragile: card.querySelector('.is-fragile').checked,
+        specialHandling: card.querySelector('.special-handling-notes').value || null
+      });
+    });
+
+    try {
+      // TẠO 2 ĐỊA CHỈ SONG SONG
+      const [pickupAddressId, deliveryAddressId] = await Promise.all([
+        createAddress(pickupAddress, 'pickup'),
+        createAddress(deliveryAddress, 'delivery')
+      ]);
+
+      // TẠO REQUEST
+      const providerIdStr = document.getElementById('providerId').value;
+      const payload = {
+        customerId: currentUser.customerId,
+        providerId: providerIdStr ? parseInt(providerIdStr) : null,
+        pickupAddressId,
+        deliveryAddressId,
+        preferredDate: document.getElementById('preferredDate').value,
+        status: 'pending',
+        furnitureItems
+      };
+
+      const res = await fetch(`${API_BASE}/api/requests`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+
+      if (res.ok && result.success) {
+        showAlert(`✅ Yêu cầu tạo thành công! Mã: #${result.data.requestId}`, 'success');
+        setTimeout(() => {
+          document.getElementById('requestForm').reset();
+          document.querySelectorAll('#furnitureItems .item-card').forEach((c,i)=>{ if(i>0) c.remove(); });
+          itemCount = 1;
+        }, 1000);
+      } else {
+        throw new Error(result.message || 'Có lỗi khi tạo yêu cầu');
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert(`❌ ${err.message || 'Không thể tạo địa chỉ/yêu cầu. Kiểm tra backend!'}`, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  });
+
+
+  // ==== INIT ====
+  (function init() {
+    currentUser = mockLogin();
+    document.getElementById('preferredDate').min = new Date().toISOString().split('T')[0];
+    loadProviders();
+  })();
+</script>
+
+</body>
+</html>
