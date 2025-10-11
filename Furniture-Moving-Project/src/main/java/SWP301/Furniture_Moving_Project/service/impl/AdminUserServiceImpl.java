@@ -1,6 +1,6 @@
 package SWP301.Furniture_Moving_Project.service.impl;
 
-import SWP301.Furniture_Moving_Project.controller.dto.UserAccountResponse;
+import SWP301.Furniture_Moving_Project.dto.UserAccountResponseDTO;
 import SWP301.Furniture_Moving_Project.model.AccountStatus;
 import SWP301.Furniture_Moving_Project.model.UserAccount;
 import SWP301.Furniture_Moving_Project.repository.UserAccountRepository;
@@ -8,7 +8,6 @@ import SWP301.Furniture_Moving_Project.repository.UserAccountRepository;
 // import SWP301.Furniture_Moving_Project.repository.RoleRepository;
 
 import SWP301.Furniture_Moving_Project.service.AdminUserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +29,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     @Override
-    public Page<UserAccountResponse> list(String q, Integer page, Integer size) {
+    public Page<UserAccountResponseDTO> list(String q, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page == null ? 0 : page,
                 size == null ? 10 : size,
                 Sort.by("id").descending());
@@ -49,14 +48,14 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     @Override
-    public UserAccountResponse get(Long id) {
+    public UserAccountResponseDTO get(Long id) {
         UserAccount u = repo.findById(id).orElseThrow();
         return toDtoEntityOnly(u);
     }
 
     @Override
     @Transactional
-    public UserAccountResponse changeStatus(Long id, AccountStatus status) {
+    public UserAccountResponseDTO changeStatus(Long id, AccountStatus status) {
         UserAccount u = repo.findById(id).orElseThrow();
         u.setStatus(status); // AccountStatusConverter sẽ lưu xuống DB dạng lowercase
         UserAccount saved = repo.save(u);
@@ -71,14 +70,14 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     // ----------------- Helpers -----------------
 
-    private UserAccountResponse toDtoEntityOnly(UserAccount u) {
+    private UserAccountResponseDTO toDtoEntityOnly(UserAccount u) {
         String fullName = ((u.getFirstName() == null ? "" : u.getFirstName()) + " " +
                 (u.getLastName()  == null ? "" : u.getLastName())).trim();
 
         // (Tùy chọn) Nếu đã tạo RoleRepository:
         // String primaryRole = (roleRepo != null) ? roleRepo.findPrimaryRoleByUserId(u.getId()) : null;
 
-        return new UserAccountResponse(
+        return new UserAccountResponseDTO(
                 u.getId(),
                 u.getUsername(),
                 u.getEmail(),

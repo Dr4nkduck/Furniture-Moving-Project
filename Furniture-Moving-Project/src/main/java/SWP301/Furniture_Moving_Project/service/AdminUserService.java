@@ -1,6 +1,6 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.controller.dto.UserAccountResponse;
+import SWP301.Furniture_Moving_Project.dto.UserAccountResponseDTO;
 import SWP301.Furniture_Moving_Project.model.AccountStatus;
 import org.springframework.data.domain.Page;
 
@@ -21,7 +21,7 @@ public interface AdminUserService {
      * @param size  Kích thước trang
      * @return Page<UserAccountResponse>
      */
-    Page<UserAccountResponse> list(String q, Integer page, Integer size);
+    Page<UserAccountResponseDTO> list(String q, Integer page, Integer size);
 
     /**
      * Lấy thông tin 1 người dùng.
@@ -29,7 +29,7 @@ public interface AdminUserService {
      * @param id ID người dùng
      * @return UserAccountResponse
      */
-    UserAccountResponse get(Long id);
+    UserAccountResponseDTO get(Long id);
 
     /**
      * Đổi trạng thái tài khoản.
@@ -38,7 +38,7 @@ public interface AdminUserService {
      * @param status Trạng thái mới (ACTIVE/SUSPENDED/DELETED)
      * @return UserAccountResponse sau khi cập nhật
      */
-    UserAccountResponse changeStatus(Long id, AccountStatus status);
+    UserAccountResponseDTO changeStatus(Long id, AccountStatus status);
 
     /**
      * Soft delete: đặt trạng thái = DELETED.

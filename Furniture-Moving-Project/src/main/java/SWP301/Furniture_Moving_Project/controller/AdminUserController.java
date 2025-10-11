@@ -1,7 +1,7 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.controller.dto.ChangeStatusRequest;
-import SWP301.Furniture_Moving_Project.controller.dto.UserAccountResponse;
+import SWP301.Furniture_Moving_Project.dto.ChangeStatusRequest;
+import SWP301.Furniture_Moving_Project.dto.UserAccountResponseDTO;
 import SWP301.Furniture_Moving_Project.model.AccountStatus;
 import SWP301.Furniture_Moving_Project.service.AdminUserService;
 import org.springframework.data.domain.Page;
@@ -22,21 +22,21 @@ public class AdminUserController {
 
     /** List users with optional q= search, page/size pagination */
     @GetMapping
-    public Page<UserAccountResponse> list(@RequestParam(required = false) String q,
-                                          @RequestParam(required = false) Integer page,
-                                          @RequestParam(required = false) Integer size) {
+    public Page<UserAccountResponseDTO> list(@RequestParam(required = false) String q,
+                                             @RequestParam(required = false) Integer page,
+                                             @RequestParam(required = false) Integer size) {
         return service.list(q, page, size);
     }
 
     /** Get one user by id */
     @GetMapping("/{id}")
-    public UserAccountResponse get(@PathVariable Long id) {
+    public UserAccountResponseDTO get(@PathVariable Long id) {
         return service.get(id);
     }
 
     /** Change status (ACTIVE/SUSPENDED/DELETED) */
     @PutMapping("/{id}/status")
-    public UserAccountResponse changeStatus(@PathVariable Long id, @RequestBody ChangeStatusRequest body) {
+    public UserAccountResponseDTO changeStatus(@PathVariable Long id, @RequestBody ChangeStatusRequest body) {
         AccountStatus status = body.getStatus();
         return service.changeStatus(id, status);
     }

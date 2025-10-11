@@ -1,9 +1,9 @@
-package SWP301.Furniture_Moving_Project.controller.dto;
+package SWP301.Furniture_Moving_Project.dto;
 
 import SWP301.Furniture_Moving_Project.model.AccountStatus;
 import java.time.OffsetDateTime;
 
-public record UserAccountResponse(
+public record UserAccountResponseDTO(
         Long id,
         String username,
         String email,
