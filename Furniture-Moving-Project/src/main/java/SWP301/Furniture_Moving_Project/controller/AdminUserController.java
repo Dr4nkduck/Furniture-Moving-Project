@@ -1,6 +1,6 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.dto.ChangeStatusRequest;
+import SWP301.Furniture_Moving_Project.dto.ChangeStatusRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.UserAccountResponseDTO;
 import SWP301.Furniture_Moving_Project.model.AccountStatus;
 import SWP301.Furniture_Moving_Project.service.AdminUserService;
@@ -36,7 +36,7 @@ public class AdminUserController {
 
     /** Change status (ACTIVE/SUSPENDED/DELETED) */
     @PutMapping("/{id}/status")
-    public UserAccountResponseDTO changeStatus(@PathVariable Long id, @RequestBody ChangeStatusRequest body) {
+    public UserAccountResponseDTO changeStatus(@PathVariable Long id, @RequestBody ChangeStatusRequestDTO body) {
         AccountStatus status = body.getStatus();
         return service.changeStatus(id, status);
     }

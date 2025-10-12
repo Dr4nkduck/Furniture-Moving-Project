@@ -51,7 +51,7 @@
           <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
         </div>
         <div class="ms-3">
-          <h6 class="mb-0" th:text="${#authentication?.name}">John Doe</h6>
+          <h6 class="mb-0" th:text="${#authentication?.name}">Admin</h6>
           <span>Admin</span>
         </div>
       </div>
@@ -61,8 +61,8 @@
           <i class="fa fa-tachometer-alt me-2"></i>Dashboard
         </a>
 
-        <a th:href="@{/chatbot}" class="nav-item nav-link">
-          <i class="fa fa-th me-2"></i>Chatbot
+        <a th:href="@{/accountmanagement}" class="nav-item nav-link">
+          <i class="fa fa-th me-2"></i>Quản lí tài khoản
         </a>
 
         <a th:href="@{/provider}" class="nav-item nav-link">
