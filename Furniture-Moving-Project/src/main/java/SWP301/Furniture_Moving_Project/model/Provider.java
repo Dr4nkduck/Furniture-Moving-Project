@@ -62,7 +62,7 @@ public class Provider {
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
     }
-    public String getVerificationStatus() {
+    public String getVerificationStatus() { 
         return verificationStatus;
     }
     public void setVerificationStatus(String verificationStatus) {

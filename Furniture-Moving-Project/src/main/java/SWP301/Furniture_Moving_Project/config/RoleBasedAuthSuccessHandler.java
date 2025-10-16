@@ -1,7 +1,5 @@
 package SWP301.Furniture_Moving_Project.config;
 
-import SWP301.Furniture_Moving_Project.repository.UserRepository;
-import SWP301.Furniture_Moving_Project.service.ActivityLogService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,40 +12,31 @@ import java.io.IOException;
 @Component
 public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final UserRepository userRepo;
-    private final ActivityLogService activityLogService;
-
-    public RoleBasedAuthSuccessHandler(UserRepository userRepo,
-                                       ActivityLogService activityLogService) {
-        this.userRepo = userRepo;
-        this.activityLogService = activityLogService;
-    }
-
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res,
-                                        Authentication auth) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest req, HttpServletResponse res, Authentication auth)
+            throws IOException, ServletException {
 
-        // --- GHI LOG LOGIN ---
-        String username = auth.getName();
-        Integer userId = userRepo.findByUsername(username).map(u -> u.getUserId()).orElse(null);
-        String ip = IpUtils.clientIp(req);
-        activityLogService.log(userId, "LOGIN", "Đăng nhập", ip);
+        final String ctx = req.getContextPath() == null ? "" : req.getContextPath();
+        var authorities = auth.getAuthorities();
 
-        String ctx = req.getContextPath();
+        boolean isSuper = authorities.stream().anyMatch(a -> "ROLE_SUPERADMIN".equals(a.getAuthority()));
+        boolean isAdmin = authorities.stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        boolean isProvider = authorities.stream().anyMatch(a -> "ROLE_PROVIDER".equals(a.getAuthority()));
 
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"))) {
-            // ✅ sau login vào Dashboard của Super Admin
+        if (isSuper) {
             res.sendRedirect(ctx + "/super/dashboard");
             return;
         }
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+        if (isAdmin) {
             res.sendRedirect(ctx + "/admin/dashboard");
             return;
         }
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PROVIDER"))) {
-            res.sendRedirect(ctx + "/provider");
+        if (isProvider) {
+            //changed from "/provider" to the new dashboard route
+            res.sendRedirect(ctx + "/provider/dashboard");
             return;
         }
+        // default (e.g., customer)
         res.sendRedirect(ctx + "/user");
     }
 }

@@ -9,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "service_requests", schema = "dbo")
-public class ServiceRequest {
+public class    ServiceRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

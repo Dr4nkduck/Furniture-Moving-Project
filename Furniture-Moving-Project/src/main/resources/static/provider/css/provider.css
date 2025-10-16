@@ -1,0 +1,193 @@
+/* -----------------------------
+   Provider Dashboard – Clean UI
+   - System-aware Dark Mode (prefers-color-scheme)
+   - CSS Variables for quick theming
+   - Tables, Buttons, Chips, Cards
+   ----------------------------- */
+
+/* THEME TOKENS */
+:root{
+    --bg: #fafafa;
+    --panel: #ffffff;
+    --text: #0f172a;         /* slate-900 */
+    --muted: #6b7280;        /* gray-500 */
+    --border: #e5e7eb;       /* gray-200 */
+    --primary: #2563eb;      /* blue-600 */
+    --primary-600: #1d4ed8;
+    --primary-50: #eef2ff;   /* indigo-50 */
+    --success: #16a34a;      /* green-600 */
+    --warning: #d97706;      /* amber-600 */
+    --danger: #dc2626;       /* red-600 */
+    --chip: #f3f4f6;         /* gray-100 */
+    --shadow: 0 10px 20px rgba(2,6,23,.06);
+}
+
+@media (prefers-color-scheme: dark){
+    :root{
+        --bg: #0b1020;
+        --panel: #0f172a;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #1f2937;
+        --primary: #60a5fa;
+        --primary-600: #3b82f6;
+        --primary-50: #0b1220;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --chip: #111827;
+        --shadow: 0 12px 24px rgba(0,0,0,.35);
+    }
+}
+
+/* OPTIONAL: Enable manual dark mode if you later add a toggle
+   <html data-theme="dark"> ... */
+html[data-theme="dark"]{
+    color-scheme: dark;
+}
+
+/* BASICS */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background: var(--bg);
+    color: var(--text);
+    line-height:1.55;
+}
+
+header{
+    position: sticky; top:0; z-index:10;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:saturate(140%) blur(6px);
+}
+header h1{
+    margin:0; padding:18px 24px; font-size:20px; letter-spacing:.2px;
+}
+header nav{
+    display:flex; gap:8px; padding:0 16px 16px;
+}
+
+/* TABS */
+nav button{
+    appearance:none; border:1px solid var(--border);
+    background:var(--panel); color:var(--text);
+    padding:8px 12px; border-radius:10px; cursor:pointer;
+    font-weight:600; transition:all .2s ease;
+}
+nav button:hover{ transform:translateY(-1px); box-shadow: var(--shadow); }
+.tab{ display:none; padding:20px 24px; max-width:1200px; margin:0 auto; }
+.tab.active{ display:block; }
+
+/* PANELS & CARDS */
+section h2{ margin:4px 0 14px; font-size:18px }
+.card{
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:16px; box-shadow: var(--shadow); padding:16px;
+}
+
+/* ACTION BUTTONS */
+button, .btn{
+    appearance:none; border:1px solid var(--border);
+    background:var(--panel); color:var(--text);
+    padding:8px 12px; border-radius:10px; cursor:pointer;
+    font-weight:600; transition:all .2s ease;
+}
+button:hover, .btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow); }
+
+.btn-primary{
+    background:var(--primary); color:#fff; border-color:transparent;
+}
+.btn-primary:hover{ background:var(--primary-600) }
+
+.btn-ghost{
+    background:transparent;
+}
+.btn-danger{
+    background:var(--danger); color:#fff; border-color:transparent;
+}
+.btn-success{
+    background:var(--success); color:#fff; border-color:transparent;
+}
+.btn-warning{
+    background:var(--warning); color:#fff; border-color:transparent;
+}
+
+/* TABLES */
+table{
+    width:100%; border-collapse:separate; border-spacing:0;
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:16px; overflow:hidden; box-shadow:var(--shadow);
+}
+thead th{
+    text-align:left; font-size:12px; letter-spacing:.4px;
+    color:var(--muted); background:var(--primary-50);
+    padding:12px 14px; border-bottom:1px solid var(--border);
+}
+tbody td{
+    padding:12px 14px; border-bottom:1px solid var(--border);
+}
+tbody tr:last-child td{ border-bottom:none }
+tbody tr:hover{ background:rgba(2,6,23,.03) }
+
+/* INLINE CONTROLS IN TABLE */
+#catalog-table td:last-child, #orders-tbody td:last-child{
+    white-space:nowrap; width:1%;
+}
+button.edit{ background:var(--primary); color:#fff; border-color:transparent; margin-right:6px }
+button.del{ background:var(--danger); color:#fff; border-color:transparent }
+
+/* FILTER BAR */
+.filters{
+    display:flex; align-items:center; gap:10px; margin:10px 0 14px;
+}
+select, input[type="text"], input[type="number"], input[type="datetime-local"]{
+    padding:8px 10px; border:1px solid var(--border); border-radius:10px;
+    background:var(--panel); color:var(--text); outline:none;
+}
+select:focus, input:focus{ box-shadow:0 0 0 3px rgba(37,99,235,.15); border-color:var(--primary) }
+
+/* STATUS CHIPS */
+.badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700;
+    background:var(--chip); border:1px solid var(--border); color:var(--muted);
+}
+.badge.RFP, .badge.OFFERED{ color:var(--warning); border-color:rgba(217,119,6,.35) }
+.badge.ASSIGNED{ color:var(--primary); border-color:rgba(37,99,235,.35) }
+.badge.IN_PROGRESS{ color:var(--primary-600); border-color:rgba(29,78,216,.35) }
+.badge.COMPLETED{ color:var(--success); border-color:rgba(34,197,94,.35) }
+.badge.CANCELLED{ color:var(--danger); border-color:rgba(220,38,38,.35) }
+
+/* ORDER DETAIL */
+#order-detail{
+    margin-top:16px; padding:16px; border:1px solid var(--border);
+    background:var(--panel); border-radius:16px; box-shadow:var(--shadow);
+}
+#od-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px }
+#od-image{ display:block; border-radius:12px; border:1px solid var(--border) }
+
+/* UTILS */
+.muted{ color:var(--muted) }
+.row{ display:flex; gap:12px; align-items:center }
+.grid{ display:grid; gap:12px }
+.grid-2{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+.grid-3{ grid-template-columns:repeat(3,minmax(0,1fr)) }
+
+/* RESPONSIVE */
+@media (max-width: 960px){
+    .grid-3{ grid-template-columns:1fr 1fr }
+    thead{ display:none }
+    table, tbody, tr, td{ display:block; width:100% }
+    tbody tr{ border-bottom:1px solid var(--border) }
+    tbody td{
+        display:flex; justify-content:space-between; gap:10px;
+        border:none; border-bottom:1px dashed var(--border);
+    }
+    tbody td::before{
+        content: attr(data-th);
+        color:var(--muted); font-weight:600;
+    }
+}

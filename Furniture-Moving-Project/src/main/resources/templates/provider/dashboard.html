@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Provider Dashboard</title>
+    <link rel="stylesheet" th:href="@{/provider/provider.css}">
+    <script defer th:src="@{/provider/provider.js}"></script>
+</head>
+<body>
+<header>
+    <h1>Provider Dashboard</h1>
+    <nav>
+        <button data-tab="catalog">Service & Price Catalog</button>
+        <button data-tab="orders">Orders</button>
+    </nav>
+</header>
+
+<main>
+    <!-- Catalog -->
+    <section id="tab-catalog" class="tab active">
+        <h2>Catalog</h2>
+        <button id="btn-new-item">+ New Item</button>
+        <table id="catalog-table">
+            <thead>
+            <tr>
+                <th>Name</th><th>Base Fee</th><th>perKm</th><th>perMin</th>
+                <th>Stairs</th><th>NoElev</th><th>Alley</th><th>Weekend</th><th>Active</th><th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${catalog}">
+                <td th:text="${i.name}"></td>
+                <td th:text="${i.baseFee}"></td>
+                <td th:text="${i.perKm}"></td>
+                <td th:text="${i.perMin}"></td>
+                <td th:text="${i.stairsFee}"></td>
+                <td th:text="${i.noElevatorFee}"></td>
+                <td th:text="${i.narrowAlleyFee}"></td>
+                <td th:text="${i.weekendFee}"></td>
+                <td th:text="${i.active}"></td>
+                <td>
+                    <button class="edit" th:attr="data-id=${i.id}">Edit</button>
+                    <button class="del"  th:attr="data-id=${i.id}">Del</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Orders -->
+    <section id="tab-orders" class="tab">
+        <h2>Orders</h2>
+        <div class="filters">
+            <select id="order-state">
+                <option value="pending">Pending Offers</option>
+                <option value="assigned">Assigned / In progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="all" selected>All</option>
+            </select>
+            <button id="reload-orders">Reload</button>
+        </div>
+
+        <div id="orders-list">
+            <table>
+                <thead>
+                <tr><th>ID</th><th>Status</th><th>Pickup → Dropoff</th><th>Schedule</th><th>Quote</th><th></th></tr>
+                </thead>
+                <tbody id="orders-tbody">
+                <tr th:each="o : ${assigned}">
+                    <td th:text="${o.id}"></td>
+                    <td th:text="${o.status}"></td>
+                    <td><span th:text="${o.pickupAddress}"></span> → <span th:text="${o.dropoffAddress}"></span></td>
+                    <td th:text="${#temporals.format(o.scheduledAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="${o.quotedPrice}"></td>
+                    <td><button class="view" th:attr="data-id=${o.id}">View</button></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="order-detail" hidden>
+            <h3>Order #<span id="od-id"></span></h3>
+            <p><b>Status:</b> <span id="od-status"></span></p>
+            <p><b>Route:</b> <span id="od-pickup"></span> → <span id="od-dropoff"></span></p>
+            <p><b>Schedule:</b> <span id="od-scheduled"></span></p>
+            <p><b>Customer:</b> <span id="od-cust-name"></span> | <span id="od-cust-phone"></span> | <span id="od-cust-email"></span></p>
+            <p><b>Notes:</b> <span id="od-notes"></span></p>
+            <p><b>ETA:</b> <span id="od-eta"></span></p>
+            <div id="od-actions">
+                <button data-act="ACCEPT">Accept</button>
+                <button data-act="DECLINE">Decline</button>
+                <button data-act="STATUS" data-to="IN_PROGRESS">Start</button>
+                <button data-act="STATUS" data-to="COMPLETED">Complete</button>
+                <button data-act="STATUS" data-to="CANCELLED">Cancel</button>
+                <button data-act="ETA">Set ETA</button>
+                <button data-act="NOTE">Add Note</button>
+            </div>
+            <img id="od-image" alt="Inventory" style="max-width:400px;margin-top:8px"/>
+        </div>
+    </section>
+</main>
+</body>
+</html>

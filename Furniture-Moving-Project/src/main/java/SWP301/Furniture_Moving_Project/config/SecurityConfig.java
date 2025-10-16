@@ -7,9 +7,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
@@ -44,35 +44,36 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .authenticationProvider(daoAuthenticationProvider())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/register",
-                                 "/forgot/**",
-                                 "/css/**", "/js/**", "/images/**",
-                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
-                                 "/superadmin/**",
-                                 "/dashbooard/**"                 // ✅ static của superadmin (css/js)
-                ).permitAll()
-                .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
-                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/user/**").hasRole("CUSTOMER")
-                .requestMatchers("/provider/**").hasRole("PROVIDER")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers").permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(login -> login
-                .loginPage("/login")
-                .loginProcessingUrl("/perform_login")
-                .successHandler(successHandler)
-                .failureUrl("/login?error=true")
-                .permitAll())
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/homepage")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll());
+                .csrf(csrf -> csrf.disable()) // enable + configure token later if you prefer
+                .authorizeHttpRequests(auth -> auth
+                        // static assets (match your current structure under /static/**)
+                        .requestMatchers(
+                                "/static/**", "/images/**", "/webjars/**",
+                                "/homepage/**", "/chatbot/**"
+                        ).permitAll()
+                        // auth pages
+                        .requestMatchers("/login", "/perform_login").permitAll()
+                        // role scopes
+                        .requestMatchers("/super/**").hasRole("SUPERADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/provider/**").hasRole("PROVIDER")
+                        // everything else requires login
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")                 // your login template
+                        .loginProcessingUrl("/perform_login")// you already use this
+                        .successHandler(successHandler)      // role-based redirect
+                        .failureUrl("/login?error=true")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/homepage")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                );
         return http.build();
     }
 }
