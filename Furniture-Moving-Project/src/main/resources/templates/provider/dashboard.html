@@ -10,8 +10,8 @@
 <header>
     <h1>Provider Dashboard</h1>
     <nav>
-        <button data-tab="catalog">Service & Price Catalog</button>
-        <button data-tab="orders">Orders</button>
+        <button data-tab="catalog" class="btn">Service & Price Catalog</button>
+        <button data-tab="orders"  class="btn">Orders</button>
     </nav>
 </header>
 
@@ -19,7 +19,7 @@
     <!-- Catalog -->
     <section id="tab-catalog" class="tab active">
         <h2>Catalog</h2>
-        <button id="btn-new-item">+ New Item</button>
+        <button id="btn-new-item" class="btn btn-primary">+ New Item</button>
         <table id="catalog-table">
             <thead>
             <tr>
@@ -39,8 +39,8 @@
                 <td th:text="${i.weekendFee}"></td>
                 <td th:text="${i.active}"></td>
                 <td>
-                    <button class="edit" th:attr="data-id=${i.id}">Edit</button>
-                    <button class="del"  th:attr="data-id=${i.id}">Del</button>
+                    <button class="edit btn btn-primary" th:attr="data-id=${i.id}">Edit</button>
+                    <button class="del btn btn-danger"  th:attr="data-id=${i.id}">Del</button>
                 </td>
             </tr>
             </tbody>
@@ -58,7 +58,7 @@
                 <option value="cancelled">Cancelled</option>
                 <option value="all" selected>All</option>
             </select>
-            <button id="reload-orders">Reload</button>
+            <button id="reload-orders" class="btn">Reload</button>
         </div>
 
         <div id="orders-list">
@@ -69,11 +69,13 @@
                 <tbody id="orders-tbody">
                 <tr th:each="o : ${assigned}">
                     <td th:text="${o.id}"></td>
-                    <td th:text="${o.status}"></td>
+                    <td>
+                        <span class="badge" th:classappend="' ' + ${o.status}" th:text="${o.status}"></span>
+                    </td>
                     <td><span th:text="${o.pickupAddress}"></span> → <span th:text="${o.dropoffAddress}"></span></td>
                     <td th:text="${#temporals.format(o.scheduledAt, 'yyyy-MM-dd HH:mm')}"></td>
                     <td th:text="${o.quotedPrice}"></td>
-                    <td><button class="view" th:attr="data-id=${o.id}">View</button></td>
+                    <td><button class="view btn btn-primary" th:attr="data-id=${o.id}">View</button></td>
                 </tr>
                 </tbody>
             </table>
@@ -81,20 +83,20 @@
 
         <div id="order-detail" hidden>
             <h3>Order #<span id="od-id"></span></h3>
-            <p><b>Status:</b> <span id="od-status"></span></p>
+            <p><b>Status:</b> <span id="od-status" class="badge"></span></p>
             <p><b>Route:</b> <span id="od-pickup"></span> → <span id="od-dropoff"></span></p>
             <p><b>Schedule:</b> <span id="od-scheduled"></span></p>
             <p><b>Customer:</b> <span id="od-cust-name"></span> | <span id="od-cust-phone"></span> | <span id="od-cust-email"></span></p>
             <p><b>Notes:</b> <span id="od-notes"></span></p>
             <p><b>ETA:</b> <span id="od-eta"></span></p>
             <div id="od-actions">
-                <button data-act="ACCEPT">Accept</button>
-                <button data-act="DECLINE">Decline</button>
-                <button data-act="STATUS" data-to="IN_PROGRESS">Start</button>
-                <button data-act="STATUS" data-to="COMPLETED">Complete</button>
-                <button data-act="STATUS" data-to="CANCELLED">Cancel</button>
-                <button data-act="ETA">Set ETA</button>
-                <button data-act="NOTE">Add Note</button>
+                <button data-act="ACCEPT" class="btn btn-success">Accept</button>
+                <button data-act="DECLINE" class="btn btn-danger">Decline</button>
+                <button data-act="STATUS" data-to="IN_PROGRESS" class="btn btn-primary">Start</button>
+                <button data-act="STATUS" data-to="COMPLETED" class="btn btn-success">Complete</button>
+                <button data-act="STATUS" data-to="CANCELLED" class="btn btn-warning">Cancel</button>
+                <button data-act="ETA" class="btn">Set ETA</button>
+                <button data-act="NOTE" class="btn">Add Note</button>
             </div>
             <img id="od-image" alt="Inventory" style="max-width:400px;margin-top:8px"/>
         </div>

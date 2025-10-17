@@ -7,9 +7,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
@@ -25,7 +25,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // BCrypt by default
     }
 
     @Bean
@@ -44,29 +44,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // enable + configure token later if you prefer
+                .authenticationProvider(daoAuthenticationProvider())
+
                 .authorizeHttpRequests(auth -> auth
-                        // static assets (match your current structure under /static/**)
+                        // Public & static
                         .requestMatchers(
+                                "/favicon.ico",
                                 "/static/**", "/images/**", "/webjars/**",
-                                "/homepage/**", "/chatbot/**"
+                                "/css/**", "/js/**",
+                                "/homepage/**", "/chatbot/**",
+                                "/login", "/perform_login", "/register", "/error"
                         ).permitAll()
-                        // auth pages
-                        .requestMatchers("/login", "/perform_login").permitAll()
-                        // role scopes
+
+                        // Role scopes
                         .requestMatchers("/super/**").hasRole("SUPERADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/provider/**").hasRole("PROVIDER")
-                        // everything else requires login
+
+                        // Everything else
                         .anyRequest().authenticated()
                 )
+
                 .formLogin(form -> form
-                        .loginPage("/login")                 // your login template
-                        .loginProcessingUrl("/perform_login")// you already use this
-                        .successHandler(successHandler)      // role-based redirect
+                        .loginPage("/login").permitAll()
+                        .loginProcessingUrl("/perform_login")
+                        .successHandler(successHandler)
                         .failureUrl("/login?error=true")
-                        .permitAll()
                 )
+
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/homepage")
@@ -74,6 +79,10 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 );
+
+        // Keep CSRF enabled (default). Your page should send the token for AJAX (see step 3).
+        // If you must disable for dev: .csrf(csrf -> csrf.ignoringRequestMatchers("/provider/api/**"))
+
         return http.build();
     }
 }
