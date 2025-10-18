@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Super Admin – Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" th:href="@{/superadmin/superadmin.css}"/>
+  <style>.stat-card{border-radius:14px}.mono{font-family:ui-monospace,Menlo,Consolas,monospace}</style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="#">Super Admin</a>
+    <div class="ms-auto d-flex gap-2">
+      <a class="btn btn-outline-light btn-sm" th:href="@{/super/dashboard}">Dashboard</a>
+      <a class="btn btn-outline-light btn-sm" th:href="@{/super/logs}">Logs</a>
+      <a class="btn btn-outline-light btn-sm" th:href="@{/super/users}">Users</a>
+      <a class="btn btn-outline-light btn-sm" th:href="@{/super/admins}">Admins</a>
+      <a class="btn btn-warning btn-sm" th:href="@{/logout}">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card stat-card shadow-sm"><div class="card-body">
+      <div class="text-muted">Tổng số người dùng</div><div class="h3" th:text="${totalUsers}">0</div>
+      <a th:href="@{/super/users}" class="small">Xem danh sách »</a></div></div></div>
+    <div class="col-md-4"><div class="card stat-card shadow-sm"><div class="card-body">
+      <div class="text-muted">Tổng Admins</div><div class="h3" th:text="${totalAdmins}">0</div>
+      <a th:href="@{/super/admins}" class="small">Xem danh sách »</a></div></div></div>
+    <div class="col-md-4"><div class="card stat-card shadow-sm"><div class="card-body">
+      <div class="text-muted">Nhật ký hoạt động</div><div class="h3" th:text="${totalLogs}">0</div>
+      <a th:href="@{/super/logs}" class="small">Xem toàn bộ »</a></div></div></div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="m-0">Nhật ký gần nhất</h5>
+        <a class="btn btn-sm btn-primary" th:href="@{/super/logs}">Tới trang Logs</a>
+      </div>
+      <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle">
+          <thead class="table-light"><tr>
+            <th>Thời gian (UTC)</th><th>User ID</th><th>Loại</th><th>Mô tả</th><th>IP</th>
+          </tr></thead>
+          <tbody>
+          <tr th:each="log : ${latestLogs}">
+            <td th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">...</td>
+            <td th:text="${log.userId}">...</td>
+            <td><span class="badge bg-secondary" th:text="${log.eventType}">TYPE</span></td>
+            <td th:text="${log.eventDescription}">...</td>
+            <td class="mono" th:text="${log.ipAddress}">127.0.0.1</td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(latestLogs)}">
+            <td colspan="5" class="text-center text-muted py-4">Chưa có dữ liệu.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

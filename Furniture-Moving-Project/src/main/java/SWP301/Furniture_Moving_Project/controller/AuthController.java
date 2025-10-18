@@ -9,6 +9,6 @@ public class AuthController {
     @GetMapping("/login")
     public String login(Boolean error, Model model) {
         // Thymeleaf sẽ đọc param ?error
-        return "login";
+        return "accountmanage/login";
     }
 }

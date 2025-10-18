@@ -47,8 +47,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/css/**", "/js/**", "/images/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/", "/homepage", "/login", "/register",
+                                 "/forgot/**",
+                                 "/css/**", "/js/**", "/images/**",
+                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
+                                 "/superadmin/**",
+                                 "/dashbooard/**"                 // ✅ static của superadmin (css/js)
+                ).permitAll()
+                .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers").permitAll()
@@ -59,13 +66,13 @@ public class SecurityConfig {
                 .loginProcessingUrl("/perform_login")
                 .successHandler(successHandler)
                 .failureUrl("/login?error=true")
-                .permitAll()
-            )
+                .permitAll())
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/homepage")
-                .permitAll()
-            );
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll());
         return http.build();
     }
 }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Nav Bar Start -->
+<div class="nav-bar" th:fragment="navbar">
+  <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+      <a href="#" class="navbar-brand">MENU</a>
+      <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+        <div class="navbar-nav mr-auto">
+          <a th:href="@{/homepage}" class="nav-item nav-link active">Trang chủ</a>
+          <a th:href="@{/homepage/about}" class="nav-item nav-link">Thông tin</a>
+          <a th:href="@{/homepage/service}" class="nav-item nav-link">Dịch vụ</a>
+          <div class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Hỗ trợ</a>
+            <div class="dropdown-menu">
+              <a th:href="@{/homepage/blog}" class="dropdown-item">Yêu cầu hỗ trợ</a>
+              <a th:href="@{/homepage/single}" class="dropdown-item">Khiếu nại</a>
+            </div>
+          </div>
+          <a th:href="@{/homepage/contact}" class="nav-item nav-link">Liên hệ</a>
+        </div>
+        <div class="ml-auto">
+          <a class="btn" href="/login">Đăng nhập/Đăng ký</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+</div>
+<!-- Nav Bar End -->
+</body>
+</html>

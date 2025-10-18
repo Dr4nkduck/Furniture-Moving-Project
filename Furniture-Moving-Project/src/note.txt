@@ -1,0 +1,4 @@
+Đưa code về phiên bản commit gần nhất:
+
+git reset --hard HEAD
+git clean -fd

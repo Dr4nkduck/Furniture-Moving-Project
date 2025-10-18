@@ -1,0 +1,12 @@
+ /*
+Tài khoản đăng nhập 
+
+Admin: admin1 / Admin@123 → /admin/dashboard
+
+Super Admin: superadmin / Superadmin123 -> Super Admin
+
+Customer: johnc / User@123 → /user
+
+Provider: prov1 / Prov@123 → /provider
+ */
+ --
