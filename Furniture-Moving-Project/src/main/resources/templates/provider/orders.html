@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Orders</title>
+    <link th:href="@{/provider/css/provider.css}" rel="stylesheet"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body class="pv-body">
+<header class="pv-header">
+    <h1>Orders</h1>
+    <nav class="pv-nav">
+        <a th:href="@{/provider}">Overview</a>
+        <a th:href="@{/provider/services}">Catalog</a>
+        <a th:href="@{/provider/orders}" class="active">Orders</a>
+    </nav>
+</header>
+
+<main class="pv-container pv-grid-3">
+    <section class="pv-card">
+        <h2>Pending Offers</h2>
+        <ul id="listRfp" class="pv-list"></ul>
+    </section>
+    <section class="pv-card">
+        <h2>Assigned</h2>
+        <ul id="listAssigned" class="pv-list"></ul>
+    </section>
+    <section class="pv-card">
+        <h2>In Progress</h2>
+        <ul id="listInProgress" class="pv-list"></ul>
+    </section>
+</main>
+
+<script th:src="@{/provider/js/orders.js}"></script>
+</body>
+</html>

@@ -1,10 +1,7 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.dto.AddressDTO;
 import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
-import SWP301.Furniture_Moving_Project.model.Address;
-import SWP301.Furniture_Moving_Project.repository.AddressRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,28 +10,29 @@ public class FullRequestService {
 
     private final AddressService addressService;
     private final ServiceRequestService serviceRequestService;
-    private final AddressRepository addressRepository;
 
     public FullRequestService(AddressService addressService,
-                              ServiceRequestService serviceRequestService,
-                              AddressRepository addressRepository) {
+                              ServiceRequestService serviceRequestService) {
         this.addressService = addressService;
         this.serviceRequestService = serviceRequestService;
-        this.addressRepository = addressRepository;
     }
 
+    /**
+     * Create a full request: create pickup & delivery addresses, then create the service request.
+     * Returns the created ServiceRequest ID (Long).
+     */
     @Transactional
-    public Integer createAll(CreateFullRequestDTO dto) {
-        // 1) tạo 2 address
-        Integer pickupId = addressService.create(dto.getPickupAddress());
-        Integer deliveryId = addressService.create(dto.getDeliveryAddress());
+    public Long createAll(CreateFullRequestDTO dto) {
+        // 1) Create two addresses (AddressService currently returns Integer IDs)
+        Integer pickupAddressId = addressService.create(dto.getPickupAddress());
+        Integer deliveryAddressId = addressService.create(dto.getDeliveryAddress());
 
-        // 2) gắn vào request DTO rồi gọi service hiện có
-        CreateServiceRequestDTO req = dto.getRequest();
-        req.setPickupAddressId(pickupId);
-        req.setDeliveryAddressId(deliveryId);
+        // 2) Attach to the request DTO
+        CreateServiceRequestDTO requestDto = dto.getRequest();
+        requestDto.setPickupAddressId(pickupAddressId);
+        requestDto.setDeliveryAddressId(deliveryAddressId);
 
-        // 3) tạo request
-        return serviceRequestService.create(req);
+        // 3) Create the service request (ServiceRequestService returns Long now)
+        return serviceRequestService.create(requestDto);
     }
 }

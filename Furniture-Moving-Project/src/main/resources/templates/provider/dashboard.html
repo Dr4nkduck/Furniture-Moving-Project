@@ -1,106 +1,37 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <title>Provider Dashboard</title>
-    <link rel="stylesheet" th:href="@{/provider/provider.css}">
-    <script defer th:src="@{/provider/provider.js}"></script>
+    <link th:href="@{/provider/css/provider.css}" rel="stylesheet"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
-<body>
-<header>
+<body class="pv-body">
+<header class="pv-header">
     <h1>Provider Dashboard</h1>
-    <nav>
-        <button data-tab="catalog" class="btn">Service & Price Catalog</button>
-        <button data-tab="orders"  class="btn">Orders</button>
+    <nav class="pv-nav">
+        <a th:href="@{/provider}">Overview</a>
+        <a th:href="@{/provider/services}">Service & Price Catalog</a>
+        <a th:href="@{/provider/orders}">Orders</a>
     </nav>
 </header>
 
-<main>
-    <!-- Catalog -->
-    <section id="tab-catalog" class="tab active">
-        <h2>Catalog</h2>
-        <button id="btn-new-item" class="btn btn-primary">+ New Item</button>
-        <table id="catalog-table">
-            <thead>
-            <tr>
-                <th>Name</th><th>Base Fee</th><th>perKm</th><th>perMin</th>
-                <th>Stairs</th><th>NoElev</th><th>Alley</th><th>Weekend</th><th>Active</th><th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="i : ${catalog}">
-                <td th:text="${i.name}"></td>
-                <td th:text="${i.baseFee}"></td>
-                <td th:text="${i.perKm}"></td>
-                <td th:text="${i.perMin}"></td>
-                <td th:text="${i.stairsFee}"></td>
-                <td th:text="${i.noElevatorFee}"></td>
-                <td th:text="${i.narrowAlleyFee}"></td>
-                <td th:text="${i.weekendFee}"></td>
-                <td th:text="${i.active}"></td>
-                <td>
-                    <button class="edit btn btn-primary" th:attr="data-id=${i.id}">Edit</button>
-                    <button class="del btn btn-danger"  th:attr="data-id=${i.id}">Del</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Orders -->
-    <section id="tab-orders" class="tab">
-        <h2>Orders</h2>
-        <div class="filters">
-            <select id="order-state">
-                <option value="pending">Pending Offers</option>
-                <option value="assigned">Assigned / In progress</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="all" selected>All</option>
-            </select>
-            <button id="reload-orders" class="btn">Reload</button>
-        </div>
-
-        <div id="orders-list">
-            <table>
-                <thead>
-                <tr><th>ID</th><th>Status</th><th>Pickup → Dropoff</th><th>Schedule</th><th>Quote</th><th></th></tr>
-                </thead>
-                <tbody id="orders-tbody">
-                <tr th:each="o : ${assigned}">
-                    <td th:text="${o.id}"></td>
-                    <td>
-                        <span class="badge" th:classappend="' ' + ${o.status}" th:text="${o.status}"></span>
-                    </td>
-                    <td><span th:text="${o.pickupAddress}"></span> → <span th:text="${o.dropoffAddress}"></span></td>
-                    <td th:text="${#temporals.format(o.scheduledAt, 'yyyy-MM-dd HH:mm')}"></td>
-                    <td th:text="${o.quotedPrice}"></td>
-                    <td><button class="view btn btn-primary" th:attr="data-id=${o.id}">View</button></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div id="order-detail" hidden>
-            <h3>Order #<span id="od-id"></span></h3>
-            <p><b>Status:</b> <span id="od-status" class="badge"></span></p>
-            <p><b>Route:</b> <span id="od-pickup"></span> → <span id="od-dropoff"></span></p>
-            <p><b>Schedule:</b> <span id="od-scheduled"></span></p>
-            <p><b>Customer:</b> <span id="od-cust-name"></span> | <span id="od-cust-phone"></span> | <span id="od-cust-email"></span></p>
-            <p><b>Notes:</b> <span id="od-notes"></span></p>
-            <p><b>ETA:</b> <span id="od-eta"></span></p>
-            <div id="od-actions">
-                <button data-act="ACCEPT" class="btn btn-success">Accept</button>
-                <button data-act="DECLINE" class="btn btn-danger">Decline</button>
-                <button data-act="STATUS" data-to="IN_PROGRESS" class="btn btn-primary">Start</button>
-                <button data-act="STATUS" data-to="COMPLETED" class="btn btn-success">Complete</button>
-                <button data-act="STATUS" data-to="CANCELLED" class="btn btn-warning">Cancel</button>
-                <button data-act="ETA" class="btn">Set ETA</button>
-                <button data-act="NOTE" class="btn">Add Note</button>
-            </div>
-            <img id="od-image" alt="Inventory" style="max-width:400px;margin-top:8px"/>
-        </div>
-    </section>
+<main class="pv-container pv-grid-3">
+    <div class="pv-card stat">
+        <div class="stat-number" th:text="${rfpCount}">0</div>
+        <div class="stat-label">Pending Offers (RFP)</div>
+    </div>
+    <div class="pv-card stat">
+        <div class="stat-number" th:text="${assignedCount}">0</div>
+        <div class="stat-label">Assigned</div>
+    </div>
+    <div class="pv-card stat">
+        <div class="stat-number" th:text="${inProgressCount}">0</div>
+        <div class="stat-label">In Progress</div>
+    </div>
 </main>
+
+<footer class="pv-footer">© Furniture Transport Platform</footer>
 </body>
 </html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Order Detail</title>
+    <link th:href="@{/provider/css/provider.css}" rel="stylesheet"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body class="pv-body">
+<header class="pv-header">
+    <h1>Order #<span id="orderId" th:text="${orderId}">0</span></h1>
+    <nav class="pv-nav">
+        <a th:href="@{/provider/orders}">← Back to Orders</a>
+    </nav>
+</header>
+
+<main class="pv-container pv-grid-2">
+    <div class="pv-card">
+        <h2>Route & Schedule</h2>
+        <div class="pv-kv">
+            <div>Pickup</div><div id="pickup"></div>
+            <div>Dropoff</div><div id="dropoff"></div>
+            <div>Scheduled</div><div id="scheduledAt"></div>
+            <div>Distance/Duration</div><div id="route"></div>
+            <div>ETA</div><div id="eta"></div>
+            <div>Total</div><div id="total"></div>
+        </div>
+    </div>
+
+    <div class="pv-card">
+        <h2>Customer (Order Scope)</h2>
+        <div class="pv-kv">
+            <div>Name</div><div id="cname"></div>
+            <div>Phone</div><div id="cphone"></div>
+            <div>Email</div><div id="cemail"></div>
+        </div>
+        <small>All PII reads are logged.</small>
+    </div>
+
+    <div class="pv-card pv-col-2">
+        <h2>Actions</h2>
+        <div class="pv-row pv-gap">
+            <button class="pv-btn" data-to="IN_PROGRESS">Start</button>
+            <button class="pv-btn pv-secondary" data-to="COMPLETED">Complete</button>
+            <button class="pv-btn pv-danger" data-to="CANCELLED">Cancel</button>
+        </div>
+        <label>ETA<input id="fEta" placeholder="e.g., 14:30 or 45 mins"></label>
+        <label>Note<textarea id="fNote" rows="3"></textarea></label>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    const ORDER_ID = /*[[${orderId}]]*/ 0;
+</script>
+<script th:src="@{/provider/js/order-detail.js}"></script>
+</body>
+</html>

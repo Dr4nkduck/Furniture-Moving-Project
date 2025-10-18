@@ -4,11 +4,26 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class OrderSummaryDTO {
-    public Long id;
-    public String status;          // PENDING_OFFER / ASSIGNED / IN_PROGRESS / COMPLETED / CANCELLED
-    public String pickup;
-    public String dropoff;
-    public LocalDateTime scheduledAt;
-    public BigDecimal totalPrice;
-    public String routeSummary;    // short string, e.g. "12.4 km / 36 min"
+    private Long id;
+    private String status;
+    private String pickup;
+    private String dropoff;
+    private LocalDateTime scheduledAt;
+    private BigDecimal totalPrice;
+    private String routeSummary;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getPickup() { return pickup; }
+    public void setPickup(String pickup) { this.pickup = pickup; }
+    public String getDropoff() { return dropoff; }
+    public void setDropoff(String dropoff) { this.dropoff = dropoff; }
+    public LocalDateTime getScheduledAt() { return scheduledAt; }
+    public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
+    public BigDecimal getTotalPrice() { return totalPrice; }
+    public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+    public String getRouteSummary() { return routeSummary; }
+    public void setRouteSummary(String routeSummary) { this.routeSummary = routeSummary; }
 }

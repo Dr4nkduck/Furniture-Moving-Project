@@ -1,26 +1,26 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.model.ActivityLog;
-import SWP301.Furniture_Moving_Project.repository.ActivityLogRepository;
-import org.springframework.stereotype.Service;
+public interface ActivityLogService {
 
-import java.time.OffsetDateTime;
+    /**
+     * Generic audit logger.
+     * @param actorId  the acting user/provider id (nullable)
+     * @param type     short action key, e.g. "ORDER_PII_READ", "ORDER_STATUS_UPDATE"
+     * @param details  free-form details (e.g. "providerId=12, orderId=99, to=IN_PROGRESS")
+     */
+    void log(Long actorId, String type, String details);
 
-@Service
-public class ActivityLogService {
-    private final ActivityLogRepository repo;
+    /* -------- Optional helpers (syntactic sugar) -------- */
 
-    public ActivityLogService(ActivityLogRepository repo) {
-        this.repo = repo;
+    default void logProvider(Long providerId, String type, String details) {
+        log(providerId, type, details);
     }
 
-    public void log(Integer userId, String type, String description, String ip) {
-        ActivityLog log = new ActivityLog();
-        log.setUserId(userId);
-        log.setEventType(type);
-        log.setEventDescription(description);
-        log.setIpAddress(ip);
-        log.setTimestamp(OffsetDateTime.now());
-        repo.save(log);
+    default void logOrderPiiRead(Long providerId, Long orderId) {
+        log(providerId, "ORDER_PII_READ", "orderId=" + orderId);
+    }
+
+    default void logOrderStatusUpdate(Long providerId, Long orderId, String to) {
+        log(providerId, "ORDER_STATUS_UPDATE", "orderId=" + orderId + ", to=" + to);
     }
 }

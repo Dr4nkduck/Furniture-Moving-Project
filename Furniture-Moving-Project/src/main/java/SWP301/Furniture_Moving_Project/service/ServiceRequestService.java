@@ -3,9 +3,13 @@ package SWP301.Furniture_Moving_Project.service;
 import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.FurnitureItemDTO;
 import SWP301.Furniture_Moving_Project.model.Address;
+import SWP301.Furniture_Moving_Project.model.Customer;
 import SWP301.Furniture_Moving_Project.model.FurnitureItem;
+import SWP301.Furniture_Moving_Project.model.Provider;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.model.OrderStatus;
 import SWP301.Furniture_Moving_Project.repository.AddressRepository;
+import SWP301.Furniture_Moving_Project.repository.CustomerRepository;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import org.springframework.stereotype.Service;
@@ -20,63 +24,93 @@ public class ServiceRequestService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final AddressRepository addressRepository;
     private final ProviderRepository providerRepository;
+    private final CustomerRepository customerRepository;
 
     public ServiceRequestService(ServiceRequestRepository serviceRequestRepository,
                                  AddressRepository addressRepository,
-                                 ProviderRepository providerRepository) {
+                                 ProviderRepository providerRepository,
+                                 CustomerRepository customerRepository) {
         this.serviceRequestRepository = serviceRequestRepository;
         this.addressRepository = addressRepository;
         this.providerRepository = providerRepository;
+        this.customerRepository = customerRepository;
     }
 
     @Transactional
-    public Integer create(CreateServiceRequestDTO dto) {
+    public Long create(CreateServiceRequestDTO dto) {
 
-        // Provider tồn tại (nếu có)
-        if (dto.getProviderId() != null) {
-            boolean exists = providerRepository.existsById(dto.getProviderId());
-            if (!exists) {
-                throw new IllegalArgumentException("Provider not found: id=" + dto.getProviderId());
-            }
+        // ---- Normalize IDs from DTO (Integer -> Long) ----
+        Long customerId = dto.getCustomerId() != null ? dto.getCustomerId().longValue() : null;
+        Long providerId = dto.getProviderId() != null ? dto.getProviderId().longValue() : null;
+        Long pickupAddressId = dto.getPickupAddressId() != null ? dto.getPickupAddressId().longValue() : null;
+        Long deliveryAddressId = dto.getDeliveryAddressId() != null ? dto.getDeliveryAddressId().longValue() : null;
+
+        if (customerId == null) {
+            throw new IllegalArgumentException("customerId is required");
         }
 
-        // Kiểm tra địa chỉ tồn tại
-        Address pickup = addressRepository.findById(dto.getPickupAddressId())
-                .orElseThrow(() -> new IllegalArgumentException("Pickup address not found: id=" + dto.getPickupAddressId()));
-        Address delivery = addressRepository.findById(dto.getDeliveryAddressId())
-                .orElseThrow(() -> new IllegalArgumentException("Delivery address not found: id=" + dto.getDeliveryAddressId()));
+        // ---- Validate provider (optional) ----
+        Provider provider = null;
+        if (providerId != null) {
+            boolean exists = providerRepository.existsById(providerId);
+            if (!exists) {
+                throw new IllegalArgumentException("Provider not found: id=" + providerId);
+            }
+            provider = providerRepository.getReferenceById(providerId);
+        }
 
-        // (Khuyến nghị) kiểm tra ownership cùng user (nếu đây là rule của bạn)
-        if (!pickup.getUserId().equals(dto.getCustomerId()) || !delivery.getUserId().equals(dto.getCustomerId())) {
+        // ---- Load addresses ----
+        Address pickup = addressRepository.findById(pickupAddressId)
+                .orElseThrow(() -> new IllegalArgumentException("Pickup address not found: id=" + pickupAddressId));
+        Address delivery = addressRepository.findById(deliveryAddressId)
+                .orElseThrow(() -> new IllegalArgumentException("Delivery address not found: id=" + deliveryAddressId));
+
+        // (Optional) Ownership rule: both addresses must belong to the same customer
+        if (pickup.getUserId() == null || delivery.getUserId() == null
+                || !pickup.getUserId().equals(customerId)
+                || !delivery.getUserId().equals(customerId)) {
             throw new IllegalArgumentException("Addresses do not belong to this customer");
         }
 
-        ServiceRequest sr = new ServiceRequest();
-        sr.setCustomerId(dto.getCustomerId());
-        sr.setProviderId(dto.getProviderId());
-        sr.setPreferredDate(dto.getPreferredDate());
-        sr.setStatus(dto.getStatus() == null || dto.getStatus().isBlank() ? "pending" : dto.getStatus());
-        sr.setTotalCost(dto.getTotalCost());
+        // ---- Load customer reference ----
+        Customer customer = customerRepository.getReferenceById(customerId);
 
-        // set quan hệ address (entity managed)
-        sr.setPickupAddress(pickup);
-        sr.setDeliveryAddress(delivery);
+        // ---- Build entity according to the new model ----
+        ServiceRequest serviceRequest = new ServiceRequest();
+        serviceRequest.setCustomer(customer);
+        serviceRequest.setProvider(provider);
+        serviceRequest.setPreferredDate(dto.getPreferredDate());
 
-        // Map items
+        // Status: map from DTO string (if provided) to enum; default PENDING_OFFER
+        OrderStatus status = dto.getStatus() == null || dto.getStatus().isBlank()
+                ? OrderStatus.PENDING_OFFER
+                : OrderStatus.safeParse(dto.getStatus());
+        if (status == null) status = OrderStatus.PENDING_OFFER;
+        serviceRequest.setStatus(status);
+
+        // Prices/addresses
+        serviceRequest.setTotalPrice(dto.getTotalCost());
+        serviceRequest.setPickupAddressEntity(pickup);
+        serviceRequest.setDeliveryAddressEntity(delivery);
+
+        // ---- Map furniture items ----
         List<FurnitureItem> items = new ArrayList<>();
-        for (FurnitureItemDTO f : dto.getFurnitureItems()) {
-            FurnitureItem it = new FurnitureItem();
-            it.setServiceRequest(sr);
-            it.setItemType(f.getItemType());
-            it.setSize(f.getSize());
-            it.setQuantity(f.getQuantity());
-            it.setIsFragile(f.getIsFragile());
-            it.setSpecialHandling(f.getSpecialHandling());
-            items.add(it);
+        if (dto.getFurnitureItems() != null) {
+            for (FurnitureItemDTO f : dto.getFurnitureItems()) {
+                FurnitureItem item = new FurnitureItem();
+                item.setServiceRequest(serviceRequest);
+                item.setItemType(f.getItemType());
+                item.setSize(f.getSize());
+                item.setQuantity(f.getQuantity());
+                item.setIsFragile(f.getIsFragile());
+                item.setSpecialHandling(f.getSpecialHandling());
+                items.add(item);
+            }
         }
-        sr.setFurnitureItems(items);
+        serviceRequest.setFurnitureItems(items);
 
-        serviceRequestRepository.save(sr);
-        return sr.getRequestId();
+        // ---- Persist ----
+        serviceRequestRepository.save(serviceRequest);
+        return serviceRequest.getId();
     }
 }

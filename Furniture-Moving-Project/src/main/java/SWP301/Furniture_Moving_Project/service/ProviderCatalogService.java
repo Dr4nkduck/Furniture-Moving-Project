@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface ProviderCatalogService {
     List<ProviderServiceItemDTO> listMyItems(Long providerId);
-    ProviderServiceItemDTO create(Long providerId, ProviderServiceItemDTO dto);
-    ProviderServiceItemDTO update(Long providerId, Long itemId, ProviderServiceItemDTO dto);
-    void delete(Long providerId, Long itemId); // soft delete -> active=false
+    ProviderServiceItemDTO create(Long providerId, ProviderServiceItemDTO request);
+    ProviderServiceItemDTO update(Long providerId, Long serviceItemId, ProviderServiceItemDTO request);
+    void delete(Long providerId, Long serviceItemId);
 }

@@ -10,7 +10,7 @@ public class Provider {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "provider_id")
-    private Integer providerId;
+    private Long providerId;
 
     @Column(name = "user_id", nullable = false)
     private Integer userId;
@@ -44,10 +44,10 @@ public class Provider {
     }
 
     // ===== Getters & Setters =====
-    public Integer getProviderId() {
+    public Long getProviderId() {
         return providerId;
     }
-    public void setProviderId(Integer providerId) {
+    public void setProviderId(Long providerId) {
         this.providerId = providerId;
     }
     public Integer getUserId() {
