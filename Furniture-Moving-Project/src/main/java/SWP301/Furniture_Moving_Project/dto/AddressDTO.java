@@ -19,7 +19,7 @@ public class AddressDTO {
     @NotBlank(message = "state is required")
     private String state;
 
-    @NotBlank(message = "zipCode is required")
+    // CHANGED: zipCode không còn bắt buộc
     private String zipCode;
 
     private BigDecimal latitude;

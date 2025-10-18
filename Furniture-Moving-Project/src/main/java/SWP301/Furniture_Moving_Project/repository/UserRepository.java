@@ -11,6 +11,7 @@ import SWP301.Furniture_Moving_Project.model.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
 
     @Query(value = """
         SELECT r.role_name
@@ -19,4 +20,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
         WHERE ur.user_id = :userId
         """, nativeQuery = true)
     List<String> findRoleNamesByUserId(Integer userId);
+    
 }

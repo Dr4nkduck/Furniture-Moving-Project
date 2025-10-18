@@ -13,4 +13,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     List<ServiceRequest> findByStatus(String status);
     
     List<ServiceRequest> findByCustomerIdAndStatus(Integer customerId, String status);
+    
+    List<ServiceRequest> findTop5ByCustomerIdOrderByCreatedAtDesc(Integer customerId);
+
 }

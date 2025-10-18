@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>UserDashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    /* Giữ style giống homepage bạn đưa */
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    a.btn { padding:.5rem 1rem; border:1px solid #333; text-decoration:none; border-radius:8px; }
+
+    /* Style cho dashboard */
+    .section-title{margin:1rem 0 .5rem;font-weight:700}
+    .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    @media(max-width:720px){.quick-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.quick-grid{grid-template-columns:1fr}}
+    .quick-card{display:block;padding:16px;border:1px solid #ddd;border-radius:10px;text-decoration:none;background:#fff;
+      transition:transform .12s, box-shadow .12s, border-color .12s}
+    .quick-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.06);border-color:#bbb}
+    .qc-title{font-weight:600;margin-bottom:4px;font-size:1.05rem;color:#111}
+    .qc-desc{font-size:.95rem;opacity:.8;color:#333}
+    .card{border:1px solid #eee;border-radius:10px;padding:12px;margin-top:12px}
+    .muted{opacity:.7}
+  </style>
+</head>
+<body>
+
+  <!-- HEADER: giống trang bạn gửi -->
+  <header style="display:flex;justify-content:space-between;align-items:center;">
+    <strong>Khu vực khách hàng</strong>
+    <nav><a class="btn" href="/logout">Đăng xuất</a></nav>
+  </header>
+
+  <main style="margin-top:1.25rem">
+    <!-- Chào user (mock) -->
+    <div class="card" th:if="${user != null}">
+      <div class="section-title" th:text="'Xin chào, ' + ${user.fullName} + '!'">Xin chào!</div>
+      <div class="muted" th:text="'Email: ' + ${user.email}">Email: demo@example.com</div>
+    </div>
+
+    <!-- 6 ô chức năng -->
+    <h2 class="section-title">Chức năng nhanh</h2>
+    <section class="quick-grid">
+      <a class="quick-card" th:href="@{/requestservice}">
+        <div class="qc-title">Tạo yêu cầu</div>
+        <div class="qc-desc">Đặt dịch vụ ngay</div>
+      </a>
+      <a class="quick-card" th:href="@{/#}">
+        <div class="qc-title">Ước tính giá</div>
+        <div class="qc-desc">Tính phí nhanh</div>
+      </a>
+      <a class="quick-card" th:href="@{/#}">
+        <div class="qc-title">Đơn gần đây</div>
+        <div class="qc-desc">Tiếp tục đơn cũ</div>
+      </a>
+      <a class="quick-card" th:href="@{/#}">
+        <div class="qc-title">Báo giá</div>
+        <div class="qc-desc">Xem/duyệt báo giá</div>
+      </a>
+      <a class="quick-card" th:href="@{/#}">
+        <div class="qc-title">Địa chỉ</div>
+        <div class="qc-desc">Điểm lấy/trả</div>
+      </a>
+      <a class="quick-card" th:href="@{/#}">
+        <div class="qc-title">Hỗ trợ</div>
+        <div class="qc-desc">Chat & FAQ</div>
+      </a>
+    </section>
+
+    <!-- Đơn gần đây -->
+    <div class="card">
+      <div class="section-title">Đơn gần đây</div>
+      <div th:if="${#lists.isEmpty(orders)}" class="muted">Chưa có đơn nào.</div>
+      <div th:each="o : ${orders}">
+        <div>
+          <strong th:text="${o.code}">#12345</strong>
+          — <span th:text="${o.status}">IN_PROGRESS</span>
+          — <span th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy')}">12/10/2025</span>
+          <a class="btn" style="margin-left:8px" th:href="@{'/orders/' + ${o.id}}">Chi tiết</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER: tối giản -->
+  <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid #ddd;font-size:.95rem;opacity:.9">
+    <span>&copy; 2025 Furniture Transport Platform</span>
+  </footer>
+
+</body>
+</html>

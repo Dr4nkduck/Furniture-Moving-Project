@@ -60,6 +60,15 @@
     .alert { padding:15px 20px; border-radius:8px; margin-bottom:20px; display:none; }
     .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
     .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+
+    /* Hint số đo cho size */
+    .size-hint{
+      margin-top:6px;
+      font-size:12px;
+      color:#555;
+      display:none;
+    }
+
     @media (max-width: 768px) {
       .row { grid-template-columns: 1fr; }
       .form-content { padding:20px; }
@@ -117,19 +126,16 @@
                   <input type="text" class="state" placeholder="Quận/Huyện" required>
                 </div>
               </div>
+              <!-- BỎ MÃ BƯU ĐIỆN -->
               <div class="row">
-                <div class="form-group">
-                  <label>Mã Bưu Điện <span class="required">*</span></label>
-                  <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
-                </div>
                 <div class="form-group">
                   <label>Tên Liên Hệ</label>
                   <input type="text" class="contact-name" placeholder="(Không bắt buộc)">
                 </div>
-              </div>
-              <div class="form-group">
-                <label>Số Điện Thoại</label>
-                <input type="text" class="contact-phone" placeholder="(Không bắt buộc)">
+                <div class="form-group">
+                  <label>Số Điện Thoại</label>
+                  <input type="text" class="contact-phone" placeholder="(Không bắt buộc)">
+                </div>
               </div>
               <div class="form-group">
                 <label>Hướng Dẫn Đặc Biệt</label>
@@ -161,19 +167,16 @@
                   <input type="text" class="state" placeholder="Quận/Huyện" required>
                 </div>
               </div>
+              <!-- BỎ MÃ BƯU ĐIỆN -->
               <div class="row">
-                <div class="form-group">
-                  <label>Mã Bưu Điện <span class="required">*</span></label>
-                  <input type="text" class="zip-code" placeholder="Mã bưu điện" required>
-                </div>
                 <div class="form-group">
                   <label>Tên Liên Hệ</label>
                   <input type="text" class="contact-name" placeholder="(Không bắt buộc)">
                 </div>
-              </div>
-              <div class="form-group">
-                <label>Số Điện Thoại</label>
-                <input type="text" class="contact-phone" placeholder="(Không bắt buộc)">
+                <div class="form-group">
+                  <label>Số Điện Thoại</label>
+                  <input type="text" class="contact-phone" placeholder="(Không bắt buộc)">
+                </div>
               </div>
               <div class="form-group">
                 <label>Hướng Dẫn Đặc Biệt</label>
@@ -219,11 +222,12 @@
                   <label>Kích Thước</label>
                   <select class="size">
                     <option value="">-- Chọn --</option>
-                    <option value="Small">Nhỏ</option>
-                    <option value="Medium">Trung bình</option>
-                    <option value="Large">Lớn</option>
-                    <option value="Extra Large">Rất lớn</option>
+                    <option value="Small" data-dimensions="40x40x40">Nhỏ (40×40×40)</option>
+                    <option value="Medium" data-dimensions="80x60x60">Trung bình (80×60×60)</option>
+                    <option value="Large" data-dimensions="120x80x80">Lớn (120×80×80)</option>
+                    <option value="Extra Large" data-dimensions="160x100x100">Rất lớn (160×100×100)</option>
                   </select>
+                  <div class="size-hint">Số đo: <span></span> cm</div>
                 </div>
               </div>
               <div class="checkbox-group">
@@ -308,6 +312,36 @@
     }
   }
 
+  // ==== LẤY & ĐIỀN ĐỊA CHỈ MẶC ĐỊNH CỦA USER (Pickup) ====
+  async function loadDefaultPickupAddress() {
+    try {
+      if (!currentUser?.customerId) return;
+
+      // dùng endpoint bạn đang có: GET /api/addresses?userId=
+      const res = await fetch(`${API_BASE}/api/addresses?userId=${currentUser.customerId}`, { method: 'GET' });
+      if (!res.ok) return;
+      const text = await res.text();
+      let json; try { json = JSON.parse(text); } catch { json = null; }
+
+      const list =
+        Array.isArray(json) ? json :
+        (json && Array.isArray(json.data)) ? json.data : [];
+
+      if (!list.length) return;
+
+      const pick = list.find(a => a.isDefault) ||
+                   list.find(a => (a.addressType ?? a.address_type) === 'home') ||
+                   list[0];
+
+      const pickupCard = document.querySelector('#pickupAddresses .address-card');
+      pickupCard.querySelector('.street-address').value = pick.streetAddress ?? pick.street_address ?? '';
+      pickupCard.querySelector('.city').value           = pick.city ?? '';
+      pickupCard.querySelector('.state').value          = pick.state ?? pick.district ?? '';
+    } catch (e) {
+      console.warn('Không thể tự động nạp địa chỉ pickup:', e);
+    }
+  }
+
   // ==== THÊM ITEM UI ====
   function addFurnitureItem() {
     itemCount++;
@@ -347,11 +381,12 @@
           <label>Kích Thước</label>
           <select class="size">
             <option value="">-- Chọn --</option>
-            <option value="Small">Nhỏ</option>
-            <option value="Medium">Trung bình</option>
-            <option value="Large">Lớn</option>
-            <option value="Extra Large">Rất lớn</option>
+            <option value="Small" data-dimensions="40x40x40">Nhỏ (40×40×40)</option>
+            <option value="Medium" data-dimensions="80x60x60">Trung bình (80×60×60)</option>
+            <option value="Large" data-dimensions="120x80x80">Lớn (120×80×80)</option>
+            <option value="Extra Large" data-dimensions="160x100x100">Rất lớn (160×100×100)</option>
           </select>
+          <div class="size-hint">Số đo: <span></span> cm</div>
         </div>
       </div>
       <div class="checkbox-group">
@@ -364,6 +399,33 @@
       </div>
     `;
     container.appendChild(itemCard);
+
+    // gắn hint động cho card mới
+    wireSizeHints(itemCard);
+  }
+
+  // ==== HINT SỐ ĐO (CÁCH 2) ====
+  function wireSizeHints(root = document) {
+    root.querySelectorAll('.item-card').forEach(card => {
+      const select = card.querySelector('.size');
+      const hint   = card.querySelector('.size-hint');
+      const span   = hint?.querySelector('span');
+      if (!select || !hint || !span) return;
+
+      const update = () => {
+        const dims = select.selectedOptions[0]?.getAttribute('data-dimensions');
+        if (dims) {
+          span.textContent = dims;
+          hint.style.display = 'block';
+        } else {
+          span.textContent = '';
+          hint.style.display = 'none';
+        }
+      };
+      select.removeEventListener('change', update);
+      select.addEventListener('change', update);
+      update();
+    });
   }
 
   // ==== VALIDATION PHÍA CLIENT ====
@@ -383,7 +445,7 @@
       return false;
     }
 
-    // 2) địa chỉ pickup
+    // 2) địa chỉ pickup & delivery
     const pickupCard = document.querySelector('#pickupAddresses .address-card');
     const deliveryCard = document.querySelector('#deliveryAddresses .address-card');
     if (!pickupCard || !deliveryCard) {
@@ -395,22 +457,20 @@
     const pickup = {
       street: pickupCard.querySelector('.street-address')?.value,
       city: pickupCard.querySelector('.city')?.value,
-      state: pickupCard.querySelector('.state')?.value,
-      zip: pickupCard.querySelector('.zip-code')?.value
+      state: pickupCard.querySelector('.state')?.value
     };
     const delivery = {
       street: deliveryCard.querySelector('.street-address')?.value,
       city: deliveryCard.querySelector('.city')?.value,
-      state: deliveryCard.querySelector('.state')?.value,
-      zip: deliveryCard.querySelector('.zip-code')?.value
+      state: deliveryCard.querySelector('.state')?.value
     };
 
-    if (![pickup.street, pickup.city, pickup.state, pickup.zip].every(required)) {
-      showAlert('❌ Vui lòng nhập đủ địa chỉ LẤY HÀNG (đường, thành phố, quận/huyện, mã bưu điện).', 'error');
+    if (![pickup.street, pickup.city, pickup.state].every(required)) {
+      showAlert('❌ Vui lòng nhập đủ địa chỉ LẤY HÀNG (đường, thành phố, quận/huyện).', 'error');
       return false;
     }
-    if (![delivery.street, delivery.city, delivery.state, delivery.zip].every(required)) {
-      showAlert('❌ Vui lòng nhập đủ địa chỉ GIAO HÀNG (đường, thành phố, quận/huyện, mã bưu điện).', 'error');
+    if (![delivery.street, delivery.city, delivery.state].every(required)) {
+      showAlert('❌ Vui lòng nhập đủ địa chỉ GIAO HÀNG (đường, thành phố, quận/huyện).', 'error');
       return false;
     }
 
@@ -444,7 +504,8 @@
       streetAddress: addr.streetAddress,
       city: addr.city,
       state: addr.state,
-      zipCode: addr.zipCode,
+      // bỏ zipCode theo yêu cầu (hoặc để null nếu backend chấp nhận)
+      zipCode: null,
       latitude: null,
       longitude: null,
       isDefault: false
@@ -475,22 +536,25 @@
     const pickupAddress = {
       streetAddress: pickupCard.querySelector('.street-address').value,
       city: pickupCard.querySelector('.city').value,
-      state: pickupCard.querySelector('.state').value,
-      zipCode: pickupCard.querySelector('.zip-code').value
+      state: pickupCard.querySelector('.state').value
     };
     const deliveryAddress = {
       streetAddress: deliveryCard.querySelector('.street-address').value,
       city: deliveryCard.querySelector('.city').value,
-      state: deliveryCard.querySelector('.state').value,
-      zipCode: deliveryCard.querySelector('.zip-code').value
+      state: deliveryCard.querySelector('.state').value
     };
 
-    // gom items gửi đúng schema backend
+    // gom items gửi đúng schema backend (kèm số đo cụ thể)
     const furnitureItems = [];
     document.querySelectorAll('#furnitureItems .item-card').forEach(card => {
+      const sizeEl = card.querySelector('.size');
+      const sizeVal = sizeEl?.value || null;
+      const dims = sizeEl?.selectedOptions?.[0]?.getAttribute('data-dimensions') || null;
+
       furnitureItems.push({
         itemType: card.querySelector('.item-type').value,
-        size: card.querySelector('.size')?.value || null,
+        size: sizeVal,
+        sizeDimensions: dims, // gửi thêm số đo
         quantity: parseInt(card.querySelector('.quantity').value),
         isFragile: card.querySelector('.is-fragile').checked,
         specialHandling: card.querySelector('.special-handling-notes').value || null
@@ -529,6 +593,7 @@
           document.getElementById('requestForm').reset();
           document.querySelectorAll('#furnitureItems .item-card').forEach((c,i)=>{ if(i>0) c.remove(); });
           itemCount = 1;
+          wireSizeHints(); // reset hint
         }, 1000);
       } else {
         throw new Error(result.message || 'Có lỗi khi tạo yêu cầu');
@@ -544,9 +609,11 @@
 
   // ==== INIT ====
   (function init() {
-    currentUser = mockLogin();
+    currentUser = mockLogin(); // nếu đã có session backend, thay bằng gọi /api/me để lấy customerId
     document.getElementById('preferredDate').min = new Date().toISOString().split('T')[0];
     loadProviders();
+    loadDefaultPickupAddress(); // tự nạp địa chỉ lấy hàng (nếu có)
+    wireSizeHints(); // gắn hint cho card #1
   })();
 </script>
 
