@@ -13,4 +13,8 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     List<ServiceRequest> findByStatus(String status);
     
     List<ServiceRequest> findByCustomerIdAndStatus(Integer customerId, String status);
+
+    long countByProviderId(Integer providerId);
+
+    long countByProviderIdAndStatus(Integer providerId, String status);
 }

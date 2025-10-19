@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Cấu hình giá dịch vụ</title>
+    <style>
+        :root { --bg:#0f172a; --card:#111827; --fg:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --ok:#22c55e; }
+        body{font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--fg);margin:0;display:flex;justify-content:center}
+        .wrap{max-width:900px;width:100%;padding:32px}
+        .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:24px}
+        h1{margin:0 0 8px}
+        p.sub{color:var(--muted);margin:0 0 24px}
+        .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .field{display:flex;flex-direction:column;gap:6px}
+        label{font-size:14px;color:var(--muted)}
+        input{background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:12px;color:var(--fg);outline:none}
+        .actions{display:flex;justify-content:flex-end;margin-top:20px}
+        button{padding:12px 18px;border-radius:12px;border:none;background:var(--accent);color:#001018;font-weight:700;cursor:pointer}
+        .toast{position:fixed;right:16px;bottom:16px;background:#0b1220;border:1px solid #1f2937;color:var(--fg);padding:12px 14px;border-radius:12px;opacity:.95}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="card">
+        <h1>Giá & Phụ phí</h1>
+        <p class="sub">Cập nhật biểu phí áp dụng cho nhà cung cấp của bạn.</p>
+
+        <div class="grid">
+            <div class="field"><label>Base fee (VND)</label><input id="baseFee" type="number" min="0" step="1000"></div>
+            <div class="field"><label>Per Km (VND/km)</label><input id="perKm" type="number" min="0" step="1000"></div>
+            <div class="field"><label>Per Minute (VND/min)</label><input id="perMinute" type="number" min="0" step="1000"></div>
+
+            <div class="field"><label>Surcharge - Stairs</label><input id="surchargeStairs" type="number" min="0" step="1000"></div>
+            <div class="field"><label>Surcharge - No Elevator</label><input id="surchargeNoElevator" type="number" min="0" step="1000"></div>
+            <div class="field"><label>Surcharge - Narrow Alley</label><input id="surchargeNarrowAlley" type="number" min="0" step="1000"></div>
+
+            <div class="field"><label>Surcharge - Weekend</label><input id="surchargeWeekend" type="number" min="0" step="1000"></div>
+        </div>
+
+        <div class="actions"><button onclick="save()">Lưu cấu hình</button></div>
+    </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+    async function load(){
+        const res = await fetch('/api/provider/pricing');
+        if(!res.ok) return;
+        const d = await res.json();
+        for (const k of Object.keys(d)){
+            const el = document.getElementById(k);
+            if(el) el.value = d[k] ?? 0;
+        }
+    }
+    async function save(){
+        const body = {
+            baseFee: +baseFee.value, perKm: +perKm.value, perMinute: +perMinute.value,
+            surchargeStairs:+surchargeStairs.value, surchargeNoElevator:+surchargeNoElevator.value,
+            surchargeNarrowAlley:+surchargeNarrowAlley.value, surchargeWeekend:+surchargeWeekend.value
+        };
+        const res = await fetch('/api/provider/pricing',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        toast.style.display='block';
+        toast.textContent = res.ok ? 'Đã lưu cấu hình!' : 'Lỗi khi lưu.';
+        setTimeout(()=>toast.style.display='none',2000);
+    }
+    load();
+</script>
+</body>
+</html>
