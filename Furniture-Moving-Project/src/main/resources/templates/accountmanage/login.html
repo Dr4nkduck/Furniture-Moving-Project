@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Đăng nhập</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Boxicons cho icon con mắt -->
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- CSS trang login -->
+  <link rel="stylesheet" th:href="@{/accountmanage/css/login.css}">
+</head>
+<body>
+  <div class="wrapper">
+    <form method="post" th:action="@{/perform_login}">
+      <h1>ĐĂNG NHẬP</h1>
+
+      <div class="input-box">
+  <input type="text" name="username" placeholder="Tên đăng nhập hoặc Email" required>
+</div>
+
+<div class="input-box">
+  <input id="passwordInput" type="password" name="password" placeholder="Mật khẩu" required>
+  <i id="togglePassword" class="bx bx-hide" aria-label="Hiện/ẩn mật khẩu" role="button" tabindex="0"></i>
+</div>
+
+
+      <div class="remember-forgot">
+        <label><input type="checkbox">Nhớ tài khoản của tôi</label>
+        <a th:href="@{/forgot}">Quên mật khẩu</a>
+      </div>
+
+      <button type="submit" class="btn">Đăng nhập</button>
+
+      <div th:if="${param.error}" class="alert-txt">
+        Sai tài khoản hoặc mật khẩu!
+      </div>
+
+      <div class="register-link">
+        <p>Bạn chưa có tài khoản? <a th:href="@{/register}">Đăng ký</a></p>
+      </div>
+
+      <div th:if="${param.registered}" class="alert-txt">
+        Đăng ký thành công! Hãy đăng nhập.
+      </div>
+
+      <div class="back-home">
+        <a th:href="@{/homepage}" class="btn btn-secondary">Quay lại Trang chính</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- JS inline: đảm bảo luôn chạy, không lệch path -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const pwd = document.getElementById('passwordInput');
+      const btn = document.getElementById('togglePassword');
+      if (!pwd || !btn) return;
+
+      function toggle() {
+        const show = pwd.type === 'password';
+        pwd.type = show ? 'text' : 'password';
+        btn.classList.toggle('bx-show', show);
+        btn.classList.toggle('bx-hide', !show);
+      }
+
+      btn.addEventListener('click', function (e) {
+        e.preventDefault(); // tránh form submit nếu nhấn Enter trong ô
+        toggle();
+      });
+
+      // Hỗ trợ bàn phím (Enter/Space)
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
