@@ -3,39 +3,20 @@ package SWP301.Furniture_Moving_Project.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-/**
- * Controller to serve HTML pages (Views)
- * Note: This is @Controller, NOT @RestController
- */
 @Controller
 public class ViewController {
-    
-    /**
-     * Request Service page - Create new transport request
-     * URL: http://localhost:8081/requestservice
-     */
-    @GetMapping("/requestservice")
-    public String requestServicePage() {
-        return "requestservice";  // Returns templates/requestservice.html
+
+    /** URL chính: http://localhost:8080/request */
+    @GetMapping("/request")
+    public String requestPage() {
+        return "request/request"; // templates/request/request.html
     }
-    
-    /**
-     * Alternative URL with dash
-     * URL: http://localhost:8081/request-service
-     */
-    @GetMapping("/request-service")
-    public String requestServicePageAlt() {
-        return "requestservice";
+
+    /** Giữ url cũ: chuyển hướng về /request */
+    @GetMapping({"/requestservice", "/request-service"})
+    public String legacyRequestUrls() {
+        return "redirect:/request";
     }
-    
-    /**
-     * If your file is in user folder: templates/user/requestservice.html
-     * Uncomment this if needed:
-     */
-    /*
-    @GetMapping("/user/requestservice")
-    public String userRequestServicePage() {
-        return "user/requestservice";
-    }
-    */
+
+    // KHÔNG map "/" ở đây để tránh đụng HomeController
 }

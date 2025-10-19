@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tạo Yêu Cầu Vận Chuyển</title>
+
+  <!-- ====== DÙNG CHUNG BỘ CSS VỚI HOMEPAGE (KHÔNG DÙNG CDN KHÁC PHIÊN BẢN) ====== -->
+  <link th:href="@{/homepage/lib/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+  <link th:href="@{/homepage/lib/font-awesome/css/all.min.css}" rel="stylesheet"/>
+  <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet"/>
+  <link th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}" rel="stylesheet"/>
+  <link th:href="@{/homepage/css/style.css}" rel="stylesheet"/>
+
+  <!-- CSS riêng của trang request (đặt SAU để override nếu cần) -->
+  <link th:href="@{/request/css/request.css}" rel="stylesheet"/>
+
+  <style>
+    /* Giữ khoảng cách dưới topbar/navbar để nội dung không bị đè */
+    .request-page-wrap { padding-top: 24px; padding-bottom: 40px; }
+
+    /* Card theo style của homepage */
+    .request-card.card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+    .request-card .card-header { background:#fff; border-bottom: 1px solid #eef1f6; border-top-left-radius:12px; border-top-right-radius:12px; }
+    .request-card .card-header h3 { margin-bottom: 4px; font-weight: 700; }
+
+    /* Nhãn mục nhỏ */
+    .section-title { font-weight: 700; font-size: 18px; padding-left: 10px; border-left: 3px solid #1a2a44; margin-bottom: 14px; }
+
+    /* Hộp con mềm mại */
+    .address-card, .item-card { background:#fff; border:1px solid #eef1f6; border-radius:10px; padding:16px; }
+    .size-hint { display:block; margin-top:6px; color:#6c757d; }
+
+    /* Dropdown trong nav hiển thị đúng trên cùng */
+    .dropdown-menu { z-index: 1050; }
+  </style>
+</head>
+<body>
+
+  <!-- ====== FRAGMENTS DÙNG CHUNG VỚI HOMEPAGE ====== -->
+  <div th:replace="fragments/header :: topbar"></div>
+  <div th:replace="fragments/navbar :: navbar" th:with="active='request'"></div>
+
+  <!-- ====== NỘI DUNG TRANG REQUEST ====== -->
+  <main class="request-page-wrap">
+    <div class="container">
+      <div class="card request-card">
+        <div class="card-header">
+          <h3>🚚 Tạo Yêu Cầu Vận Chuyển Nội Thất</h3>
+          <small class="text-muted">Điền đầy đủ thông tin để chúng tôi phục vụ bạn tốt nhất</small>
+        </div>
+
+        <div class="card-body">
+          <div id="alertBox" class="alert d-none" role="alert" aria-live="polite"></div>
+
+          <form id="requestForm" novalidate>
+            <!-- 1. Thông tin chung -->
+            <section class="mb-4">
+              <div class="section-title">1 Thông Tin Chung</div>
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="preferredDate">Ngày Vận Chuyển <span class="text-danger">*</span></label>
+                  <input type="date" id="preferredDate" name="preferredDate" class="form-control" required>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="providerId">Nhà Cung Cấp (Tùy Chọn)</label>
+                  <select id="providerId" name="providerId" class="form-control">
+                    <option value="">-- Chọn sau --</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- 2. Địa chỉ lấy hàng -->
+            <section class="mb-4">
+              <div class="section-title">2 Địa Chỉ Lấy Hàng</div>
+              <div id="pickupAddresses">
+                <div class="address-card" data-type="Pickup">
+                  <div class="form-row">
+                    <div class="form-group col-12">
+                      <label>Địa Chỉ <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control street-address" placeholder="Số nhà, tên đường" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Thành Phố <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control city" placeholder="Thành phố" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Quận/Huyện <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control state" placeholder="Quận/Huyện" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Tên Liên Hệ</label>
+                      <input type="text" class="form-control contact-name" placeholder="(Không bắt buộc)">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Số Điện Thoại</label>
+                      <input type="text" class="form-control contact-phone" placeholder="(Không bắt buộc)">
+                    </div>
+                    <div class="form-group col-12">
+                      <label>Hướng Dẫn Đặc Biệt</label>
+                      <textarea class="form-control special-instructions" placeholder="Ví dụ: Tầng 3, không có thang máy..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 3. Địa chỉ giao hàng -->
+            <section class="mb-4">
+              <div class="section-title">3 Địa Chỉ Giao Hàng</div>
+              <div id="deliveryAddresses">
+                <div class="address-card" data-type="Delivery">
+                  <div class="form-row">
+                    <div class="form-group col-12">
+                      <label>Địa Chỉ <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control street-address" placeholder="Số nhà, tên đường" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Thành Phố <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control city" placeholder="Thành phố" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Quận/Huyện <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control state" placeholder="Quận/Huyện" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Tên Liên Hệ</label>
+                      <input type="text" class="form-control contact-name" placeholder="(Không bắt buộc)">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Số Điện Thoại</label>
+                      <input type="text" class="form-control contact-phone" placeholder="(Không bắt buộc)">
+                    </div>
+                    <div class="form-group col-12">
+                      <label>Hướng Dẫn Đặc Biệt</label>
+                      <textarea class="form-control special-instructions" placeholder="Ví dụ: Cần gọi trước 30 phút..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 4. Danh sách đồ nội thất -->
+            <section class="mb-4">
+              <div class="section-title">4 Danh Sách Đồ Nội Thất</div>
+              <div id="furnitureItems">
+                <div class="item-card">
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label>Loại Đồ <span class="text-danger">*</span></label>
+                      <select class="form-control item-type" required>
+                        <option value="">-- Chọn loại --</option>
+                        <option value="Sofa">Sofa</option>
+                        <option value="Bed">Giường</option>
+                        <option value="Table">Bàn</option>
+                        <option value="Chair">Ghế</option>
+                        <option value="Cabinet">Tủ</option>
+                        <option value="Wardrobe">Tủ quần áo</option>
+                        <option value="Other">Khác</option>
+                      </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Tên Món Đồ</label>
+                      <input type="text" class="form-control item-name" placeholder="Ví dụ: Sofa 3 chỗ">
+                    </div>
+                    <div class="form-group col-md-4">
+                      <label>Số Lượng <span class="text-danger">*</span></label>
+                      <input type="number" class="form-control quantity" min="1" value="1" required>
+                    </div>
+                    <div class="form-group col-md-8">
+                      <label>Kích Thước</label>
+                      <select class="form-control size">
+                        <option value="">-- Chọn --</option>
+                        <option value="Small" data-dimensions="40x40x40">Nhỏ (40×40×40)</option>
+                        <option value="Medium" data-dimensions="80x60x60">Trung bình (80×60×60)</option>
+                        <option value="Large" data-dimensions="120x80x80">Lớn (120×80×80)</option>
+                        <option value="Extra Large" data-dimensions="160x100x100">Rất lớn (160×100×100)</option>
+                      </select>
+                      <small class="size-hint">Số đo: <span></span> cm</small>
+                    </div>
+                    <div class="form-group col-12">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input is-fragile" id="fragile1">
+                        <label for="fragile1" class="form-check-label">Đồ dễ vỡ</label>
+                      </div>
+                    </div>
+                    <div class="form-group col-12">
+                      <label>Ghi Chú Đặc Biệt</label>
+                      <textarea class="form-control special-handling-notes" placeholder="Ví dụ: Cần bọc cẩn thận..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-block mt-3" id="btnAddItem">+ Thêm Món Đồ</button>
+            </section>
+
+            <button type="submit" class="btn btn-primary btn-block" id="btnSubmit">📤 Gửi Yêu Cầu</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer chung -->
+  <div th:replace="fragments/footer :: footer"></div>
+
+  <!-- ====== DÙNG CHUNG BỘ JS VỚI HOMEPAGE ====== -->
+  <script th:src="@{/homepage/js/jquery-3.4.1.min.js}"></script>
+  <script th:src="@{/homepage/js/bootstrap.bundle.min.js}"></script>
+  <script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+  <script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+  <script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+  <script th:src="@{/homepage/js/main.js}"></script>
+
+  <!-- JS riêng của trang request -->
+  <script th:src="@{/request/js/request.js}"></script>
+</body>
+</html>
