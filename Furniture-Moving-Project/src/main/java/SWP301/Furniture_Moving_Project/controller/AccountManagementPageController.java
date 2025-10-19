@@ -10,7 +10,7 @@ public class AccountManagementPageController {
 
     @GetMapping("/accountmanagement")
     public String accountManagementPage() {
-        // resolves src/main/resources/templates/accountmanagement.html
-        return "accountmanagement";
+        // Template is under templates/admin/accountmanagement.html
+        return "admin/accountmanagement";
     }
 }

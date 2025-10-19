@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Quản lí tài khoản</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Base CSS -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+
+    <!-- Prevent theme flash -->
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+<body>
+
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h4 class="mb-0">Quản lí tài khoản</h4>
+        <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" type="button">
+            🌙 Dark
+        </button>
+    </div>
+
+    <div class="bg-light rounded p-4 shadow-sm">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="input-group" style="max-width:420px;">
+                <input id="am-search" class="form-control" placeholder="Tìm email / tên / username">
+                <button class="btn btn-primary" id="am-search-btn">Tìm</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th><th>Username</th><th>Email</th><th>Họ tên</th>
+                    <th>Điện thoại</th><th>Role</th><th>Trạng thái</th><th style="width:280px">Hành động</th>
+                </tr>
+                </thead>
+                <tbody id="am-tbody">
+                <tr><td colspan="8" class="text-muted">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-end align-items-center gap-2 mt-2">
+            <button class="btn btn-outline-secondary" id="am-prev">«</button>
+            <span id="am-page" class="small text-muted">1/1</span>
+            <button class="btn btn-outline-secondary" id="am-next">»</button>
+            <select id="am-size" class="form-select form-select-sm" style="width:110px">
+                <option value="5">5 / trang</option>
+                <option value="10" selected>10 / trang</option>
+                <option value="20">20 / trang</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/dashbooard/js/accountmanagement.js}"></script>
+</body>
+</html>
