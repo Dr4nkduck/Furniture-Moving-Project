@@ -1,37 +1,37 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 
-@Entity @Table(name="provider_furniture_prices",
-        uniqueConstraints=@UniqueConstraint(columnNames={"provider_id","furniture_type_id"}))
+@Entity
+@Table(name = "provider_furniture_prices",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"provider_id", "furniture_type_id"}))
 public class ProviderFurniturePrice {
-    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name="provider_id", nullable=false) private Integer providerId;
+    @Column(name = "provider_id", nullable = false)
+    private Integer providerId;
 
-    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="furniture_type_id", nullable=false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "furniture_type_id", nullable = false)
     private FurnitureType furnitureType;
 
-    @Column(nullable=false) private BigDecimal price;
-    // getters/setters
-
+    @Column(nullable = false)
+    private BigDecimal price;
 
     public Integer getId() {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public Integer getProviderId() {
+        return providerId;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
     }
 
     public FurnitureType getFurnitureType() {
@@ -42,11 +42,11 @@ public class ProviderFurniturePrice {
         this.furnitureType = furnitureType;
     }
 
-    public Integer getProviderId() {
-        return providerId;
+    public BigDecimal getPrice() {
+        return price;
     }
 
-    public void setProviderId(Integer providerId) {
-        this.providerId = providerId;
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 }

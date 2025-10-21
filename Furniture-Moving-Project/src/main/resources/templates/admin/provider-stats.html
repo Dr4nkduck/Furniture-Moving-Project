@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Provider Statistics</title>
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+    <script>(function(){const s=localStorage.getItem('theme');if(s==='dark'||(!s&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})();</script>
+</head>
+<body>
+<div class="container-fluid pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Provider Statistics</h4>
+        <div class="d-flex gap-2">
+            <input id="from" type="datetime-local" class="form-control form-control-sm">
+            <input id="to"   type="datetime-local" class="form-control form-control-sm">
+            <button id="filter" class="btn btn-sm btn-primary">Lọc</button>
+            <button id="exportCsv" class="btn btn-sm btn-outline-secondary">CSV</button>
+            <button id="theme-toggle" class="btn btn-sm btn-outline-secondary">🌙 Dark</button>
+        </div>
+    </div>
+
+    <div class="bg-light rounded p-3 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>Provider</th><th>Jobs</th><th>Accepted</th><th>Canceled</th>
+                    <th>Accept %</th><th>Cancel %</th><th>Avg Rating</th><th>Revenue</th>
+                </tr>
+                </thead>
+                <tbody id="ps-tbody"><tr><td colspan="8">Đang tải...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script th:src="@{/dashbooard/js/provider-stats.js}"></script>
+</body>
+</html>
