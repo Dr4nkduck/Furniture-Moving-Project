@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
 <body>
 <!-- Nav Bar Start -->
 <div class="nav-bar" th:fragment="navbar">
@@ -24,8 +24,36 @@
           </div>
           <a th:href="@{/homepage/contact}" class="nav-item nav-link">Liên hệ</a>
         </div>
-        <div class="ml-auto">
-          <a class="btn" href="/login">Đăng nhập/Đăng ký</a>
+
+        <!-- Chưa đăng nhập -->
+        <div class="ml-auto" sec:authorize="isAnonymous()">
+          <a class="btn" th:href="@{/login}">Đăng nhập/Đăng ký</a>
+        </div>
+
+        <!-- Đã đăng nhập: icon người + menu -->
+        <div class="ml-auto nav-item dropdown" sec:authorize="isAuthenticated()">
+          <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" title="Tài khoản">
+            <i class="fas fa-user-circle fa-lg"></i>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item disabled" href="#" tabindex="-1" aria-disabled="true">
+              <i class="far fa-id-badge mr-2"></i> Hồ sơ (đang làm)
+            </a>
+            <div class="dropdown-divider"></div>
+
+            <!-- CSRF đang disable, nên form này không cần hidden _csrf -->
+            <form th:action="@{/logout}" method="post" class="m-0 px-0">
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất
+              </button>
+            </form>
+
+            <!-- Hoặc nếu muốn GET (vì bạn đã disable CSRF): 
+            <a class="dropdown-item text-danger" th:href="@{/logout}">
+              <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất
+            </a>
+            -->
+          </div>
         </div>
       </div>
     </nav>
