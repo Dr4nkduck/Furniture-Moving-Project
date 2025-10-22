@@ -22,3 +22,5 @@
     toast('Bạn sẽ xem được một mẫu bảng giá tham khảo ở bản kế tiếp.');
   });
 })();
+
+
