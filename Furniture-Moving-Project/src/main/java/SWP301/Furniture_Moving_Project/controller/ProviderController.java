@@ -10,6 +10,6 @@ public class ProviderController {
 
     @GetMapping("")
     public String providerHome() {
-        return "provider"; // => provider.html
+        return "provider";  // => providers.html
     }
 }
