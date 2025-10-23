@@ -16,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.stereotype.Component;
 
 @Configuration
-@EnableMethodSecurity 
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
@@ -28,17 +28,18 @@ public class SecurityConfig {
         this.successHandler = successHandler;
     }
 
+    /** ✅ Dùng DelegatingPasswordEncoder: hỗ trợ {noop}, {bcrypt}, ... */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
-
 
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider p = new DaoAuthenticationProvider();
         p.setUserDetailsService(userDetailsService);
         p.setPasswordEncoder(passwordEncoder());
+        // p.setHideUserNotFoundExceptions(false); // mở nếu muốn phân biệt lỗi username/password
         return p;
     }
 
@@ -53,45 +54,49 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/register",
-                                 "/forgot/**",
-                                 "/css/**", "/js/**", "/images/**",
-                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
-                                 "/superadmin/**",
-                                 "/dashbooard/**"                 // ✅ static của superadmin (css/js)
+                .requestMatchers(
+                        "/", "/homepage", "/login", "/register", "/perform_register",
+                        "/forgot/**",
+                        "/css/**", "/js/**", "/images/**",
+                        "/accountmanage/**", "/homepage/**", "/chatbot/**",
+                        "/superadmin/**",
+                        "/dashbooard/**",            // static của superadmin (css/js)
+                        "/api/providers"             // GET nạp provider trên form client
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                    .requestMatchers("/accountmanagement").hasRole("ADMIN")
-                    .requestMatchers("/api/admin/analytics/**").hasRole("ADMIN")
-                    .requestMatchers("/api/admin/users/**").hasRole("ADMIN")
+                .requestMatchers("/accountmanagement").hasRole("ADMIN")
+                .requestMatchers("/api/admin/analytics/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/users/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login
                 .loginPage("/login")
-                .loginProcessingUrl("/perform_login")
+                .loginProcessingUrl("/perform_login")   // form action phải POST vào đây
                 .successHandler(successHandler)
                 .failureUrl("/login?error=true")
-                .permitAll())
+                .permitAll()
+            )
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/homepage")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-                .permitAll());
+                .permitAll()
+            );
         return http.build();
     }
 
+    /** Chỉ để in thử hash khi cần – không ảnh hưởng logic */
     @Component
-    class PrintHashOnce implements CommandLineRunner {
+    static class PrintHashOnce implements CommandLineRunner {
         private final PasswordEncoder encoder;
         PrintHashOnce(PasswordEncoder encoder){ this.encoder = encoder; }
         @Override public void run(String... args) {
             String raw = "Admin@123";
-            System.out.println("BCrypt: " + encoder.encode(raw));
+            System.out.println("Delegating enc (bcrypt): " + encoder.encode(raw));
         }
     }
 }
