@@ -1,65 +1,71 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.model.User;
-import SWP301.Furniture_Moving_Project.model.AuthCredential;
-import SWP301.Furniture_Moving_Project.repository.UserRepository;
-import SWP301.Furniture_Moving_Project.repository.AuthCredentialRepository;
+import SWP301.Furniture_Moving_Project.model.AccountStatus;
+import SWP301.Furniture_Moving_Project.model.UserAccount;
+import SWP301.Furniture_Moving_Project.repository.UserAccountRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final AuthCredentialRepository authCredentialRepository;
+    private final UserAccountRepository userRepo;
 
-    public CustomUserDetailsService(UserRepository userRepository,
-                                    AuthCredentialRepository authCredentialRepository) {
-        this.userRepository = userRepository;
-        this.authCredentialRepository = authCredentialRepository;
+    @Autowired(required = false)
+    private JdbcTemplate jdbc; // optional; used if you have roles in DB
+
+    public CustomUserDetailsService(UserAccountRepository userRepo) {
+        this.userRepo = userRepo;
     }
 
     @Override
-    public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
-        // Cho phép nhập username hoặc email
-        User user = resolveUser(login);
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        UserAccount u = userRepo.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Not found"));
 
-        // credentials
-        AuthCredential auth = authCredentialRepository.findByUserId(user.getUserId())
-                .orElseThrow(() -> new UsernameNotFoundException("Credentials not found for: " + login));
+        if (u.getStatus() == AccountStatus.DELETED) throw new UsernameNotFoundException("Not found");
+        if (u.getStatus() == AccountStatus.SUSPENDED) throw new DisabledException("Account suspended");
 
-        // roles -> authorities
-        List<String> roleNames = userRepository.findRoleNamesByUserId(user.getUserId());
-        List<GrantedAuthority> authorities = roleNames.stream()
-                .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                .collect(Collectors.toList());
+        String hash = u.getPasswordHash();
+        if (hash == null || hash.isBlank()) throw new UsernameNotFoundException("Not found");
+
+        List<String> roles = fetchRoleNamesSafely(u.getId());
+        if (roles.isEmpty()) roles = List.of("USER");
+        String[] auths = roles.stream()
+                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r.toUpperCase(Locale.ROOT))
+                .toArray(String[]::new);
+        List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(auths);
 
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername()) // username “chuẩn” từ DB
-                .password(auth.getPasswordHash())
+                .withUsername(u.getUsername())
+                .password(u.getPasswordHash())
                 .authorities(authorities)
+                .accountLocked(false)
+                .disabled(false)
                 .build();
     }
 
-    /** Ưu tiên email nếu có ký tự '@', không phân biệt hoa thường; fallback sang cách còn lại. */
-    private User resolveUser(String login) {
-        boolean looksLikeEmail = login != null && login.contains("@");
-
-        if (looksLikeEmail) {
-            return userRepository.findByEmailIgnoreCase(login)
-                    .or(() -> userRepository.findByUsernameIgnoreCase(login))
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + login));
-        } else {
-            return userRepository.findByUsernameIgnoreCase(login)
-                    .or(() -> userRepository.findByEmailIgnoreCase(login))
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + login));
+    private List<String> fetchRoleNamesSafely(Long userId) {
+        if (jdbc == null || userId == null) return new ArrayList<>();
+        try {
+            List<String> names = jdbc.query(
+                    "SELECT r.role_name FROM roles r JOIN user_roles ur ON ur.role_id = r.role_id WHERE ur.user_id = ?",
+                    (rs, i) -> rs.getString(1),
+                    userId
+            );
+            return names.stream().filter(s -> s != null && !s.isBlank()).collect(Collectors.toList());
+        } catch (Exception ignore) {
+            return new ArrayList<>();
         }
     }
 }

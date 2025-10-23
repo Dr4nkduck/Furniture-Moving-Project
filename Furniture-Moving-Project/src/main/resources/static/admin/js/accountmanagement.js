@@ -9,14 +9,19 @@
     const sizeSel = $('am-size');
     const themeBtn = $('theme-toggle');
 
+    const fromInp = $('am-from');
+    const toInp   = $('am-to');
+    const dateApplyBtn = $('am-date-apply');
+    const dateClearBtn = $('am-date-clear');
+
     let page = 0, size = parseInt(sizeSel.value, 10), totalPages = 1, q = '';
+    let createdFromIso = null, createdToIso = null;
 
     function setTheme(next) {
         const root = document.documentElement;
-        if (next === 'dark') { root.classList.add('dark'); }
-        else { root.classList.remove('dark'); }
+        if (next === 'dark') root.classList.add('dark'); else root.classList.remove('dark');
         localStorage.setItem('theme', next);
-        themeBtn.textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+        if (themeBtn) themeBtn.textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
     }
     function initTheme() {
         const saved = localStorage.getItem('theme');
@@ -44,8 +49,9 @@
       </div>`;
     }
     function row(u) {
+        const cls = (u.status === 'DELETED') ? ' class="row-deleted"' : '';
         return `
-      <tr>
+      <tr${cls}>
         <td>${u.id}</td>
         <td>${u.username ?? ''}</td>
         <td>${u.email ?? ''}</td>
@@ -57,15 +63,26 @@
       </tr>`;
     }
 
+    function toIsoRangeStart(dStr) { return dStr ? `${dStr}T00:00:00Z` : null; }
+    function toIsoRangeEnd(dStr) {
+        if (!dStr) return null;
+        const x = new Date(dStr + 'T00:00:00Z');
+        x.setUTCDate(x.getUTCDate() + 1);
+        return x.toISOString();
+    }
+
     async function fetchPage() {
         const params = new URLSearchParams({ page, size });
         if (q) params.set('q', q);
+        if (createdFromIso) params.set('createdFrom', createdFromIso);
+        if (createdToIso)   params.set('createdTo', createdToIso);
         const res = await fetch(`/api/admin/users?${params.toString()}`, { headers: { 'Accept':'application/json' } });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         return res.json();
     }
 
     async function load() {
+        if (!tbody) return;
         tbody.innerHTML = `<tr><td colspan="8">Đang tải...</td></tr>`;
         try {
             const pg = await fetchPage();
@@ -99,6 +116,7 @@
                 load();
             });
         });
+
         tbody.querySelectorAll('button[data-del]').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.getAttribute('data-id');
@@ -111,16 +129,37 @@
         });
     }
 
-    // events
     qBtn.addEventListener('click', () => { q = qInput.value.trim(); page = 0; load(); });
     qInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { q = qInput.value.trim(); page = 0; load(); }});
     prevBtn.addEventListener('click', () => { if (page > 0) { page--; load(); }});
     nextBtn.addEventListener('click', () => { if (page < totalPages - 1) { page++; load(); }});
     sizeSel.addEventListener('change', () => { size = parseInt(sizeSel.value, 10); page = 0; load(); });
+
     themeBtn.addEventListener('click', () => {
         const isDark = document.documentElement.classList.contains('dark');
         setTheme(isDark ? 'light' : 'dark');
     });
 
-    document.addEventListener('DOMContentLoaded', () => { initTheme(); load(); });
+    dateApplyBtn.addEventListener('click', () => {
+        createdFromIso = toIsoRangeStart(fromInp.value);
+        createdToIso   = toIsoRangeEnd(toInp.value);
+        page = 0; load();
+    });
+    dateClearBtn.addEventListener('click', () => {
+        fromInp.value = ''; toInp.value = '';
+        createdFromIso = createdToIso = null;
+        page = 0; load();
+    });
+
+    // Optional: initialize datepickers if Tempus Dominus is present
+    function initPickers() {
+        if (window.$ && typeof $.fn.datetimepicker === 'function') {
+            $('#am-from').datetimepicker({ format: 'YYYY-MM-DD' });
+            $('#am-to').datetimepicker({ format: 'YYYY-MM-DD', useCurrent: false });
+            $("#am-from").on("change.datetimepicker", e => $('#am-to').datetimepicker('minDate', e.date));
+            $("#am-to").on("change.datetimepicker", e => $('#am-from').datetimepicker('maxDate', e.date));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { initTheme(); initPickers(); load(); });
 })();

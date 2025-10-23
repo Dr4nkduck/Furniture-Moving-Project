@@ -5,37 +5,47 @@
     <title>Quản lí tài khoản</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Base CSS -->
+    <!-- Shared libs -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css}">
 
-    <!-- Prevent theme flash -->
+    <!-- Page CSS in /static/admin/css -->
+    <link rel="stylesheet" th:href="@{/admin/css/accountmanagement.css}">
+
     <script>
-        (function() {
-            const saved = localStorage.getItem('theme');
-            if (saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
+        (function(){ const saved=localStorage.getItem('theme');
+            if (saved==='dark'||(!saved&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark'); }})();
     </script>
 </head>
 <body>
-
 <div class="container-fluid pt-4 px-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h4 class="mb-0">Quản lí tài khoản</h4>
-        <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" type="button">
-            🌙 Dark
-        </button>
+        <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" type="button">🌙 Dark</button>
     </div>
 
     <div class="bg-light rounded p-4 shadow-sm">
-        <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
             <div class="input-group" style="max-width:420px;">
                 <input id="am-search" class="form-control" placeholder="Tìm email / tên / username">
                 <button class="btn btn-primary" id="am-search-btn">Tìm</button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group input-group-sm" style="width: 210px;">
+                    <span class="input-group-text">Từ</span>
+                    <input id="am-from" type="text" class="form-control" placeholder="YYYY-MM-DD">
+                </div>
+                <div class="input-group input-group-sm" style="width: 210px;">
+                    <span class="input-group-text">Đến</span>
+                    <input id="am-to" type="text" class="form-control" placeholder="YYYY-MM-DD">
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" id="am-date-apply">Lọc ngày</button>
+                <button class="btn btn-sm btn-outline-secondary" id="am-date-clear">Xóa</button>
             </div>
         </div>
 
@@ -66,6 +76,14 @@
     </div>
 </div>
 
-<script th:src="@{/dashbooard/js/accountmanagement.js}"></script>
+<!-- Vendor libs -->
+<script th:src="@{/dashbooard/js/jquery-3.4.1.min.js}"></script>
+<script th:src="@{/dashbooard/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashbooard/lib/tempusdominus/js/moment.min.js}"></script>
+<script th:src="@{/dashbooard/lib/tempusdominus/js/moment-timezone.min.js}"></script>
+<script th:src="@{/dashbooard/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js}"></script>
+
+<!-- Page JS -->
+<script th:src="@{/admin/js/accountmanagement.js}"></script>
 </body>
 </html>

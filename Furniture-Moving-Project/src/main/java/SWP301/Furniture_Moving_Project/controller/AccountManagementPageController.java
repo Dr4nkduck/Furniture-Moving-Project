@@ -5,12 +5,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-@PreAuthorize("hasRole('ADMIN')")
 public class AccountManagementPageController {
 
     @GetMapping("/accountmanagement")
-    public String accountManagementPage() {
-        // Template is under templates/admin/accountmanagement.html
+    @PreAuthorize("hasRole('ADMIN')")
+    public String page() {
+        // resolves templates/admin/accountmanagement.html
         return "admin/accountmanagement";
     }
 }

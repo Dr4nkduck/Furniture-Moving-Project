@@ -1,12 +1,12 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import SWP301.Furniture_Moving_Project.model.converter.AccountStatusConverter;
-import jakarta.persistence.Entity;
 import jakarta.persistence.*;
+
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "users") // change if your table name differs
+@Table(name = "users")
 public class UserAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,15 +32,33 @@ public class UserAccount {
     @Column(name = "status", nullable = false, length = 20)
     private AccountStatus status;
 
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    /* Helpers */
-    @Transient public String getFullName(){ return (firstName + " " + lastName).trim(); }
+    @Transient
+    public String getFullName() {
+        return ((firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName)).trim();
+    }
 
+    @PrePersist
+    public void onCreate() {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (this.createdAt == null) this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = OffsetDateTime.now();
+    }
+
+    // Getters / Setters
     public Long getId() {
         return id;
     }
@@ -111,5 +129,13 @@ public class UserAccount {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 }

@@ -1,5 +1,6 @@
 package SWP301.Furniture_Moving_Project.config;
 
+import SWP301.Furniture_Moving_Project.model.User;
 import SWP301.Furniture_Moving_Project.repository.UserRepository;
 import SWP301.Furniture_Moving_Project.service.ActivityLogService;
 import jakarta.servlet.ServletException;
@@ -29,7 +30,7 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
 
         // --- GHI LOG LOGIN ---
         String username = auth.getName();
-        Integer userId = userRepo.findByUsername(username).map(u -> u.getUserId()).orElse(null);
+        Integer userId = userRepo.findByUsername(username).map(User::getUserId).orElse(null);
         String ip = IpUtils.clientIp(req);
         activityLogService.log(userId, "LOGIN", "Đăng nhập", ip);
 

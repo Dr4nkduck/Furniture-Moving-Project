@@ -1,0 +1,9 @@
+tr.row-deleted {
+    opacity: 0.55;
+    filter: grayscale(0.25);
+    transition: opacity .2s ease;
+}
+
+:root.dark .table thead.table-light {
+    background: var(--border);
+}

@@ -6,15 +6,24 @@ import jakarta.persistence.Converter;
 
 @Converter(autoApply = true)
 public class AccountStatusConverter implements AttributeConverter<AccountStatus, String> {
-    @Override public String convertToDatabaseColumn(AccountStatus attr) {
-        return attr == null ? "active" : attr.name().toLowerCase();
+    @Override
+    public String convertToDatabaseColumn(AccountStatus attribute) {
+        if (attribute == null) return null;
+        return switch (attribute) {
+            case ACTIVE -> "active";
+            case SUSPENDED -> "suspended";
+            case DELETED -> "deleted";
+        };
     }
-    @Override public AccountStatus convertToEntityAttribute(String db) {
-        if (db == null) return AccountStatus.ACTIVE;
-        return switch (db.toLowerCase()) {
+
+    @Override
+    public AccountStatus convertToEntityAttribute(String dbData) {
+        if (dbData == null) return null;
+        return switch (dbData.toLowerCase()) {
+            case "active" -> AccountStatus.ACTIVE;
             case "suspended" -> AccountStatus.SUSPENDED;
             case "deleted" -> AccountStatus.DELETED;
-            default -> AccountStatus.ACTIVE;
+            default -> throw new IllegalArgumentException("Unknown status: " + dbData);
         };
     }
 }

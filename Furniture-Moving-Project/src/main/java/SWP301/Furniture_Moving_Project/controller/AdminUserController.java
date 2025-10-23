@@ -4,29 +4,35 @@ import SWP301.Furniture_Moving_Project.dto.ChangeStatusRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.UserAccountResponseDTO;
 import SWP301.Furniture_Moving_Project.service.AdminUserService;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
-
     private final AdminUserService service;
     public AdminUserController(AdminUserService service) { this.service = service; }
 
     @GetMapping
     public Page<UserAccountResponseDTO> list(@RequestParam(required = false) String q,
                                              @RequestParam(required = false) Integer page,
-                                             @RequestParam(required = false) Integer size) {
-        return service.list(q, page, size);
+                                             @RequestParam(required = false) Integer size,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                             OffsetDateTime createdFrom,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                             OffsetDateTime createdTo) {
+        return service.list(q, page, size, createdFrom, createdTo);
     }
 
     @GetMapping("/{id}")
-    public UserAccountResponseDTO get(@PathVariable Long id) {
-        return service.get(id);
-    }
+    public UserAccountResponseDTO get(@PathVariable Long id) { return service.get(id); }
 
     @PutMapping("/{id}/status")
     public UserAccountResponseDTO changeStatus(@PathVariable Long id,
