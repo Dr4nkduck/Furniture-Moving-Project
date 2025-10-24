@@ -47,7 +47,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/register",
+                .requestMatchers("/", "/homepage", "/login", "/register", "/distanceCalculation",
                                  "/forgot/**",
                                  "/css/**", "/js/**", "/images/**",
                                  "/accountmanage/**", "/homepage/**", "/chatbot/**",

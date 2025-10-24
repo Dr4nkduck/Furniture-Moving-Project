@@ -245,6 +245,7 @@
   </div>
 
 <script>
+
   // ==== CẤU HÌNH API ====
   const API_BASE = 'http://localhost:8080'; // đổi nếu backend chạy port khác/context-path
 
@@ -548,6 +549,46 @@
     document.getElementById('preferredDate').min = new Date().toISOString().split('T')[0];
     loadProviders();
   })();
+
+
+  // Gom một card địa chỉ thành chuỗi “Số nhà, đường, Quận/Huyện, Thành phố, ZIP”
+  function joinAddress(card) {
+    const street = card.querySelector('.street-address')?.value?.trim() || '';
+    const city   = card.querySelector('.city')?.value?.trim() || '';
+    const state  = card.querySelector('.state')?.value?.trim() || '';
+    const zip    = card.querySelector('.zip-code')?.value?.trim() || '';
+    return [street, state, city, zip].filter(Boolean).join(', ');
+  }
+
+  // Bắt sự kiện submit để chuyển trang kèm dữ liệu
+  document.getElementById('requestForm').addEventListener('submit', function(e){
+    e.preventDefault();
+
+    // validate ngắn gọn (giữ validate chi tiết như bạn đã viết nếu muốn)
+    const pickupCard   = document.querySelector('#pickupAddresses .address-card');
+    const deliveryCard = document.querySelector('#deliveryAddresses .address-card');
+    const dateStr      = document.getElementById('preferredDate').value;
+    if (!pickupCard || !deliveryCard || !dateStr) {
+      return alert('Vui lòng nhập đủ địa chỉ và ngày vận chuyển.');
+    }
+
+    const pickupFull   = joinAddress(pickupCard);
+    const deliveryFull = joinAddress(deliveryCard);
+
+    // (Tuỳ chọn) nếu trang này sau này có “dịch vụ”, truyền thêm ?service=...
+    // const service = document.getElementById('serviceSelect')?.value || '';
+
+    // Tạo query và chuyển trang
+    const params = new URLSearchParams({
+      pickup: pickupFull,
+      destination: deliveryFull,
+      date: dateStr
+      // , service: service   // nếu có
+      // , elevator: '1'      // nếu có checkbox thang máy ở trang này
+    });
+    // Đường dẫn tới file hiển thị bản đồ/giá
+    window.location.href = `/distanceCalculation?${params.toString()}`;
+  });
 </script>
 
 </body>

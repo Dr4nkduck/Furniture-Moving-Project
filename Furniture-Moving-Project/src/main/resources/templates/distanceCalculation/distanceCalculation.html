@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Furniture Moving – Quãng đường & Báo giá</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <!-- CSS riêng -->
+    <link rel="stylesheet" href="/distanceCalculation/style.css">
+
+
+</head>
+<body>
+<!-- 🔑 Auth -->
+<div class="topbar" id="authArea">
+    <a href="/login" class="login-btn">Đăng nhập</a>
+</div>
+
+<div class="container">
+    <h2>Furniture Moving</h2>
+
+    <!-- Form nhỏ để người dùng chỉnh tay nếu muốn (không submit về server) -->
+    <form id="addressForm">
+        <label>Địa chỉ lấy hàng:</label>
+        <input type="text" id="pickup" name="pickup" placeholder="Nhập địa chỉ lấy hàng" required>
+
+        <label>Địa chỉ giao hàng:</label>
+        <input type="text" id="destination" name="destination" placeholder="Nhập địa chỉ giao hàng" required>
+
+        <button type="submit">🔍 Tìm đường & Báo giá</button>
+    </form>
+
+    <label>Dịch vụ vận chuyển:</label>
+    <select id="serviceSelect">
+        <option value="">-- Chọn dịch vụ --</option>
+        <option value="Xe bán tải nhỏ">Xe bán tải nhỏ</option>
+        <option value="Xe 3.5 tấn">Xe 3.5 tấn</option>
+        <option value="Xe 5 tấn">Xe 5 tấn</option>
+    </select>
+
+    <label>
+        <input type="checkbox" id="hasElevator">
+        🏢 Chung cư có thang máy (giảm 20% chi phí bốc vác)
+    </label>
+
+    <label>Ngày và giờ vận chuyển:</label>
+    <input type="datetime-local" id="pickupTime">
+
+    <label>Chụp ảnh hàng hóa (AI ước lượng):</label>
+    <input type="file" id="uploadImage" accept="image/*">
+    <div id="aiNote"></div>
+
+    <div id="map"></div>
+
+    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
+
+    <div id="payment">Tổng thanh toán: 0 đ</div>
+    <button class="pay-btn" id="btnConfirm" disabled>✅ Xác nhận thanh toán</button>
+
+    <div id="alert" class="alert" style="display:none;"></div>
+</div>
+
+<!-- JS riêng (tất cả logic nằm ở đây) -->
+<script src="/distanceCalculation/script.js"></script>
+</body>
+</html>

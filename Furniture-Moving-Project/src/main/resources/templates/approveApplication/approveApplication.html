@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Hóa Đơn</title>
+    <link rel="stylesheet" href="/static/approveApplication/css/approveApplication.css">
+
+
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">LOGO</div>
+        <div class="company-info">
+            <h1>CÔNG TY VẬN CHUYỂN</h1>
+            <p>123 Đường ABC, Quận 1, TP.HCM</p>
+            <p>0123 455.789 • info@cty-vanchuyen.vn</p>
+        </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div>
+        <span class="status-badge" id="statusBadge">Chờ xử lý</span>
+        <button class="btn-primary" id="toggleStatusBtn" style="margin-left: 10px;">Đánh dấu hoàn thành</button>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+        <div>
+            <div class="detail-section">
+                <h3>Nơi gửi:</h3>
+                <p>456 Đường XYZ, Quận 5, T.HCM</p>
+            </div>
+            <div class="detail-section">
+                <h3>Nơi nhận:</h3>
+                <p>789 Đường MNO, TP.Hà Nội</p>
+            </div>
+        </div>
+        <div>
+            <div class="detail-section">
+                <h3>Số hóa đơn:</h3>
+                <p>001</p>
+            </div>
+            <div class="detail-section">
+                <h3>Ngày:</h3>
+                <p id="invoiceDate">24/04/2024</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Meta -->
+    <div class="invoice-meta">
+        <div class="meta-item">
+            <strong>Số hóa đơn:</strong>
+            <span>001</span>
+        </div>
+        <div class="meta-item">
+            <strong>Ngày:</strong>
+            <span id="metaDate">24/04/2024</span>
+        </div>
+    </div>
+
+    <!-- Add Item Button -->
+    <button class="btn-add" id="addItemBtn" onclick="openAddModal()">+ Thêm hàng hóa</button>
+
+    <!-- Items Table -->
+    <table>
+        <thead>
+        <tr>
+            <th>TÊN HÀNG</th>
+            <th>SỐ LƯỢNG</th>
+            <th>ĐƠN GIÁ</th>
+            <th>THÀNH TIỀN</th>
+            <th>HÀNH ĐỘNG</th>
+        </tr>
+        </thead>
+        <tbody id="itemsTable">
+        <tr>
+            <td colspan="5" class="empty-row">Chưa có hàng hóa nào. Nhấn "Thêm hàng hóa" để bắt đầu.</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Summary -->
+    <div class="summary">
+        <div class="summary-item">
+            <strong>Phí quãng Đường:</strong>
+            <span id="advertisingFee">5.000.000</span>
+        </div>
+        <div class="summary-item">
+            <strong>Phí bốc xếp (tăng 3%):</strong>
+            <span id="packingFee">300.000</span>
+        </div>
+    </div>
+
+    <!-- Total -->
+    <table style="margin-bottom: 30px;">
+        <tr class="total-row">
+            <td style="border: 1px solid #555;">Cộng tiền hàng:</td>
+            <td style="border: 1px solid #555; text-align: right;" id="totalAmount">0</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Modal for Add/Edit Item -->
+<div id="itemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" id="modalTitle">Thêm hàng hóa</div>
+        <form id="itemForm">
+            <div class="form-group">
+                <label for="itemName">Tên hàng:</label>
+                <input type="text" id="itemName" required>
+            </div>
+            <div class="form-group">
+                <label for="itemQuantity">Số lượng:</label>
+                <input type="number" id="itemQuantity" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="itemPrice">Đơn giá:</label>
+                <input type="number" id="itemPrice" min="0" required>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Hủy</button>
+                <button type="submit" class="btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/static/approveApplication/js/script.js"></script>
+</body>
+</html>

@@ -5,13 +5,41 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b7889494-f132-498c-b2a1-6b1179da7c7a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/controller/DistanceController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/controller/RequestCheckoutApiController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/dto/CheckoutRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/dto/QuickRequestDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/dto/RequestCreatedResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/service/CheckoutService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/service/ServiceRequestAppService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/static/approveApplication/css/approveApplication.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/static/approveApplication/js/script.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/templates/approveApplication/approveApplication.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.PVS-Studio/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.PVS-Studio/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/repository/AddressRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/java/SWP301/Furniture_Moving_Project/repository/AddressRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/static/distanceCalculation/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/js/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/static/distanceCalculation/script.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/templates/distanceCalculation.html" beforeDir="false" afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/templates/distanceCalculation/distanceCalculation.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/templates/requestService.html" beforeDir="false" afterPath="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/templates/requestService.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="HTML File" />
+        <option value="JavaScript File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -24,32 +52,55 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "Spring Boot.FurnitureMovingProjectApplication.executor": "Run",
-    "git-widget-placeholder": "vinhDQ-branch2",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/PC/Desktop/Furniture-Moving-Project_04",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;JavaScript Debug.approveApplication.html.executor&quot;: &quot;Run&quot;,
+    &quot;JavaScript Debug.distanceCalculation.html.executor&quot;: &quot;Run&quot;,
+    &quot;Node.js.script.js.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Spring Boot.FurnitureMovingProjectApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;vinhDQ-branch2&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/PC/Desktop/Furniture-Moving-Project/Furniture-Moving-Project/src/main/resources/static/distanceCalculation&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
-  <component name="RunManager">
-    <configuration name="FurnitureMovingProjectApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\PC\Desktop\Furniture-Moving-Project\Furniture-Moving-Project\src\main\resources\static\distanceCalculation" />
+      <recent name="C:\Users\PC\Desktop\Furniture-Moving-Project\Furniture-Moving-Project\src\main\resources\templates\distanceCalculation" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\PC\Desktop\Furniture-Moving-Project\Furniture-Moving-Project\src\main\resources\static\approveApplication\js" />
+    </key>
+  </component>
+  <component name="RunManager" selected="JavaScript Debug.approveApplication.html">
+    <configuration name="approveApplication.html" type="JavascriptDebugType" temporary="true" nameIsGenerated="true" uri="http://localhost:63342/Furniture-Moving-Project/Furniture_Moving_Project/templates/approveApplication/approveApplication.html" useBuiltInWebServerPort="true">
+      <method v="2" />
+    </configuration>
+    <configuration name="distanceCalculation.html" type="JavascriptDebugType" temporary="true" nameIsGenerated="true" uri="http://localhost:63342/Furniture-Moving-Project/Furniture_Moving_Project/templates/distanceCalculation/distanceCalculation.html" useBuiltInWebServerPort="true">
+      <method v="2" />
+    </configuration>
+    <configuration name="script.js" type="NodeJSConfigurationType" temporary="true" nameIsGenerated="true" path-to-js-file="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/static/approveApplication/js/script.js" working-dir="$PROJECT_DIR$/Furniture-Moving-Project/src/main/resources/static/approveApplication/js">
+      <method v="2" />
+    </configuration>
+    <configuration name="FurnitureMovingProjectApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="Furniture_Moving_Project" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="SWP301.Furniture_Moving_Project.FurnitureMovingProjectApplication" />
@@ -57,6 +108,30 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="FurnitureMovingProjectApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="21" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateResources" />
+      <module name="Furniture_Moving_Project" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="SWP301.Furniture_Moving_Project.FurnitureMovingProjectApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="JavaScript Debug.approveApplication.html" />
+      <item itemvalue="JavaScript Debug.distanceCalculation.html" />
+      <item itemvalue="Node.js.script.js" />
+      <item itemvalue="Spring Boot.FurnitureMovingProjectApplication" />
+      <item itemvalue="Spring Boot.FurnitureMovingProjectApplication (1)" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JavaScript Debug.approveApplication.html" />
+        <item itemvalue="JavaScript Debug.distanceCalculation.html" />
+        <item itemvalue="Node.js.script.js" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -76,6 +151,12 @@
       <updated>1760600952861</updated>
       <workItem from="1760600953975" duration="980000" />
       <workItem from="1760601951623" duration="799000" />
+      <workItem from="1760623408207" duration="1648000" />
+      <workItem from="1760928481691" duration="5401000" />
+      <workItem from="1760941868564" duration="1790000" />
+      <workItem from="1760980380281" duration="9534000" />
+      <workItem from="1761287133222" duration="4165000" />
+      <workItem from="1761305645083" duration="363000" />
     </task>
     <servers />
   </component>
