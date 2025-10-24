@@ -3,11 +3,21 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Customer Trends</title>
-    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
-    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
-    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
-    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
-    <script>(function(){const s=localStorage.getItem('theme');if(s==='dark'||(!s&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})();</script>
+
+    <!-- SỬA: dashboard (đúng), không phải dashbooard -->
+    <link rel="stylesheet" th:href="@{/dashboard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashboard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashboard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashboard/css/theme.css}">
+
+    <script>
+      (function(){
+        const s=localStorage.getItem('theme');
+        if (s==='dark'||(!s&&matchMedia('(prefers-color-scheme: dark)').matches)){
+          document.documentElement.classList.add('dark')
+        }
+      })();
+    </script>
 </head>
 <body>
 <div class="container-fluid pt-4 px-4">
@@ -43,6 +53,7 @@
         </div>
     </div>
 </div>
+
 <script th:src="@{/admin/js/customer-trends.js}"></script>
 </body>
 </html>
