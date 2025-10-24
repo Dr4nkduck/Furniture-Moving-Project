@@ -9,6 +9,12 @@
     const sizeSel = $('am-size');
     const themeBtn = $('theme-toggle');
 
+    // NEW: date filter refs
+    const fromInput = $('am-from');
+    const toInput = $('am-to');
+    const filterBtn = $('am-filter-btn');
+    const clearBtn = $('am-clear-btn');
+
     let page = 0, size = parseInt(sizeSel.value, 10), totalPages = 1, q = '';
 
     function setTheme(next) {
@@ -57,9 +63,22 @@
       </tr>`;
     }
 
-    async function fetchPage() {
+    // build query params for API
+    function buildParams() {
         const params = new URLSearchParams({ page, size });
         if (q) params.set('q', q);
+
+        // NEW: attach date range if present
+        const from = fromInput.value; // yyyy-mm-dd
+        const to = toInput.value;     // yyyy-mm-dd
+        if (from) params.set('from', from);
+        if (to) params.set('to', to);
+
+        return params;
+    }
+
+    async function fetchPage() {
+        const params = buildParams();
         const res = await fetch(`/api/admin/users?${params.toString()}`, { headers: { 'Accept':'application/json' } });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         return res.json();
@@ -120,6 +139,17 @@
     themeBtn.addEventListener('click', () => {
         const isDark = document.documentElement.classList.contains('dark');
         setTheme(isDark ? 'light' : 'dark');
+    });
+
+    // NEW: filter actions
+    filterBtn.addEventListener('click', () => { page = 0; load(); });
+    fromInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { page = 0; load(); }});
+    toInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { page = 0; load(); }});
+    clearBtn.addEventListener('click', () => {
+        fromInput.value = '';
+        toInput.value = '';
+        page = 0;
+        load();
     });
 
     document.addEventListener('DOMContentLoaded', () => { initTheme(); load(); });
