@@ -1,0 +1,73 @@
+/* Theme variables: light + dark */
+:root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-2: #f8f9fa;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --line: #e5e7eb;
+    --primary: #0d6efd;
+    --fg: #1f2937;
+}
+
+.dark {
+    --bg: #0b0e14;
+    --surface: #111827;
+    --surface-2: #0f172a;
+    --text: #e5e7eb;
+    --text-muted: #94a3b8;
+    --line: #1f2937;
+    --primary: #60a5fa;
+    --fg: #e5e7eb;
+}
+
+/* Bootstrap harmonization */
+html, body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.bg-light {
+    background: var(--surface-2) !important;
+}
+
+.card, .dropdown-menu, .modal-content {
+    background: var(--surface) !important;
+    color: var(--text);
+}
+
+.form-control, .form-select {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--line);
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+}
+
+.btn-outline-secondary {
+    color: var(--text);
+    border-color: var(--line);
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(148, 163, 184, .14);
+    color: var(--text);
+}
+
+/* Table (if you render in pages) */
+.table {
+    color: var(--text);
+    border-color: var(--line);
+}
+
+.table thead th {
+    background: var(--surface-2);
+    color: var(--text);
+    border-bottom-color: var(--line) !important;
+}
+
+.table-hover tbody tr:hover {
+    background: rgba(148, 163, 184, .14) !important;
+}

@@ -1,66 +1,259 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/provider-layout :: layout(content=~{::body})}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <title>PV-002 • Thiết lập giá</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+    <!-- Early theme boot (no flash) -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');
+                var prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var dark = saved ? (saved === 'dark') : prefers;
+                document.documentElement.classList.toggle('dark', !!dark);
+            } catch(e){}
+        })();
+    </script>
+
+    <!-- Reuse DASHBOARD assets -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+
+    <!-- Icons (used by dashboard shell) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- Page-only style (overlay sidebar + readability) -->
+    <style>
+        /* Sidebar overlays content; content never shifts */
+        .sidebar{
+            position: fixed; top:0; left:0; bottom:0; width:250px; z-index:1030;
+            transform: translateX(-100%); transition: transform .2s ease;
+        }
+        .sidebar.open{ transform: translateX(0); }
+        .content, .content.open{ margin-left:0 !important; }
+
+        /* Sidebar contrast in dark */
+        .dark .sidebar{ background-color:#0f172a!important; }
+        .sidebar .nav-link{
+            display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; border-radius:.6rem;
+            color:var(--text-muted)!important; transition:background-color .15s,color .15s;
+        }
+        .sidebar .nav-link .fa, .sidebar .nav-link .bi{ color:currentColor!important; opacity:.95; }
+        .dark .sidebar .nav-link:hover{ color:var(--text)!important; background:rgba(148,163,184,.14); }
+        .sidebar .nav-link.active{
+            color:#e5e7eb!important;
+            background:linear-gradient(90deg, rgba(59,130,246,.18) 0%, rgba(59,130,246,.12) 40%, rgba(59,130,246,.06) 100%);
+            box-shadow: inset 3px 0 0 #3b82f6;
+        }
+
+        /* Optional backdrop */
+        #sidebar-backdrop{
+            position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter:blur(1px);
+            opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:1029;
+        }
+        #sidebar-backdrop.show{ opacity:1; pointer-events:auto; }
+
+        /* Card & chips */
+        .card-dark{ background:var(--surface)!important; border:1px solid var(--border)!important; border-radius:14px; }
+        .chip{ display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .55rem; border-radius:999px; background:var(--surface-2); color:var(--text); border:1px solid var(--border); font-size:12px; }
+        .muted{ color:var(--text-muted)!important; }
+        .btn-accent{ background:var(--primary); color:#fff; border:0; }
+        .btn-accent:hover{ filter:brightness(.95); color:#fff; }
+
+        /* Table clean (use theme colors) */
+        .table thead th{ font-weight:600; }
+    </style>
+
+    <!-- Page-specific CSS (nếu bạn có file riêng) -->
     <link rel="stylesheet" th:href="@{/provider/css/provider-services.css}">
 </head>
 
 <body>
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-        <h2 class="mb-1">PV-002 • Thiết lập giá</h2>
-        <div class="text-muted">1) Chọn gói → 2) Giá theo km → 3) Giá theo từng món đồ.</div>
-    </div>
-    <a href="/provider/dashboard" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Dashboard</a>
-</div>
+<div class="container-fluid position-relative d-flex p-0">
 
-<!-- 1) Gói -->
-<section class="card-dark p-4 mb-4">
-    <h5 class="mb-3">1) Chọn gói dịch vụ</h5>
-    <div class="row g-3 align-items-end">
-        <div class="col-md-6">
-            <label class="form-label muted">Gói</label>
-            <select id="packageSelect" class="form-select"></select>
-        </div>
-        <div class="col-md-6 text-end">
-            <span class="chip muted"><i class="bi bi-info-circle"></i> Chọn gói để tải giá hiện tại</span>
-        </div>
-    </div>
-</section>
+    <!-- Sidebar (reused from dashboard) -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a th:href="@{/provider/dashboard}" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>ProviderOP</h3>
+            </a>
 
-<!-- 2) Giá /km -->
-<section class="card-dark p-4 mb-4">
-    <h5 class="mb-3">2) Giá theo kilomet</h5>
-    <div class="row g-3 align-items-center">
-        <div class="col-md-4">
-            <label class="form-label muted">Per Km (VND/km)</label>
-            <input id="perKm" class="form-control" type="number" min="0" step="1000" placeholder="VD: 100000">
-        </div>
-        <div class="col-md-8 text-end">
-            <button id="btnSavePerKm" class="btn btn-accent"><i class="bi bi-save2"></i> Lưu giá/km</button>
-        </div>
-    </div>
-    <div class="small text-muted mt-2">Tổng cước = km × giá/km (không phụ phí).</div>
-</section>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:40px;height:40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0" th:text="${#authentication?.name}">provider1</h6>
+                    <span>Provider</span>
+                </div>
+            </div>
 
-<!-- 3) Giá theo món -->
-<section class="card-dark p-4">
-    <div class="d-flex align-items-center justify-content-between mb-2">
-        <h5 class="m-0">3) Giá theo từng món đồ</h5>
-        <button id="btnSaveFurniture" class="btn btn-accent"><i class="bi bi-save2"></i> Lưu bảng giá</button>
+            <div class="navbar-nav w-100">
+                <a th:href="@{/provider/dashboard}" class="nav-item nav-link"><i class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
+                <a th:href="@{/provider/services}" class="nav-item nav-link active"><i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ</a>
+                <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box-seam me-2"></i>Đơn hàng</a>
+                <a th:href="@{/provider/analytics}" class="nav-item nav-link"><i class="bi bi-graph-up me-2"></i>Phân tích</a>
+            </div>
+        </nav>
     </div>
-    <div class="table-responsive">
-        <table class="table table-dark align-middle">
-            <thead>
-            <tr class="text-muted"><th style="width:45%">Món đồ</th><th style="width:20%">Đơn vị</th><th style="width:35%">Giá (VND)</th></tr>
-            </thead>
-            <tbody id="furnitureBody"></tbody>
-        </table>
-    </div>
-</section>
 
+    <!-- Content -->
+    <div class="content">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a th:href="@{/provider/dashboard}" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2>
+            </a>
+            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <form class="d-none d-md-flex ms-4" role="search">
+                <input class="form-control border-0" type="search" placeholder="Tìm kiếm nhanh…">
+            </form>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Dark</button>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a href="#" class="dropdown-item"><h6 class="fw-normal mb-0">Không có thông báo</h6><small>—</small></a>
+                    </div>
+                </div>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt="" style="width:40px;height:40px;">
+                        <span class="d-none d-lg-inline-flex" th:text="${#authentication?.name}">provider1</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" href="/provider/profile">Hồ sơ</a>
+                        <a class="dropdown-item" href="/provider/settings">Cài đặt</a>
+                        <div class="dropdown-divider"></div>
+                        <form th:action="@{/logout}" method="post" id="logoutForm"></form>
+                        <a href="#" class="dropdown-item" onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Body: PV-002 • Thiết lập giá -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h2 class="mb-1">PV-002 • Thiết lập giá</h2>
+                    <div class="text-muted">1) Chọn gói → 2) Giá theo km → 3) Giá theo từng món đồ.</div>
+                </div>
+                <a th:href="@{/provider/dashboard}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Dashboard</a>
+            </div>
+
+            <!-- 1) Gói -->
+            <section class="card-dark p-4 mb-4">
+                <h5 class="mb-3">1) Chọn gói dịch vụ</h5>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label muted">Gói</label>
+                        <select id="packageSelect" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="chip muted"><i class="bi bi-info-circle"></i> Chọn gói để tải giá hiện tại</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2) Giá /km -->
+            <section class="card-dark p-4 mb-4">
+                <h5 class="mb-3">2) Giá theo kilomet</h5>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label class="form-label muted">Per Km (VND/km)</label>
+                        <input id="perKm" class="form-control" type="number" min="0" step="1000" placeholder="VD: 100000">
+                    </div>
+                    <div class="col-md-8 text-end">
+                        <button id="btnSavePerKm" class="btn btn-accent"><i class="bi bi-save2"></i> Lưu giá/km</button>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2">Tổng cước = km × giá/km (không phụ phí).</div>
+            </section>
+
+            <!-- 3) Giá theo món -->
+            <section class="card-dark p-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="m-0">3) Giá theo từng món đồ</h5>
+                    <button id="btnSaveFurniture" class="btn btn-accent"><i class="bi bi-save2"></i> Lưu bảng giá</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr class="text-muted">
+                            <th style="width:45%">Món đồ</th>
+                            <th style="width:20%">Đơn vị</th>
+                            <th style="width:35%">Giá (VND)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="furnitureBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded-top p-4">
+                <div class="row">
+                    <div class="col-12 col-sm-6 text-center text-sm-start">
+                        &copy; <a href="#">Your Site Name</a>, All Right Reserved.
+                    </div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">
+                        Designed By <a href="https://htmlcodex.com">HTML Codex</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- /content -->
+</div> <!-- /container-fluid -->
+
+<!-- Backdrop for overlay sidebar -->
+<div id="sidebar-backdrop" aria-hidden="true"></div>
+
+<!-- JS order: jQuery -> Bootstrap -> dashboard main.js -> page JS -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/dashbooard/js/main.js}"></script>
+
+<!-- Page logic (giữ nguyên endpoints/IDs của bạn) -->
 <script th:src="@{/provider/js/provider-services.js}"></script>
+
+<!-- Backdrop sync with sidebar state -->
+<script>
+    (function(){
+        var $sidebar = $('.sidebar');
+        var $backdrop = $('#sidebar-backdrop');
+
+        function syncBackdrop(){ $backdrop.toggleClass('show', $sidebar.hasClass('open')); }
+        syncBackdrop();
+
+        try{
+            var obs = new MutationObserver(syncBackdrop);
+            obs.observe($sidebar.get(0), { attributes:true, attributeFilter:['class'] });
+        }catch(e){
+            setInterval(syncBackdrop, 250);
+        }
+
+        $(document).off('click.provider-backdrop').on('click.provider-backdrop', '#sidebar-backdrop', function(){
+            $sidebar.removeClass('open'); syncBackdrop();
+        });
+    })();
+</script>
 </body>
 </html>
