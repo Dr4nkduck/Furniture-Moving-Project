@@ -13,7 +13,8 @@
                 var prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var dark = saved ? (saved === 'dark') : prefers;
                 document.documentElement.classList.toggle('dark', !!dark);
-            } catch(e){}
+            } catch (e) {
+            }
         })();
     </script>
 
@@ -29,36 +30,89 @@
     <!-- Overlay sidebar & sidebar readability tweaks (page-only overrides) -->
     <style>
         /* Sidebar overlays content; content never shifts */
-        .sidebar{
-            position: fixed; top:0; left:0; bottom:0; width:250px; z-index:1030;
-            transform: translateX(-100%); transition: transform .2s ease;
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 250px;
+            z-index: 1030;
+            transform: translateX(-100%);
+            transition: transform .2s ease;
         }
-        .sidebar.open{ transform: translateX(0); }
-        .content, .content.open{ margin-left:0 !important; }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .content, .content.open {
+            margin-left: 0 !important;
+        }
 
         /* Improve dark-mode contrast for sidebar items */
-        .dark .sidebar{ background-color:#0f172a!important; }
-        .sidebar .nav-link{ display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; border-radius:.6rem;
-            color:var(--text-muted)!important; transition:background-color .15s,color .15s; }
-        .sidebar .nav-link .fa, .sidebar .nav-link .bi{ color:currentColor!important; opacity:.95; }
-        .dark .sidebar .nav-link:hover{ color:var(--text)!important; background:rgba(148,163,184,.14); }
-        .sidebar .nav-link.active{
-            color:#e5e7eb!important;
-            background:linear-gradient(90deg, rgba(59,130,246,.18) 0%, rgba(59,130,246,.12) 40%, rgba(59,130,246,.06) 100%);
+        .dark .sidebar {
+            background-color: #0f172a !important;
+        }
+
+        .sidebar .nav-link {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .6rem .85rem;
+            border-radius: .6rem;
+            color: var(--text-muted) !important;
+            transition: background-color .15s, color .15s;
+        }
+
+        .sidebar .nav-link .fa, .sidebar .nav-link .bi {
+            color: currentColor !important;
+            opacity: .95;
+        }
+
+        .dark .sidebar .nav-link:hover {
+            color: var(--text) !important;
+            background: rgba(148, 163, 184, .14);
+        }
+
+        .sidebar .nav-link.active {
+            color: #e5e7eb !important;
+            background: linear-gradient(90deg, rgba(59, 130, 246, .18) 0%, rgba(59, 130, 246, .12) 40%, rgba(59, 130, 246, .06) 100%);
             box-shadow: inset 3px 0 0 #3b82f6;
         }
 
         /* Optional backdrop when sidebar is open */
-        #sidebar-backdrop{
-            position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter:blur(1px);
-            opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:1029;
+        #sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .25);
+            backdrop-filter: blur(1px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
+            z-index: 1029;
         }
-        #sidebar-backdrop.show{ opacity:1; pointer-events:auto; }
+
+        #sidebar-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
 
         /* Cards for KPIs in both themes */
-        .card-dark{ background:var(--surface)!important; border:1px solid var(--border)!important; border-radius:14px; }
-        .kpi .value{ font-size:28px; font-weight:700; }
-        .kpi .label{ color:var(--text-muted); font-size:13px; }
+        .card-dark {
+            background: var(--surface) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 14px;
+        }
+
+        .kpi .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .kpi .label {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
     </style>
 </head>
 
@@ -74,7 +128,8 @@
 
             <div class="d-flex align-items-center ms-4 mb-4">
                 <div class="position-relative">
-                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:40px;height:40px;">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar"
+                         style="width:40px;height:40px;">
                     <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                 </div>
                 <div class="ms-3">
@@ -84,10 +139,14 @@
             </div>
 
             <div class="navbar-nav w-100">
-                <a th:href="@{/provider/dashboard}" class="nav-item nav-link active"><i class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
-                <a th:href="@{/provider/services}" class="nav-item nav-link"><i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ</a>
-                <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box-seam me-2"></i>Đơn hàng</a>
-                <a th:href="@{/provider/analytics}" class="nav-item nav-link"><i class="bi bi-graph-up me-2"></i>Phân tích</a>
+                <a th:href="@{/provider/dashboard}" class="nav-item nav-link active"><i
+                        class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
+                <a th:href="@{/provider/services}" class="nav-item nav-link"><i
+                        class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ</a>
+                <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box-seam me-2"></i>Đơn
+                    hàng</a>
+                <a th:href="@{/provider/analytics}" class="nav-item nav-link"><i class="bi bi-graph-up me-2"></i>Phân
+                    tích</a>
             </div>
         </nav>
     </div>
@@ -108,7 +167,9 @@
             </form>
 
             <div class="navbar-nav align-items-center ms-auto">
-                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Dark</button>
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button"
+                        aria-pressed="false">🌙 Dark
+                </button>
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -116,13 +177,15 @@
                         <span class="d-none d-lg-inline-flex">Notification</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
-                        <a href="#" class="dropdown-item"><h6 class="fw-normal mb-0">Không có thông báo</h6><small>—</small></a>
+                        <a href="#" class="dropdown-item"><h6 class="fw-normal mb-0">Không có thông báo</h6>
+                            <small>—</small></a>
                     </div>
                 </div>
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt="" style="width:40px;height:40px;">
+                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt=""
+                             style="width:40px;height:40px;">
                         <span class="d-none d-lg-inline-flex" th:text="${#authentication?.name}">provider1</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
@@ -130,7 +193,8 @@
                         <a class="dropdown-item" href="/provider/settings">Cài đặt</a>
                         <div class="dropdown-divider"></div>
                         <form th:action="@{/logout}" method="post" id="logoutForm"></form>
-                        <a href="#" class="dropdown-item" onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
+                        <a href="#" class="dropdown-item"
+                           onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
                     </div>
                 </div>
             </div>
@@ -213,28 +277,30 @@
 
 <script>
     // Backdrop sync with existing main.js toggle (.sidebar.open)
-    (function(){
+    (function () {
         var $sidebar = $('.sidebar');
         var $backdrop = $('#sidebar-backdrop');
 
-        function syncBackdrop(){
+        function syncBackdrop() {
             $backdrop.toggleClass('show', $sidebar.hasClass('open'));
         }
+
         // initial
         syncBackdrop();
 
         // observe class changes on sidebar to show/hide backdrop
-        try{
+        try {
             var obs = new MutationObserver(syncBackdrop);
-            obs.observe($sidebar.get(0), { attributes:true, attributeFilter:['class'] });
-        }catch(e){
+            obs.observe($sidebar.get(0), {attributes: true, attributeFilter: ['class']});
+        } catch (e) {
             // fallback
             setInterval(syncBackdrop, 250);
         }
 
         // click backdrop to close
-        $(document).off('click.provider-backdrop').on('click.provider-backdrop', '#sidebar-backdrop', function(){
-            $sidebar.removeClass('open'); syncBackdrop();
+        $(document).off('click.provider-backdrop').on('click.provider-backdrop', '#sidebar-backdrop', function () {
+            $sidebar.removeClass('open');
+            syncBackdrop();
         });
     })();
 </script>
