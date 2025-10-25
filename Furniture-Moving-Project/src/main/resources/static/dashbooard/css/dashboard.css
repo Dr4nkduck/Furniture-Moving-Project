@@ -277,35 +277,29 @@
 }
 
 
-/* --- Sidebar collapsed by default --- */
-.sidebar { width: 250px; transition: margin .2s ease, transform .2s ease; }
+/* Cơ bản + chuyển động mượt */
+.sidebar { width: 250px; transition: margin .2s ease; }
 .content { transition: margin .2s ease; }
 
-/* Collapsed state (hidden off-canvas on desktop) */
-.sidebar.is-collapsed { margin-left: -250px; }
-.content.is-collapsed { margin-left: 0; }
+/* Mặc định: sidebar ẩn (off-canvas) */
+.sidebar { margin-left: -250px; }
+.content { margin-left: 0; }
 
-/* Expanded state (desktop) */
-@media (min-width: 992px) {
-    .sidebar:not(.is-collapsed) { margin-left: 0; }
-    .content:not(.is-collapsed) { margin-left: 250px; }
-}
+/* Khi mở (JS thêm .open cho cả sidebar & content) */
+.sidebar.open { margin-left: 0; }
+.content.open { margin-left: 250px; }
 
-/* Mobile behavior: sidebar off-canvas by default; slides in when not collapsed */
+/* Mobile: content không dịch sang phải để full-width */
 @media (max-width: 991.98px) {
-    .sidebar { position: fixed; top:0; left:0; bottom:0; z-index:1030; margin-left: -250px; }
-    .sidebar:not(.is-collapsed) { margin-left: 0; }
-    .content { margin-left: 0 !important; } /* keep content full width on mobile */
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 1030; }
+    .content.open { margin-left: 0; }
 }
 
-/* Hover-peek state (temporary open while mouse over toggler/sidebar) */
-.sidebar.is-peek { margin-left: 0 !important; }
-.content.is-peek { margin-left: 250px !important; }
-
-/* Make the toggler easier to hit */
+/* Tăng vùng hover toggler (dễ kích hoạt hơn) */
 .sidebar-toggler { position: relative; }
 .sidebar-toggler::after {
     content: "";
     position: absolute;
-    left: -8px; top: -8px; right: -8px; bottom: -8px; /* enlarges hover area */
+    left: -8px; top: -8px; right: -8px; bottom: -8px;
 }
+

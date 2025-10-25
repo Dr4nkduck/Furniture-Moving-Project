@@ -30,9 +30,24 @@
     <!-- Template Styles -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
 
     <!-- Bootstrap 5 Bundle (Popper included) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- put this as early as possible in <head> -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');           // 'dark' | 'light' | null
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var shouldDark = saved ? (saved === 'dark') : prefersDark;
+                if (shouldDark) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            } catch (e) {}
+        })();
+    </script>
+
 </head>
 
 <body>
@@ -87,6 +102,9 @@
             </form>
 
             <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary ms-2" type="button" aria-pressed="false">
+                    🌙 Dark
+                </button>
                 <!-- Messages -->
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -337,6 +355,9 @@
 <script th:src="@{/dashbooard/lib/tempusdominus/js/moment.min.js}"></script>
 <script th:src="@{/dashbooard/lib/tempusdominus/js/moment-timezone.min.js}"></script>
 <script th:src="@{/dashbooard/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js}"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Template JS (LOCAL) -->
 <script th:src="@{/dashbooard/js/main.js}"></script>

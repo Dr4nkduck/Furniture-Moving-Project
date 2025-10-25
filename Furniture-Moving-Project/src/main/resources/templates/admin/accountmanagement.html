@@ -27,16 +27,17 @@
     <!-- Template Styles -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
 
-    <!-- Prevent theme flash -->
-    <script>
-        (function() {
-            const saved = localStorage.getItem('theme');
-            if (saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
+        <!-- Prevent theme flash -->
+        <script>
+            (function() {
+                const saved = localStorage.getItem('theme');
+                if (saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
 
     <!-- Bootstrap 5 Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -150,13 +151,12 @@
         <div class="container-fluid pt-4 px-4">
             <div class="bg-light rounded p-4 shadow-sm">
                 <!-- Header + quick back button -->
+                <!-- Header (replace your current header block) -->
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary btn-sm">← Quay về Dashboard</a>
-                        <h4 class="mb-0">Quản lí tài khoản</h4>
-                    </div>
+                    <h4 class="mb-0">Quản lí tài khoản</h4>
                     <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" type="button">🌙 Dark</button>
                 </div>
+
 
                 <!-- Controls -->
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
@@ -232,6 +232,10 @@
 <script th:src="@{/dashbooard/lib/tempusdominus/js/moment.min.js}"></script>
 <script th:src="@{/dashbooard/lib/tempusdominus/js/moment-timezone.min.js}"></script>
 <script th:src="@{/dashbooard/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js}"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 
 <!-- Template JS (LOCAL) -->
 <script th:src="@{/dashbooard/js/main.js}"></script>

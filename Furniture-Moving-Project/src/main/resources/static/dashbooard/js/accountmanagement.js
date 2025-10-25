@@ -1,34 +1,20 @@
 (() => {
     const $ = (id) => document.getElementById(id);
-    const tbody = $('am-tbody');
-    const qInput = $('am-search');
-    const qBtn = $('am-search-btn');
+    const tbody   = $('am-tbody');
+    const qInput  = $('am-search');
+    const qBtn    = $('am-search-btn');
     const pageLbl = $('am-page');
     const prevBtn = $('am-prev');
     const nextBtn = $('am-next');
     const sizeSel = $('am-size');
-    const themeBtn = $('theme-toggle');
 
-    // NEW: date filter refs
+    // Date filter refs
     const fromInput = $('am-from');
-    const toInput = $('am-to');
+    const toInput   = $('am-to');
     const filterBtn = $('am-filter-btn');
-    const clearBtn = $('am-clear-btn');
+    const clearBtn  = $('am-clear-btn');
 
     let page = 0, size = parseInt(sizeSel.value, 10), totalPages = 1, q = '';
-
-    function setTheme(next) {
-        const root = document.documentElement;
-        if (next === 'dark') { root.classList.add('dark'); }
-        else { root.classList.remove('dark'); }
-        localStorage.setItem('theme', next);
-        themeBtn.textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
-    }
-    function initTheme() {
-        const saved = localStorage.getItem('theme');
-        const isDark = saved ? (saved === 'dark') : document.documentElement.classList.contains('dark');
-        setTheme(isDark ? 'dark' : 'light');
-    }
 
     function badge(status) {
         const cls = status === 'ACTIVE' ? 'bg-success'
@@ -63,17 +49,13 @@
       </tr>`;
     }
 
-    // build query params for API
     function buildParams() {
         const params = new URLSearchParams({ page, size });
         if (q) params.set('q', q);
-
-        // NEW: attach date range if present
-        const from = fromInput.value; // yyyy-mm-dd
-        const to = toInput.value;     // yyyy-mm-dd
+        const from = fromInput.value;
+        const to   = toInput.value;
         if (from) params.set('from', from);
-        if (to) params.set('to', to);
-
+        if (to)   params.set('to', to);
         return params;
     }
 
@@ -136,12 +118,8 @@
     prevBtn.addEventListener('click', () => { if (page > 0) { page--; load(); }});
     nextBtn.addEventListener('click', () => { if (page < totalPages - 1) { page++; load(); }});
     sizeSel.addEventListener('change', () => { size = parseInt(sizeSel.value, 10); page = 0; load(); });
-    themeBtn.addEventListener('click', () => {
-        const isDark = document.documentElement.classList.contains('dark');
-        setTheme(isDark ? 'light' : 'dark');
-    });
 
-    // NEW: filter actions
+    // date filter
     filterBtn.addEventListener('click', () => { page = 0; load(); });
     fromInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { page = 0; load(); }});
     toInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { page = 0; load(); }});
@@ -152,5 +130,6 @@
         load();
     });
 
-    document.addEventListener('DOMContentLoaded', () => { initTheme(); load(); });
+    // Initial load (dark mode handled globally in main.js)
+    document.addEventListener('DOMContentLoaded', () => { load(); });
 })();
