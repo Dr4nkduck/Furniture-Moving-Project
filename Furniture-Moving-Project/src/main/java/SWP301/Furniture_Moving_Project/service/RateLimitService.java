@@ -1,7 +1,7 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.dto.RateLimitConfigDto;   // ✅ dto (chữ thường)
-import SWP301.Furniture_Moving_Project.dto.RateLimitStatusDto;  // ✅ dto (chữ thường)
+import SWP301.Furniture_Moving_Project.DTO.RateLimitConfigDto;   // ✅ dto (chữ thường)
+import SWP301.Furniture_Moving_Project.DTO.RateLimitStatusDto;  // ✅ dto (chữ thường)
 import SWP301.Furniture_Moving_Project.model.User;
 import SWP301.Furniture_Moving_Project.model.UserRateLimit;
 import SWP301.Furniture_Moving_Project.model.UserRateLimitLog;

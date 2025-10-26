@@ -1,4 +1,4 @@
-package SWP301.Furniture_Moving_Project.dto;
+package SWP301.Furniture_Moving_Project.DTO;
 
 import java.math.BigDecimal;
 

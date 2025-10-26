@@ -1,6 +1,6 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.dto.UserHistoryDto;             // ✅ dto (chữ thường)
+import SWP301.Furniture_Moving_Project.DTO.UserHistoryDto;             // ✅ dto (chữ thường)
 import SWP301.Furniture_Moving_Project.model.CustomRevisionEntity;
 import SWP301.Furniture_Moving_Project.model.User;
 import jakarta.persistence.EntityManager;
