@@ -3,12 +3,17 @@ package SWP301.Furniture_Moving_Project.dto;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
+/**
+ * AddressDTO dành cho quản lý sổ địa chỉ của user.
+ * Không dùng DTO này trong CreateFullRequestDTO vì /full không cần userId từ FE.
+ */
 public class AddressDTO {
+
     @NotNull(message = "userId is required")
     private Integer userId;
 
     @NotBlank(message = "addressType is required")
-    private String addressType; // "home"/"office"/...
+    private String addressType; // "home"/"office"/"warehouse"/...
 
     @NotBlank(message = "streetAddress is required")
     private String streetAddress;
@@ -19,13 +24,19 @@ public class AddressDTO {
     @NotBlank(message = "state is required")
     private String state;
 
-    // CHANGED: zipCode không còn bắt buộc
+    @NotBlank(message = "zipCode is required")
     private String zipCode;
 
+    // Optional
+    @Digits(integer = 10, fraction = 8)
     private BigDecimal latitude;
-    private BigDecimal longitude;
-    private Boolean isDefault;
 
+    @Digits(integer = 11, fraction = 8)
+    private BigDecimal longitude;
+
+    private Boolean isDefault = false;
+
+    // Getters / Setters
     public Integer getUserId() { return userId; }
     public void setUserId(Integer userId) { this.userId = userId; }
     public String getAddressType() { return addressType; }

@@ -1,42 +1,34 @@
 package SWP301.Furniture_Moving_Project.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 public class CreateServiceRequestDTO {
 
-    @NotNull(message = "customerId is required")
+    @NotNull
     private Integer customerId;
 
-    // optional
     private Integer providerId;
 
-    @NotNull(message = "pickupAddressId is required")
+    @NotNull
     private Integer pickupAddressId;
 
-    @NotNull(message = "deliveryAddressId is required")
+    @NotNull
     private Integer deliveryAddressId;
 
-    @NotNull(message = "preferredDate is required")
-    @FutureOrPresent(message = "preferredDate cannot be in the past")
+    @NotNull
     private LocalDate preferredDate;
 
-    // optional (default = "pending" sẽ set ở service nếu null)
     private String status;
-
-    // optional
     private BigDecimal totalCost;
 
-    @NotNull(message = "furnitureItems is required")
-    @Size(min = 1, message = "At least 1 furniture item")
-    private List<@Valid FurnitureItemDTO> furnitureItems;
+    @NotEmpty @Valid
+    private List<FurnitureItemDTO> furnitureItems;
 
+    // getters/setters
     public Integer getCustomerId() { return customerId; }
     public void setCustomerId(Integer customerId) { this.customerId = customerId; }
 
