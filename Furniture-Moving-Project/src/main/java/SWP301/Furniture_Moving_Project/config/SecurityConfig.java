@@ -13,7 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableMethodSecurity 
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
@@ -49,12 +49,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/register",
-                                 "/forgot/**",
-                                 "/css/**", "/js/**", "/images/**",
-                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
-                                 "/superadmin/**",
-                                 "/dashbooard/**"                 // ✅ static của superadmin (css/js)
+                .requestMatchers(
+                    "/", "/homepage", "/login", "/register", "/forgot/**",
+                    "/homepage/**", "/chatbot/**", "/providers", "/service/**",
+                    // static
+                    "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico",
+                    "/accountmanage/**", "/dashbooard/**", "/uploads/**"
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
@@ -66,15 +66,17 @@ public class SecurityConfig {
             .formLogin(login -> login
                 .loginPage("/login")
                 .loginProcessingUrl("/perform_login")
-                .successHandler(successHandler)
+                .successHandler(successHandler)     // GIỮ NGUYÊN
                 .failureUrl("/login?error=true")
-                .permitAll())
+                .permitAll()
+            )
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/homepage")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-                .permitAll());
+                .permitAll()
+            );
         return http.build();
     }
 }

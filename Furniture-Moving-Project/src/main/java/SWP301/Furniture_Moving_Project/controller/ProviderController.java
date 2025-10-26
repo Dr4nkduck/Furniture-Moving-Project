@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ProviderController {
 
     @GetMapping("")
-    public String providerHome() {
-        return "provider"; // => provider.html
+    public String providerHome() { return "provider";  // => providers.html
     }
 }
