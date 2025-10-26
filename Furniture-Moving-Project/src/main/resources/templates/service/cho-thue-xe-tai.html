@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Cho thuê xe tải - Furniture Moving</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="Dịch vụ cho thuê xe tải" name="keywords" />
+    <meta content="Dịch vụ cho thuê xe tải" name="description" />
+
+    <!-- Favicon -->
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
+
+    <!-- Google Font -->
+    <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+    />
+
+    <!-- CSS Libraries -->
+    <link
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/flaticon/font/flaticon.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet" />
+    <link
+            th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet" />
+    <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet" />
+
+    <!-- Template Stylesheet -->
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
+    <!-- Service Pages Custom CSS -->
+    <link th:href="@{/css/service-pages.css}" rel="stylesheet" />
+    <!-- Service Layout Fixes -->
+    <link th:href="@{/css/service-layout-fixes.css}" rel="stylesheet" />
+    <!-- Service Responsive -->
+    <link th:href="@{/css/service-responsive.css}" rel="stylesheet" />
+</head>
+
+<body>
+<div class="wrapper">
+    <!-- Top Bar Start -->
+    <div th:replace="fragments/header :: topbar"></div>
+
+    <!-- Nav Bar -->
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <!-- Page Header Start -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h2 th:text="${serviceName}">Cho thuê xe tải</h2>
+                </div>
+                <div class="col-12">
+                    <a href="/homepage">Trang chủ</a>
+                    <a href="/homepage/service">Dịch vụ</a>
+                    <a th:href="@{/service/cho-thue-xe-tai}">Cho thuê xe tải</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+    <!-- Service Packages Start -->
+    <div class="service-packages">
+        <div class="container">
+            <div class="section-header text-center">
+                <p>Dịch vụ cho thuê xe tải</p>
+                <h2 th:text="${serviceName}">Cho thuê xe tải</h2>
+                <p th:text="${serviceDescription}">
+                    Dịch vụ cho thuê xe tải đa dạng, phù hợp mọi nhu cầu
+                </p>
+            </div>
+
+            <div class="row">
+                <!-- Gói 1: Xe tải nhỏ -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-3.jpg}"
+                                    alt="Xe tải nhỏ"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho hàng hóa nhỏ, nhẹ</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Nhỏ</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">800.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 1.5 tấn
+                                </li>
+                                <li><i class="fas fa-check text-success"></i> 1 tài xế</li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm cơ bản
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-times text-danger"></i> Không bao gồm bốc
+                                    xếp
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-nho')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 2: Xe tải trung bình -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-4.jpg}"
+                                    alt="Xe tải trung bình"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho hàng hóa trung bình</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Trung Bình</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">1.200.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 1 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp cơ bản
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-trung-binh')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 3: Xe tải lớn -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-5.jpg}"
+                                    alt="Xe tải lớn"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho hàng hóa lớn, nặng</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Lớn</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">2.000.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 7.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 2 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-lon')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 4: Xe tải container -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-6.jpg}"
+                                    alt="Xe tải container"
+                            />
+                            <div class="service-overlay">
+                                <p>Chuyên về hàng hóa container</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Container</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">3.500.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe container 20
+                                    tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 2 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp
+                                    container
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                    24/7
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-container')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 5: Xe tải lạnh -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-1.jpg}"
+                                    alt="Xe tải lạnh"
+                            />
+                            <div class="service-overlay">
+                                <p>Chuyên về hàng hóa cần bảo quản lạnh</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Lạnh</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">2.800.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải lạnh 5
+                                    tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 1 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi nhiệt
+                                    độ
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-lanh')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 6: Xe tải tự lái -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.6s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-2.jpg}"
+                                    alt="Xe tải tự lái"
+                            />
+                            <div class="service-overlay">
+                                <p>Cho thuê xe tải tự lái</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Tự Lái</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">1.500.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 3.5 tấn
+                                </li>
+                                <li><i class="fas fa-check text-success"></i> Tự lái</li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm cơ bản
+                                </li>
+                                <li>
+                                    <i class="fas fa-times text-danger"></i> Không bao gồm
+                                    nhiên liệu
+                                </li>
+                                <li>
+                                    <i class="fas fa-times text-danger"></i> Không bao gồm tài
+                                    xế
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-tu-lai')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 7: Xe tải dài hạn -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.7s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-3.jpg}"
+                                    alt="Xe tải dài hạn"
+                            />
+                            <div class="service-overlay">
+                                <p>Cho thuê xe tải dài hạn</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Dài Hạn</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">15.000.000đ</span>
+                                <small class="text-muted">/tháng</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 7.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 1 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                    24/7
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo dưỡng định
+                                    kỳ
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-dai-han')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 8: Xe tải cao cấp -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.8s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-4.jpg}"
+                                    alt="Xe tải cao cấp"
+                            />
+                            <div class="service-overlay">
+                                <p>Dịch vụ xe tải cao cấp nhất</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Xe Tải Cao Cấp</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">5.000.000đ</span>
+                                <small class="text-muted">/ngày</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 15 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 3 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Nhiên liệu bao
+                                    gồm
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp cao cấp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                    24/7
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Giám sát chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Dọn dẹp sau sử
+                                    dụng
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='cho-thue-xe-tai', package='xe-tai-cao-cap')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Service Packages End -->
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+<script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+<script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+<script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+<script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+<script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+
+<!-- Template Javascript -->
+<script th:src="@{/homepage/js/main.js}"></script>
+</body>
+</html>

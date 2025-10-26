@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Chuyển văn phòng - Furniture Moving</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="Dịch vụ chuyển văn phòng" name="keywords" />
+    <meta content="Dịch vụ chuyển văn phòng" name="description" />
+
+    <!-- Favicon -->
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
+
+    <!-- Google Font -->
+    <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+    />
+
+    <!-- CSS Libraries -->
+    <link
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/flaticon/font/flaticon.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet" />
+    <link
+            th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet" />
+    <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet" />
+
+    <!-- Template Stylesheet -->
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
+    <!-- Service Pages Custom CSS -->
+    <link th:href="@{/css/service-pages.css}" rel="stylesheet" />
+    <!-- Service Layout Fixes -->
+    <link th:href="@{/css/service-layout-fixes.css}" rel="stylesheet" />
+    <!-- Service Responsive -->
+    <link th:href="@{/css/service-responsive.css}" rel="stylesheet" />
+</head>
+
+<body>
+<div class="wrapper">
+    <!-- Top Bar Start -->
+    <div th:replace="fragments/header :: topbar"></div>
+
+    <!-- Nav Bar -->
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <!-- Page Header Start -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h2 th:text="${serviceName}">Chuyển văn phòng</h2>
+                </div>
+                <div class="col-12">
+                    <a href="/homepage">Trang chủ</a>
+                    <a href="/homepage/service">Dịch vụ</a>
+                    <a th:href="@{/service/chuyen-van-phong}">Chuyển văn phòng</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+    <!-- Service Packages Start -->
+    <div class="service-packages">
+        <div class="container">
+            <div class="section-header text-center">
+                <p>Dịch vụ chuyển văn phòng</p>
+                <h2 th:text="${serviceName}">Chuyển văn phòng</h2>
+                <p th:text="${serviceDescription}">
+                    Dịch vụ chuyển văn phòng chuyên nghiệp, nhanh chóng
+                </p>
+            </div>
+
+            <div class="row">
+                <!-- Gói 1: Startup -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-2.jpg}"
+                                    alt="Gói Startup"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho công ty nhỏ 5-10 nhân viên</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Startup</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">3.500.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển bàn
+                                    ghế, máy tính
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 4 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 2.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp bàn ghế
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói thiết
+                                    bị
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='startup')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 2: SME -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-3.jpg}"
+                                    alt="Gói SME"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho doanh nghiệp vừa 20-50 nhân viên</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói SME</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">6.000.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển toàn
+                                    bộ văn phòng
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 6 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 2 xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói thiết
+                                    bị IT
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm thiết
+                                    bị
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='sme')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 3: Corporate -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-4.jpg}"
+                                    alt="Gói Corporate"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho tập đoàn lớn 100+ nhân viên</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Corporate</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">12.000.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển toàn
+                                    bộ văn phòng
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 10 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 3 xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói thiết
+                                    bị IT
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Giám sát chuyên
+                                    nghiệp
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='corporate')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 4: Express -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-5.jpg}"
+                                    alt="Gói Express"
+                            />
+                            <div class="service-overlay">
+                                <p>Chuyển văn phòng trong ngày</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Express</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">8.000.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển trong
+                                    ngày
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 8 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 2 xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp nhanh
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói cơ bản
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='express')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 5: Weekend -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-6.jpg}"
+                                    alt="Gói Weekend"
+                            />
+                            <div class="service-overlay">
+                                <p>Chuyển văn phòng cuối tuần</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Weekend</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">5.500.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển cuối
+                                    tuần
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 6 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 2 xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói thiết
+                                    bị
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='weekend')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 6: IT Focus -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.6s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-1.jpg}"
+                                    alt="Gói IT Focus"
+                            />
+                            <div class="service-overlay">
+                                <p>Chuyên về thiết bị IT và server</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói IT Focus</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">7.500.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển thiết
+                                    bị IT
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 5 nhân viên
+                                    chuyên IT
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải chuyên
+                                    dụng
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp server
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm thiết
+                                    bị IT
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='it-focus')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 7: Premium -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.7s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-2.jpg}"
+                                    alt="Gói Premium"
+                            />
+                            <div class="service-overlay">
+                                <p>Dịch vụ cao cấp nhất</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Premium</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">15.000.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển toàn
+                                    bộ văn phòng
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 12 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 4 xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói cao cấp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Giám sát 24/7
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Dọn dẹp sau
+                                    chuyển
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='premium')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 8: Eco Office -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.8s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-3.jpg}"
+                                    alt="Gói Eco Office"
+                            />
+                            <div class="service-overlay">
+                                <p>Thân thiện môi trường</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Eco Office</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">4.500.000đ</span>
+                                <small class="text-muted">/lần</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển văn
+                                    phòng
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 5 nhân viên
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 2.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Tháo lắp cơ bản
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói tái chế
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='chuyen-van-phong', package='eco-office')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Service Packages End -->
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+<script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+<script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+<script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+<script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+<script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+
+<!-- Template Javascript -->
+<script th:src="@{/homepage/js/main.js}"></script>
+</body>
+</html>

@@ -18,41 +18,41 @@ import java.util.stream.Collectors;
 @Controller
 public class ProvidersController {
 
-        private final ProviderRepository providerRepository;
-        private final UserRepository userRepository;
+    private final ProviderRepository providerRepository;
+    private final UserRepository userRepository;
 
-        public ProvidersController(ProviderRepository providerRepository, UserRepository userRepository) {
-            this.providerRepository = providerRepository;
-            this.userRepository = userRepository;
-        }
+    public ProvidersController(ProviderRepository providerRepository, UserRepository userRepository) {
+        this.providerRepository = providerRepository;
+        this.userRepository = userRepository;
+    }
 
-        @GetMapping("/providers")
-        public String providers(Model model) {
-            List<Provider> entities = providerRepository.findAll();
+    @GetMapping("/providers")
+    public String providers(Model model) {
+        List<Provider> entities = providerRepository.findAll();
 
-            List<ProviderDTO> providers = entities.stream()
-                    .map(p -> new ProviderDTO(
-                            p.getProviderId(),
-                            p.getCompanyName(),
-                            p.getRating()
-                    ))
-                    .collect(Collectors.toList());
+        List<ProviderDTO> providers = entities.stream()
+                .map(p -> new ProviderDTO(
+                        p.getProviderId(),
+                        p.getCompanyName(),
+                        p.getRating()
+                ))
+                .collect(Collectors.toList());
 
-            model.addAttribute("providers", providers);
+        model.addAttribute("providers", providers);
 
-            // Thêm thông tin user nếu đã đăng nhập (giống HomeController)
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-                Optional<User> userOpt = userRepository.findByUsername(auth.getName());
-                if (userOpt.isPresent()) {
-                    User user = userOpt.get();
-                    model.addAttribute("currentUser", user);
-                    model.addAttribute("isLoggedIn", true);
-                }
-            } else {
-                model.addAttribute("isLoggedIn", false);
+        // Thêm thông tin user nếu đã đăng nhập (giống HomeController)
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            Optional<User> userOpt = userRepository.findByUsername(auth.getName());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                model.addAttribute("currentUser", user);
+                model.addAttribute("isLoggedIn", true);
             }
-
-            return "providers";
+        } else {
+            model.addAttribute("isLoggedIn", false);
         }
+
+        return "providers";
+    }
 }
