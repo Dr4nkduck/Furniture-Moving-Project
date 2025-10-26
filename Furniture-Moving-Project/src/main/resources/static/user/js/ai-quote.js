@@ -1,4 +1,10 @@
-/* ===== AI Quote – upload, chat, parse AI → right table (internal pricing) ===== */
+/* ===== AI Quote – upload, chat, parse AI → right table (internal pricing) =====
+ * - Chỉ đổ vào danh sách khi AI nhận diện từ ảnh (autofill = true nếu lượt gửi có ảnh)
+ * - Món không có giá => hiển thị "báo giá sau", không cộng tổng tiền
+ * - Bỏ toàn bộ preflight/popup key
+ * - Bảng giá tách ra file JSON: /user/data/products.json
+ * - Tự sinh thêm sản phẩm để đủ TARGET_COUNT (mặc định 10.000)
+ */
 
 /* ========= DOM hooks ========= */
 const chatBody = document.querySelector(".chat-body");
@@ -12,9 +18,9 @@ const fileCancelButton = fileUploadWrapper ? fileUploadWrapper.querySelector("#f
 /* open picker */
 if (fileUploadBtn && fileInput) fileUploadBtn.addEventListener("click", () => fileInput.click());
 
-/* ========= API ========= */
-/* Lưu ý: ở production không nên để key ở FE. Dùng proxy BE. */
-const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // hoặc để rỗng nếu gọi qua BE
+/* ========= API (Gemini) ========= */
+/* Lưu ý: ở production không để key ở FE; dùng proxy BE */
+const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // hoặc để trống nếu gọi qua BE/proxy
 let MODEL = "gemini-2.0-flash";
 const FALLBACK_MODEL = "gemini-2.0-flash-lite";
 const buildApiUrl = () =>
@@ -25,34 +31,47 @@ const chatHistory = [];
 const userUploads = [];
 const initialInputHeight = messageInput ? messageInput.scrollHeight : 0;
 
-/* ========= Config & internal pricing ========= */
+/* ========= External price list loading ========= */
+const PRODUCTS_URL = "/user/data/products.json"; // <<— file riêng
+const TARGET_COUNT = 10000; // tổng mục tiêu (bao gồm cả file json)
+const BULKY_KEYWORDS = [
+  "sofa","ghế sofa","sofa góc","giường","giường đơn","giường đôi","giường tầng",
+  "tủ quần áo","tủ 3 cánh","tủ 4 cánh","tủ 5 cánh",
+  "tủ bếp lớn","tủ lạnh side-by-side","tủ lạnh 4 cánh",
+  "máy chạy bộ","máy tập đa năng","máy photocopy","két sắt lớn",
+  "máy giặt","máy sấy","máy rửa chén","máy lạnh đứng",
+  "tivi 55 inch","tivi 65 inch","tivi 75 inch",
+  "bàn họp","kệ kho sắt","bàn bida","bàn bida mini","tủ thờ","bàn thờ","cây cảnh lớn"
+];
+const BASE_NAMES = [
+  "nồi cơm điện","ấm đun siêu tốc","bếp hồng ngoại","bếp từ mini","quạt treo tường","quạt đứng","quạt hộp",
+  "máy sấy tóc","bàn ủi hơi nước","máy xay thịt","máy ép trái cây","máy xay sinh tố","lò nướng mini",
+  "nồi chiên không dầu","máy lọc không khí","máy hút bụi cầm tay","robot hút bụi","máy lau nhà",
+  "tủ lạnh 1 cánh","tủ lạnh 2 cánh","tủ lạnh 4 cánh","tủ lạnh side-by-side","tủ đông mini","tủ mát",
+  "máy lạnh treo tường","máy lạnh đứng","quạt điều hoà","tivi 32 inch","tivi 43 inch","tivi 50 inch",
+  "tivi 55 inch","tivi 65 inch","loa bluetooth","loa kéo","dàn karaoke","amply","đầu DVD",
+  "bàn làm việc","bàn học","bàn ăn","bàn trà","bàn gấp","bàn họp","bàn trang điểm",
+  "tủ đầu giường","tủ sách","kệ sách","kệ TV","tủ quần áo","tủ 3 cánh","tủ 4 cánh","tủ thờ",
+  "ghế xoay","ghế nhân viên","ghế giám đốc","tủ hồ sơ","két sắt nhỏ","két sắt lớn",
+  "bộ nồi inox","bộ chén đĩa","nồi áp suất","nồi lẩu điện","chảo chống dính","bếp gas đôi","bếp gas âm",
+  "máy rửa chén bàn","lò vi sóng","máy hút mùi","tủ bếp nhỏ","tủ bếp lớn","máy pha cà phê",
+  "xe đạp","xe đạp địa hình","máy chạy bộ","máy tập đa năng","tạ tay","thảm yoga","máy chèo thuyền",
+  "bóng rổ","bóng đá","bàn bida","bàn bida mini","ghế xếp du lịch","bàn xếp dã ngoại",
+  "lều 2 người","lều 4 người","bếp nướng than","bếp nướng điện","bình nước du lịch","võng xếp","bạt che nắng",
+  "kệ giày","tủ giày","kệ nhà tắm","giá phơi đồ","cây lau nhà","đèn bàn","đèn cây",
+  "gương đứng","gương treo tường","tranh treo tường","đồng hồ treo tường",
+  "nôi em bé","cũi em bé","xe đẩy em bé","ghế ăn dặm","bồn tắm em bé","máy hâm sữa","máy tiệt trùng bình sữa",
+  "đàn organ","đàn guitar","đàn ukulele","đàn piano điện","đàn piano cơ","trống cajon","trống điện tử",
+  "khoan điện","máy cưa bàn","máy cắt sắt","máy hàn mini","máy rửa xe","máy bơm nước",
+  "thang nhôm 3 bậc","thang nhôm 5 bậc","thùng carton nhỏ","thùng carton lớn","thùng nhựa",
+  "kệ nhựa","kệ kho sắt","tủ nhựa 5 tầng","tủ nhựa 3 tầng"
+];
+const SIZE_TAGS = ["mini","nhỏ","vừa","lớn","cao cấp"];
+const MATERIALS = ["gỗ","gỗ sồi","gỗ thông","gỗ công nghiệp","nhựa","inox","thép","hợp kim","vải","da","da PU"];
+const COLORS = ["trắng","đen","xám","nâu","be","xanh","đỏ"];
+
+/* ========= Config & UI ========= */
 const CFG_KEY = "ai_quote_cfg_v2";
-function defaultPriceList() {
-  const base = [
-    ["bàn",150000],["bàn làm việc",200000],["bàn học",180000],["bàn ăn",220000],["bàn trà",120000],["bàn gấp",90000],
-    ["ghế",80000],["ghế xoay",100000],["ghế sofa",300000],["ghế băng",150000],["ghế đôn",50000],["ghế ăn",70000],
-    ["sofa 2 chỗ",350000],["sofa 3 chỗ",450000],["sofa góc",550000],["giường đơn",300000],["giường đôi",400000],["giường tầng",500000],
-    ["nệm",120000],["tủ quần áo",350000],["tủ 3 cánh",450000],["tủ 4 cánh",550000],["tủ đầu giường",80000],["tủ giày",120000],
-    ["kệ sách",150000],["kệ TV",150000],["tủ bếp nhỏ",300000],["tủ bếp lớn",500000],["bếp từ",120000],["bếp gas",100000],
-    ["tủ lạnh mini",200000],["tủ lạnh 2 cánh",350000],["tủ lạnh side-by-side",600000],["máy giặt",300000],["máy sấy",300000],
-    ["máy rửa chén",350000],["máy lạnh treo tường",300000],["máy lạnh đứng",500000],["quạt điện",50000],["quạt cây",70000],
-    ["quạt bàn",40000],["tivi 32 inch",120000],["tivi 43 inch",160000],["tivi 55 inch",220000],["dàn loa",150000],
-    ["máy tính để bàn",150000],["màn hình máy tính",80000],["máy in",120000],["case PC",100000],["bàn phím",20000],["chuột máy tính",20000],
-    ["lò vi sóng",100000],["nồi chiên không dầu",80000],["nồi cơm điện",60000],["bình nước nóng",80000],["bàn ủi",40000],
-    ["máy hút bụi",90000],["đèn bàn",30000],["đèn cây",50000],["gương đứng",80000],["gương treo tường",60000],
-    ["tranh treo tường",50000],["đồng hồ treo tường",30000],["cây cảnh nhỏ",50000],["cây cảnh lớn",120000],["chậu cây gốm",70000],
-    ["valy nhỏ",50000],["valy lớn",70000],["thùng carton nhỏ",20000],["thùng carton lớn",30000],["kệ kho sắt",250000],
-    ["kệ nhựa",100000],["bàn trang điểm",220000],["ghế trang điểm",70000],["tủ thuốc",80000],["lều",50000],["xe đạp",150000],
-    ["xe đạp điện",220000],["máy chạy bộ",400000],["máy tập đa năng",450000],["tạ tay",50000],["bàn bida mini",400000],
-    ["đàn piano cơ",1500000],["đàn organ",200000],["đàn guitar",60000],["đàn ukulele",40000],["loa kéo",100000],
-    ["tủ hồ sơ",200000],["bàn họp",350000],["ghế họp",80000],["máy chiếu",80000],["màn chiếu",70000],["máy photocopy",500000],
-    ["két sắt nhỏ",200000],["két sắt lớn",450000],["bàn thờ",350000],["tủ thờ",450000],["chậu rửa chén",120000],
-    ["bình lọc nước",90000],["xe đẩy em bé",100000],["nôi em bé",150000],["cũi em bé",200000],["bình gas",90000],
-    ["bếp nướng điện",80000],["máy xay sinh tố",40000],["máy ép trái cây",60000],["lò nướng",120000],["máy pha cà phê",120000]
-  ];
-  while (base.length < 100) base.push([`Vật dụng #${base.length + 1}`, 0]);
-  return base.map(([name, price]) => ({ name, price }));
-}
 function defaultSettings() {
   return {
     currency: "VND",
@@ -62,21 +81,39 @@ function defaultSettings() {
       "• Bàn: 2 cái — đơn giá 150.000 VND — tạm tính 300.000 VND\n" +
       "• Ghế: 3 cái — đơn giá 80.000 VND — tạm tính 240.000 VND\n" +
       "Cuối cùng in tổng tạm tính. Hỏi lại: “Đây có phải là những gì bạn cần vận chuyển không? Nếu đúng, bấm Xác nhận; nếu chưa đúng, hãy nói rõ để mình chỉnh.”",
-    items: defaultPriceList()
+    items: [] // sẽ load từ JSON
   };
 }
 function loadSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(CFG_KEY));
-    if (!s || !Array.isArray(s.items) || !s.items.length) return defaultSettings();
+    if (!s) return defaultSettings();
     return s;
   } catch { return defaultSettings(); }
+}
+function saveSettings(s) {
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(s)); } catch {}
 }
 
 /* ========= Helpers ========= */
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
+const isBulky = (name="") => BULKY_KEYWORDS.some(k => (name||"").toLowerCase().includes(k.toLowerCase()));
+const rand = (arr) => arr[Math.floor(Math.random()*arr.length)];
+const randomInt = (min, max, step=5000) => {
+  const a = Math.ceil(min/step), b = Math.floor(max/step);
+  return (Math.floor(Math.random()*(b-a+1))+a)*step;
+};
+const cheapPrice = () => randomInt(15_000, 150_000, 5000);
+const bulkyPrice = () => randomInt(250_000, 900_000, 5000);
+const decorateName = (base) => {
+  const bits = [];
+  if (Math.random()<0.6) bits.push(rand(SIZE_TAGS));
+  if (Math.random()<0.4) bits.push(rand(MATERIALS));
+  if (Math.random()<0.4) bits.push(rand(COLORS));
+  return bits.length ? `${base} (${bits.join(", ")})` : base;
+};
 
-/* ========= Robust fetch/backoff ========= */
+/* ========= Robust fetch/backoff for AI ========= */
 async function fetchWithBackoff(options, { maxRetries = 3, baseDelay = 700 } = {}) {
   let attempt = 0, switched = false;
   while (true) {
@@ -102,9 +139,10 @@ async function fetchWithBackoff(options, { maxRetries = 3, baseDelay = 700 } = {
 /* ========= Prompt ========= */
 function buildPromptText(userText) {
   const s = loadSettings();
-  const priceLines = s.items.map(it => `- ${it.name}: ${Number(it.price).toLocaleString()} ${s.currency}`).join("\n");
+  const priceLines = (s.items||[]).slice(0,200) // tránh gửi quá dài
+    .map(it => `- ${it.name}: ${Number(it.price).toLocaleString()} ${s.currency}`).join("\n");
   return s.basePrompt +
-    "\n\nBảng đơn giá tham khảo (đồ vật → đơn giá):\n" + priceLines +
+    "\n\nBảng đơn giá tham khảo (một phần):\n" + priceLines +
     "\n\nHãy căn cứ ảnh + tin nhắn của khách và bảng giá trên để ước lượng số lượng & tạm tính. " +
     "Nếu không chắc 1 món nào đó trong ảnh, hãy ghi “(không rõ)” và hỏi lại. " +
     "Tuyệt đối KHÔNG trả JSON hay mã, chỉ trả lời văn bản tự nhiên.\n\n" + (userText || "");
@@ -158,7 +196,7 @@ function parseItemsFromAiText(text) {
   const lines = text.split(/\r?\n/);
   const results = [];
 
-  // Bắt buộc có số lượng (2 cái, 3 bộ, 4 chiếc, ...)
+  // bắt buộc có số lượng (2 cái, 3 bộ, 4 chiếc, ...)
   const unitWords = "(?:cái|bộ|chiếc|thùng carton|thùng|kg|m3|m²|m|bức|tấm|cây|cuộn|ghế|bàn|thanh|kiện|bao|túi)";
   const qtyRegex = new RegExp(`(\\d+[\\d.,]*)\\s*${unitWords}\\b`, "i");
 
@@ -167,8 +205,7 @@ function parseItemsFromAiText(text) {
     if (!line) continue;
 
     const lower = line.toLowerCase();
-
-    // Bỏ câu hỏi/điều hướng/kết luận
+    // bỏ câu hỏi/điều hướng/kết luận
     if (
       lower.startsWith("chào ") ||
       lower.includes("đây có phải") ||
@@ -176,23 +213,20 @@ function parseItemsFromAiText(text) {
       lower.includes("tổng tạm tính") ||
       lower.startsWith("lưu ý") ||
       lower.startsWith("ghi chú") ||
-      /[\?؟]+$/.test(lower) // có dấu hỏi ở cuối
+      /[\?؟]+$/.test(lower)
     ) continue;
 
-    // Phải có số lượng
+    // cần có số lượng
     const mQty = line.match(qtyRegex);
     if (!mQty) continue;
     const qty = parseInt(mQty[1].replace(/[^\d]/g, ""), 10) || 1;
 
-    // Tên món: lấy phần trước ":" hoặc "—"
+    // tên món: phần trước ":" hoặc "—"
     let name = line.split(/[—:]/)[0]
       .replace(/\((.*?)\)/g, "")
       .replace(/\s+/g, " ")
       .trim();
-
-    // Loại bỏ các câu “bạn/mình/tôi ...”
     if (!name || /^((bạn|mình|tôi|anh|chị|bên mình|vui lòng|xin vui lòng)\b)/i.test(name)) continue;
-
     if (name.length < 2) continue;
 
     results.push({ name, qty });
@@ -209,33 +243,37 @@ function parseItemsFromAiText(text) {
 
   let items = []; // {id,name,price,qty}
 
-  function lookupPrice(name) {
-    const n = (name || "").toLowerCase().trim();
-    const list = loadSettings().items || [];
+  // —— price index —— (build sau khi load products)
+  let priceIndexExact = null; // Map<nameLower, price>
+  let priceIndexList = null;  // Array<[nameLower, price]>
 
-    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-    // 1) Khớp chính xác
-    let found = list.find(it => it.name.toLowerCase().trim() === n);
-
-    // 2) Nếu không, khớp theo "từ nguyên" (word-boundary), chọn chuỗi dài nhất
-    if (!found) {
-      let best = null;
-      let bestLen = 0;
-      for (const it of list) {
-        const nm = (it.name || "").toLowerCase().trim();
-        if (!nm) continue;
-        const rx = new RegExp(`\\b${escapeRegExp(nm)}\\b`, "i");
-        if (rx.test(n) && nm.length > bestLen) {
-          best = it; bestLen = nm.length;
-        }
-      }
-      found = best;
+  function buildPriceIndex() {
+    const list = (loadSettings().items || []);
+    priceIndexExact = new Map();
+    priceIndexList = [];
+    for (const it of list) {
+      const nm = (it.name || "").toLowerCase().trim();
+      const price = Number(it.price) || 0;
+      if (!nm) continue;
+      priceIndexExact.set(nm, price);
+      priceIndexList.push([nm, price]);
     }
-
-    const val = Number(found?.price);
-    return Number.isFinite(val) && val > 0 ? val : 0; // 0 => “báo giá sau”
+    priceIndexList.sort((a,b)=> b[0].length - a[0].length); // dài trước
   }
+
+  function lookupPrice(name) {
+    if (!priceIndexExact) buildPriceIndex();
+    const n = (name || "").toLowerCase().trim();
+    if (!n) return 0;
+    if (priceIndexExact.has(n)) return priceIndexExact.get(n);
+    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    for (const [nm, price] of priceIndexList) {
+      const rx = new RegExp(`\\b${escapeRegExp(nm)}\\b`, "i");
+      if (rx.test(n)) return Number(price) || 0;
+    }
+    return 0;
+  }
+
   const currency = () => (loadSettings().currency || "VND");
   const fmt = (n) => Number(n || 0).toLocaleString() + " " + currency();
 
@@ -291,14 +329,14 @@ function parseItemsFromAiText(text) {
       return {
         id: "i_" + Math.random().toString(36).slice(2,9),
         name,
-        price: lookupPrice(name), // 0 nếu không có trong bảng giá
+        price: lookupPrice(name),
         qty: Math.max(1, Number(String(it.qty||1).replace(/[^\d]/g,"")) || 1)
       };
     }).filter(it => it.name);
     render();
   }
 
-  // add manual item (merge same name)
+  // add manual item
   function addManualItem(name, qty) {
     const cleanName = String(name || "").trim();
     const cleanQty = Math.max(1, parseInt(String(qty||1).replace(/[^\d]/g,""), 10) || 1);
@@ -348,7 +386,7 @@ function parseItemsFromAiText(text) {
 
 /* ========= Call AI & (conditionally) fill list ========= */
 async function generateBotResponse(incomingMessageDiv, userText, opts = {}) {
-  const { allowAutofill = false } = opts; // chỉ true nếu lượt gửi có ảnh
+  const { allowAutofill = false } = opts; // chỉ true nếu lượt gửi này có ảnh
   const messageElement = incomingMessageDiv.querySelector(".message-text");
   const parts = [{ text: buildPromptText(userText) }];
   userUploads.forEach(img => parts.push({ inline_data: { data: img.data, mime_type: img.mime_type } }));
@@ -374,7 +412,6 @@ async function generateBotResponse(incomingMessageDiv, userText, opts = {}) {
     }
   } catch (error) {
     console.error(error);
-    // Hiển thị lỗi trong chat (không popup)
     messageElement.innerText = error.message || "Có lỗi khi gọi AI.";
     messageElement.style.color = "#ff0000";
   } finally {
@@ -408,7 +445,7 @@ function handleOutgoingMessage(e) {
   chatBody.appendChild(outgoing);
   chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
 
-  // CHỈ cho phép autofill khi lượt gửi này có ảnh
+  // CHỈ autofill khi lượt gửi này có ảnh
   const allowAutofillThisTurn = userUploads.length > 0;
 
   setTimeout(() => {
@@ -435,50 +472,39 @@ if (messageInput) {
 }
 if (sendMessage) sendMessage.addEventListener("click", (e) => handleOutgoingMessage(e));
 
-/* ========= Manual Add (modal) + Confirm shipment ========= */
-(function wireManualAndConfirm(){
-  const openBtn = document.getElementById("btn-open-manual");
-  const saveBtn = document.getElementById("mi-save");
-  const nameInput = document.getElementById("mi-name");
-  const qtyInput = document.getElementById("mi-qty");
-  const confirmShipmentBtn = document.getElementById("btn-confirm-shipment");
+/* ========= Load external products.json + generator ========= */
+(async function bootstrapProducts() {
+  const s = loadSettings();
+  let loaded = [];
+  try {
+    const r = await fetch(PRODUCTS_URL, { cache: "no-store" });
+    if (r.ok) loaded = await r.json();
+  } catch (e) { console.warn("Load products.json failed", e); }
 
-  // mở modal
-  if (openBtn) openBtn.addEventListener("click", () => {
-    if (window.$) $("#manualItemModal").modal("show");
-    else document.getElementById("manualItemModal").style.display = "block";
-    if (nameInput) nameInput.value = "";
-    if (qtyInput) qtyInput.value = "1";
-    setTimeout(()=> nameInput && nameInput.focus(), 300);
-  });
-
-  // lưu trong modal (không popup, thêm thẳng)
-  if (saveBtn) saveBtn.addEventListener("click", () => {
-    const name = nameInput?.value?.trim();
-    const qty = qtyInput?.value ?? "1";
-    if (!name) { alert("Vui lòng nhập tên sản phẩm"); nameInput?.focus(); return; }
-    if (!qty || isNaN(Number(qty))) { alert("Số lượng không hợp lệ"); qtyInput?.focus(); return; }
-    if (window.AIQUOTE?.addManualItem) {
-      window.AIQUOTE.addManualItem(name, qty);
-      if (window.$) $("#manualItemModal").modal("hide");
-      else document.getElementById("manualItemModal").style.display = "none";
-    }
-  });
-
-  // xác nhận vận chuyển
-  if (confirmShipmentBtn) confirmShipmentBtn.addEventListener("click", () => {
-    alert("thành công");
-  });
-})();
-
-/* ========= Misc ========= */
-// ĐÃ BỎ preflight và popup
-window.addEventListener("beforeunload", () => { userUploads.splice(0, userUploads.length); });
-(function ensureThumbGrid(){
-  if (!fileUploadWrapper) return;
-  if (!fileUploadWrapper.querySelector(".thumb-grid")) {
-    const g=document.createElement("div");
-    g.className="thumb-grid";
-    fileUploadWrapper.appendChild(g);
+  // sanitize
+  const normalized = [];
+  const seen = new Set();
+  for (const it of (loaded||[])) {
+    const name = String(it?.name || "").trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    let price = Number(it?.price) || 0;
+    normalized.push({ name, price });
   }
+
+  // tự sinh thêm đến khi đủ TARGET_COUNT
+  while (normalized.length < TARGET_COUNT) {
+    const baseName = BASE_NAMES[Math.floor(Math.random()*BASE_NAMES.length)];
+    const full = decorateName(baseName);
+    const key = full.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const price = isBulky(full) ? bulkyPrice() : cheapPrice();
+    normalized.push({ name: full, price });
+  }
+
+  s.items = normalized;
+  saveSettings(s);
 })();
