@@ -1,6 +1,6 @@
 /* ===== AI Quote – upload, chat, parse AI → right table (internal pricing) ===== */
 
-/* DOM hooks */
+/* ========= DOM hooks ========= */
 const chatBody = document.querySelector(".chat-body");
 const messageInput = document.querySelector(".message-input");
 const sendMessage = document.querySelector("#send-message");
@@ -12,18 +12,20 @@ const fileCancelButton = fileUploadWrapper ? fileUploadWrapper.querySelector("#f
 /* open picker */
 if (fileUploadBtn && fileInput) fileUploadBtn.addEventListener("click", () => fileInput.click());
 
-/* API */
-const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc";
+/* ========= API ========= */
+/* Lưu ý: ở production không nên để key ở FE. Dùng proxy BE. */
+const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // hoặc để rỗng nếu gọi qua BE
 let MODEL = "gemini-2.0-flash";
-let FALLBACK_MODEL = "gemini-2.0-flash-lite";
-const buildApiUrl = () => `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
+const FALLBACK_MODEL = "gemini-2.0-flash-lite";
+const buildApiUrl = () =>
+  `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
 
-/* State */
+/* ========= State ========= */
 const chatHistory = [];
 const userUploads = [];
 const initialInputHeight = messageInput ? messageInput.scrollHeight : 0;
 
-/* Config & pricing */
+/* ========= Config & internal pricing ========= */
 const CFG_KEY = "ai_quote_cfg_v2";
 function defaultPriceList() {
   const base = [
@@ -71,11 +73,10 @@ function loadSettings() {
   } catch { return defaultSettings(); }
 }
 
-/* Helpers */
+/* ========= Helpers ========= */
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
-const toast = (msg) => alert(msg);
 
-/* Robust fetch/backoff */
+/* ========= Robust fetch/backoff ========= */
 async function fetchWithBackoff(options, { maxRetries = 3, baseDelay = 700 } = {}) {
   let attempt = 0, switched = false;
   while (true) {
@@ -98,22 +99,7 @@ async function fetchWithBackoff(options, { maxRetries = 3, baseDelay = 700 } = {
   }
 }
 
-/* Preflight */
-async function preflight() {
-  const url = `https://generativelanguage.googleapis.com/v1/models?key=${API_KEY}`;
-  const r = await fetch(url);
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    const msg = data?.error?.message || `HTTP ${r.status}`;
-    throw new Error(`API key check failed: ${msg}`);
-  }
-  const names = (data.models || data).map(m => m.name?.replace(/^models\//,"")).filter(Boolean);
-  if (names.includes("gemini-2.0-flash")) MODEL = "gemini-2.0-flash";
-  else if (names.includes("gemini-2.0-flash-lite")) MODEL = "gemini-2.0-flash-lite";
-  else if (names.length) MODEL = names[0];
-}
-
-/* Prompt */
+/* ========= Prompt ========= */
 function buildPromptText(userText) {
   const s = loadSettings();
   const priceLines = s.items.map(it => `- ${it.name}: ${Number(it.price).toLocaleString()} ${s.currency}`).join("\n");
@@ -124,7 +110,7 @@ function buildPromptText(userText) {
     "Tuyệt đối KHÔNG trả JSON hay mã, chỉ trả lời văn bản tự nhiên.\n\n" + (userText || "");
 }
 
-/* Upload preview */
+/* ========= Upload preview ========= */
 function renderUploadPreview() {
   if (!fileUploadWrapper) return;
   const grid = fileUploadWrapper.querySelector(".thumb-grid");
@@ -145,9 +131,9 @@ if (fileInput) {
     const files = Array.from(fileInput.files || []);
     fileInput.value = "";
     if (!files.length) return;
-    if (userUploads.length + files.length > 10) { toast("Bạn chỉ có thể tải lên tối đa 10 ảnh."); return; }
+    if (userUploads.length + files.length > 10) { alert("Bạn chỉ có thể tải lên tối đa 10 ảnh."); return; }
     const images = files.filter(f => /^image\//i.test(f.type));
-    if (images.length !== files.length) toast("Một số tệp không phải hình ảnh nên đã bị bỏ qua.");
+    if (images.length !== files.length) alert("Một số tệp không phải hình ảnh nên đã bị bỏ qua.");
     Promise.all(images.map(file => new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = e => { const previewUrl = e.target.result;
@@ -162,32 +148,59 @@ if (fileUploadWrapper) {
     const idx = +btn.getAttribute("data-idx"); if (idx >= 0) { userUploads.splice(idx, 1); renderUploadPreview(); }
   });
 }
-if (fileCancelButton) fileCancelButton.addEventListener("click", () => { userUploads.splice(0, userUploads.length); renderUploadPreview(); });
+if (fileCancelButton) fileCancelButton.addEventListener("click", () => {
+  userUploads.splice(0, userUploads.length); renderUploadPreview();
+});
 
-/* Parse AI text -> [{name, qty}] */
+/* ========= Parse AI text -> [{name, qty}] ========= */
 function parseItemsFromAiText(text) {
   if (!text) return [];
   const lines = text.split(/\r?\n/);
   const results = [];
-  const unitWords="(?:cái|bộ|chiếc|thùng carton|thùng|kg|m3|m²|m|bức|tấm|cây|cuộn|ghế|bàn)?";
+
+  // Bắt buộc có số lượng (2 cái, 3 bộ, 4 chiếc, ...)
+  const unitWords = "(?:cái|bộ|chiếc|thùng carton|thùng|kg|m3|m²|m|bức|tấm|cây|cuộn|ghế|bàn|thanh|kiện|bao|túi)";
+  const qtyRegex = new RegExp(`(\\d+[\\d.,]*)\\s*${unitWords}\\b`, "i");
+
   for (let raw of lines) {
-    let line = raw.trim().replace(/^[-•*]\s*/,"");
+    let line = (raw || "").trim().replace(/^[-•*]\s*/, "");
     if (!line) continue;
+
     const lower = line.toLowerCase();
-    if (lower.includes("tổng tạm tính") || lower.includes("đây có phải") || lower.startsWith("lưu ý") || lower.startsWith("ghi chú")) continue;
-    let name = line.split(/[—:]/)[0].trim();
-    if (!name) continue;
-    let qty = 1;
-    const mQty = line.match(new RegExp(`(\\d+[\\d.,]*)\\s*${unitWords}`,"i"));
-    if (mQty) qty = parseInt(mQty[1].replace(/[^\d]/g,""),10) || 1;
-    name = name.replace(/\((.*?)\)/g,"").replace(/\s+/g," ").trim();
-    if (!name) continue;
+
+    // Bỏ câu hỏi/điều hướng/kết luận
+    if (
+      lower.startsWith("chào ") ||
+      lower.includes("đây có phải") ||
+      lower.includes("hãy gửi") ||
+      lower.includes("tổng tạm tính") ||
+      lower.startsWith("lưu ý") ||
+      lower.startsWith("ghi chú") ||
+      /[\?؟]+$/.test(lower) // có dấu hỏi ở cuối
+    ) continue;
+
+    // Phải có số lượng
+    const mQty = line.match(qtyRegex);
+    if (!mQty) continue;
+    const qty = parseInt(mQty[1].replace(/[^\d]/g, ""), 10) || 1;
+
+    // Tên món: lấy phần trước ":" hoặc "—"
+    let name = line.split(/[—:]/)[0]
+      .replace(/\((.*?)\)/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Loại bỏ các câu “bạn/mình/tôi ...”
+    if (!name || /^((bạn|mình|tôi|anh|chị|bên mình|vui lòng|xin vui lòng)\b)/i.test(name)) continue;
+
+    if (name.length < 2) continue;
+
     results.push({ name, qty });
   }
   return results;
 }
 
-/* Right table (internal pricing) */
+/* ========= Right table (internal pricing) ========= */
 (function () {
   const itemsTbody = document.querySelector("#items-tbody");
   const sumQtyEl = document.querySelector("#sum-qty");
@@ -199,9 +212,29 @@ function parseItemsFromAiText(text) {
   function lookupPrice(name) {
     const n = (name || "").toLowerCase().trim();
     const list = loadSettings().items || [];
+
+    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    // 1) Khớp chính xác
     let found = list.find(it => it.name.toLowerCase().trim() === n);
-    if (!found) found = list.find(it => n.includes(it.name.toLowerCase().trim()) || it.name.toLowerCase().trim().includes(n));
-    return Number(found?.price || 0);
+
+    // 2) Nếu không, khớp theo "từ nguyên" (word-boundary), chọn chuỗi dài nhất
+    if (!found) {
+      let best = null;
+      let bestLen = 0;
+      for (const it of list) {
+        const nm = (it.name || "").toLowerCase().trim();
+        if (!nm) continue;
+        const rx = new RegExp(`\\b${escapeRegExp(nm)}\\b`, "i");
+        if (rx.test(n) && nm.length > bestLen) {
+          best = it; bestLen = nm.length;
+        }
+      }
+      found = best;
+    }
+
+    const val = Number(found?.price);
+    return Number.isFinite(val) && val > 0 ? val : 0; // 0 => “báo giá sau”
   }
   const currency = () => (loadSettings().currency || "VND");
   const fmt = (n) => Number(n || 0).toLocaleString() + " " + currency();
@@ -215,6 +248,14 @@ function parseItemsFromAiText(text) {
       itemsTbody.appendChild(tr);
     } else {
       for (const it of items) {
+        const hasPrice = Number(it.price) > 0;
+        const priceHtml = hasPrice
+          ? `${fmt(it.price)}`
+          : `<span class="text-muted font-italic">báo giá sau</span>`;
+        const subHtml = hasPrice
+          ? `Tạm tính: ${fmt(it.price * it.qty)}`
+          : `<span class="text-muted">Tạm tính: —</span>`;
+
         const tr = document.createElement("tr");
         tr.dataset.id = it.id;
         tr.innerHTML = `
@@ -227,8 +268,8 @@ function parseItemsFromAiText(text) {
             </div>
           </td>
           <td class="text-right">
-            <div>${fmt(it.price)}</div>
-            <small class="text-muted">Tạm tính: ${fmt(it.price * it.qty)}</small>
+            <div>${priceHtml}</div>
+            <small class="text-muted">${subHtml}</small>
           </td>
           <td class="text-right">
             <button class="btn btn-sm btn-outline-danger btn-del" title="Xoá"><i class="fas fa-trash"></i></button>
@@ -237,7 +278,9 @@ function parseItemsFromAiText(text) {
       }
     }
     const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
-    const totalAmount = items.reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);
+    const totalAmount = items
+      .filter(i => Number(i.price) > 0)
+      .reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);
     sumQtyEl.textContent = String(totalQty);
     sumAmountEl.textContent = Number(totalAmount).toLocaleString() + " " + currency();
   }
@@ -248,7 +291,7 @@ function parseItemsFromAiText(text) {
       return {
         id: "i_" + Math.random().toString(36).slice(2,9),
         name,
-        price: lookupPrice(name),
+        price: lookupPrice(name), // 0 nếu không có trong bảng giá
         qty: Math.max(1, Number(String(it.qty||1).replace(/[^\d]/g,"")) || 1)
       };
     }).filter(it => it.name);
@@ -268,7 +311,7 @@ function parseItemsFromAiText(text) {
       items.push({
         id: "i_" + Math.random().toString(36).slice(2,9),
         name: cleanName,
-        price: lookupPrice(cleanName), // internal price
+        price: lookupPrice(cleanName),
         qty: cleanQty
       });
     }
@@ -295,7 +338,7 @@ function parseItemsFromAiText(text) {
     it.qty = Math.max(1, v); render();
   });
 
-  // expose for chat + manual form
+  // expose cho chat + modal
   window.AIQUOTE = window.AIQUOTE || {};
   window.AIQUOTE.setItems = setItems;
   window.AIQUOTE.addManualItem = addManualItem;
@@ -303,36 +346,36 @@ function parseItemsFromAiText(text) {
   render();
 })();
 
-/* Call AI & fill list */
-async function generateBotResponse(incomingMessageDiv, userText) {
+/* ========= Call AI & (conditionally) fill list ========= */
+async function generateBotResponse(incomingMessageDiv, userText, opts = {}) {
+  const { allowAutofill = false } = opts; // chỉ true nếu lượt gửi có ảnh
   const messageElement = incomingMessageDiv.querySelector(".message-text");
   const parts = [{ text: buildPromptText(userText) }];
   userUploads.forEach(img => parts.push({ inline_data: { data: img.data, mime_type: img.mime_type } }));
   chatHistory.push({ role: "user", parts });
 
-  const requestOptions = { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ contents: chatHistory.slice(-8) }) };
+  const requestOptions = {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ contents: chatHistory.slice(-8) })
+  };
 
   try {
     const data = await fetchWithBackoff(requestOptions, { maxRetries:3, baseDelay:700 });
-    const apiText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/\*\*(.*?)\*\*/g,"$1").trim()
-                  ?? "Mình chưa đọc được nội dung, vui lòng thử lại.";
+    const apiText =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/\*\*(.*?)\*\*/g,"$1").trim()
+      ?? "Mình chưa đọc được nội dung, vui lòng thử lại.";
     messageElement.innerText = apiText;
     chatHistory.push({ role:"model", parts:[{ text: apiText }] });
 
     const parsed = parseItemsFromAiText(apiText);
-    if (parsed.length && window.AIQUOTE?.setItems) window.AIQUOTE.setItems(parsed);
-
+    if (allowAutofill && parsed.length && window.AIQUOTE?.setItems) {
+      window.AIQUOTE.setItems(parsed);
+    }
   } catch (error) {
     console.error(error);
-    if (/API key not valid|API_KEY_INVALID/i.test(error.message)) {
-      messageElement.innerText = "API key không hợp lệ cho endpoint này. Tạo một Gemini API key trong Google AI Studio và dán vào script.";
-    } else if (error.status === 404 || /not found|not supported/i.test(error.message)) {
-      messageElement.innerText = "Model alias hiện không khả dụng. Đã thử chuyển sang alias nhẹ hơn.";
-    } else if (error.status === 429 || error.status === 503 || /overloaded/i.test(error.message)) {
-      messageElement.innerText = "Model đang bận. Mình đã retry + fallback nhưng vẫn quá tải. Vui lòng thử lại sau.";
-    } else {
-      messageElement.innerText = error.message || "Có lỗi khi gọi API.";
-    }
+    // Hiển thị lỗi trong chat (không popup)
+    messageElement.innerText = error.message || "Có lỗi khi gọi AI.";
     messageElement.style.color = "#ff0000";
   } finally {
     userUploads.splice(0, userUploads.length);
@@ -342,7 +385,7 @@ async function generateBotResponse(incomingMessageDiv, userText) {
   }
 }
 
-/* Chat UI */
+/* ========= Chat UI ========= */
 function createMessageElement(content, ...classes) {
   const div = document.createElement("div");
   div.classList.add("message", ...classes);
@@ -365,6 +408,9 @@ function handleOutgoingMessage(e) {
   chatBody.appendChild(outgoing);
   chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
 
+  // CHỈ cho phép autofill khi lượt gửi này có ảnh
+  const allowAutofillThisTurn = userUploads.length > 0;
+
   setTimeout(() => {
     const botContent = `
       <svg class="bot-avatar" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 1024 1024">
@@ -374,15 +420,13 @@ function handleOutgoingMessage(e) {
     const incoming = createMessageElement(botContent, "bot-message", "thinking");
     chatBody.appendChild(incoming);
     chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
-    generateBotResponse(incoming, text);
+    generateBotResponse(incoming, text, { allowAutofill: allowAutofillThisTurn });
   }, 400);
 }
 if (messageInput) {
   messageInput.addEventListener("input", () => {
     messageInput.style.height = `${initialInputHeight}px`;
     messageInput.style.height = `${messageInput.scrollHeight}px`;
-    const form = document.querySelector(".chat-form");
-    if (form) form.style.borderRadius = messageInput.scrollHeight > initialInputHeight ? "15px" : "32px";
   });
   messageInput.addEventListener("keydown", (e) => {
     const userText = e.target.value.trim();
@@ -391,7 +435,7 @@ if (messageInput) {
 }
 if (sendMessage) sendMessage.addEventListener("click", (e) => handleOutgoingMessage(e));
 
-/* Manual Add (modal) + Confirm shipment */
+/* ========= Manual Add (modal) + Confirm shipment ========= */
 (function wireManualAndConfirm(){
   const openBtn = document.getElementById("btn-open-manual");
   const saveBtn = document.getElementById("mi-save");
@@ -408,7 +452,7 @@ if (sendMessage) sendMessage.addEventListener("click", (e) => handleOutgoingMess
     setTimeout(()=> nameInput && nameInput.focus(), 300);
   });
 
-  // lưu trong modal (KHÔNG alert; thêm thẳng vào list)
+  // lưu trong modal (không popup, thêm thẳng)
   if (saveBtn) saveBtn.addEventListener("click", () => {
     const name = nameInput?.value?.trim();
     const qty = qtyInput?.value ?? "1";
@@ -427,7 +471,14 @@ if (sendMessage) sendMessage.addEventListener("click", (e) => handleOutgoingMess
   });
 })();
 
-/* Preflight & cleanup */
-preflight().catch((err) => { console.error(err); alert("API key Gemini không hợp lệ với endpoint này. Tạo key mới trong Google AI Studio và dán vào script.js."); });
+/* ========= Misc ========= */
+// ĐÃ BỎ preflight và popup
 window.addEventListener("beforeunload", () => { userUploads.splice(0, userUploads.length); });
-(function ensureThumbGrid(){ if (!fileUploadWrapper) return; if (!fileUploadWrapper.querySelector(".thumb-grid")) { const g=document.createElement("div"); g.className="thumb-grid"; fileUploadWrapper.appendChild(g); }})();
+(function ensureThumbGrid(){
+  if (!fileUploadWrapper) return;
+  if (!fileUploadWrapper.querySelector(".thumb-grid")) {
+    const g=document.createElement("div");
+    g.className="thumb-grid";
+    fileUploadWrapper.appendChild(g);
+  }
+})();
