@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.*;
 public class AdminUserController {
 
     private final AdminUserService service;
-    public AdminUserController(AdminUserService service) { this.service = service; }
+
+    public AdminUserController(AdminUserService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public Page<UserAccountResponseDTO> list(@RequestParam(required = false) String q,
