@@ -6,7 +6,7 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
     <version>3.3.4</version>
-    <relativePath/> 
+    <relativePath/>
   </parent>
 
   <groupId>SWP301</groupId>
@@ -31,11 +31,18 @@
       <artifactId>spring-boot-starter-thymeleaf</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-envers</artifactId>
+    </dependency>
+
+
     <!-- Security -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
+
 
     <!-- JPA (jakarta.persistence) + Spring Data -->
     <dependency>
@@ -92,6 +99,14 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>8</source>
+          <target>8</target>
+        </configuration>
       </plugin>
     </plugins>
   </build>

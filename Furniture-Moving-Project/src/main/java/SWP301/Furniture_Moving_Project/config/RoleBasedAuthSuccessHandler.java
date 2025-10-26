@@ -48,6 +48,10 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
             res.sendRedirect(ctx + "/provider");
             return;
         }
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"))) {
+            res.sendRedirect(ctx + "/homepage");
+            return;
+        }
         res.sendRedirect(ctx + "/user");
     }
 }
