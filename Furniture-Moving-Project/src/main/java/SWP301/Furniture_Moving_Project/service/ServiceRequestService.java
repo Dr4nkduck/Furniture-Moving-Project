@@ -1,7 +1,7 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.DTO.CreateServiceRequestDTO;
-import SWP301.Furniture_Moving_Project.DTO.FurnitureItemDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.FurnitureItemDTO;
 import SWP301.Furniture_Moving_Project.model.Address;
 import SWP301.Furniture_Moving_Project.model.FurnitureItem;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
