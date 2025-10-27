@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Vận chuyển liên tỉnh - Furniture Moving</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="Dịch vụ vận chuyển liên tỉnh" name="keywords" />
+    <meta content="Dịch vụ vận chuyển liên tỉnh" name="description" />
+
+    <!-- Favicon -->
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
+
+    <!-- Google Font -->
+    <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+    />
+
+    <!-- CSS Libraries -->
+    <link
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/flaticon/font/flaticon.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet" />
+    <link
+            th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet" />
+    <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet" />
+
+    <!-- Template Stylesheet -->
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
+    <!-- Service Pages Custom CSS -->
+    <link th:href="@{/css/service-pages.css}" rel="stylesheet" />
+    <!-- Service Layout Fixes -->
+    <link th:href="@{/css/service-layout-fixes.css}" rel="stylesheet" />
+    <!-- Service Responsive -->
+    <link th:href="@{/css/service-responsive.css}" rel="stylesheet" />
+</head>
+
+<body>
+<div class="wrapper">
+    <!-- Top Bar Start -->
+    <div th:replace="fragments/header :: topbar"></div>
+
+    <!-- Nav Bar -->
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <!-- Page Header Start -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h2 th:text="${serviceName}">Vận chuyển liên tỉnh</h2>
+                </div>
+                <div class="col-12">
+                    <a href="/homepage">Trang chủ</a>
+                    <a href="/homepage/service">Dịch vụ</a>
+                    <a th:href="@{/service/van-chuyen-lien-tinh}"
+                    >Vận chuyển liên tỉnh</a
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+    <!-- Service Packages Start -->
+    <div class="service-packages">
+        <div class="container">
+            <div class="section-header text-center">
+                <p>Dịch vụ vận chuyển liên tỉnh</p>
+                <h2 th:text="${serviceName}">Vận chuyển liên tỉnh</h2>
+                <p th:text="${serviceDescription}">
+                    Dịch vụ vận chuyển hàng hóa liên tỉnh an toàn, nhanh chóng
+                </p>
+            </div>
+
+            <div class="row">
+                <!-- Gói 1: Cơ bản -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-1.jpg}"
+                                    alt="Gói cơ bản"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho hàng hóa nhỏ, nhẹ</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Cơ Bản</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">1.500.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển hàng
+                                    hóa nhỏ
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 1.5 tấn
+                                </li>
+                                <li><i class="fas fa-check text-success"></i> 1 tài xế</li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm cơ bản
+                                </li>
+                                <li>
+                                    <i class="fas fa-times text-danger"></i> Không bao gồm bốc
+                                    xếp
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='co-ban')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 2: Tiêu chuẩn -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-2.jpg}"
+                                    alt="Gói tiêu chuẩn"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho hàng hóa trung bình</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Tiêu Chuẩn</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">2.500.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển hàng
+                                    hóa trung bình
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 1 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp cơ bản
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='tieu-chuan')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 3: Chuyên nghiệp -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-3.jpg}"
+                                    alt="Gói chuyên nghiệp"
+                            />
+                            <div class="service-overlay">
+                                <p>Phù hợp cho hàng hóa lớn, nặng</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Chuyên Nghiệp</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">4.000.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển hàng
+                                    hóa lớn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 7.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 2 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='chuyen-nghiep')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 4: Express -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-4.jpg}"
+                                    alt="Gói Express"
+                            />
+                            <div class="service-overlay">
+                                <p>Vận chuyển nhanh trong ngày</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Express</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">3.500.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển nhanh
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 3.5 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 1 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp nhanh
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='express')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 5: Premium -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-5.jpg}"
+                                    alt="Gói Premium"
+                            />
+                            <div class="service-overlay">
+                                <p>Dịch vụ cao cấp nhất</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Premium</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">6.000.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển hàng
+                                    hóa lớn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 10 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 3 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                    24/7
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Giám sát chuyên
+                                    nghiệp
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='premium')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 6: Container -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.6s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-6.jpg}"
+                                    alt="Gói Container"
+                            />
+                            <div class="service-overlay">
+                                <p>Chuyên về hàng hóa container</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Container</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">8.000.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển
+                                    container
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe container 20
+                                    tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 2 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp
+                                    container
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                    24/7
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Giám sát chuyên
+                                    nghiệp
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='container')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 7: Eco -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.7s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-1.jpg}"
+                                    alt="Gói Eco"
+                            />
+                            <div class="service-overlay">
+                                <p>Thân thiện môi trường</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Eco</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">2.000.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển hàng
+                                    hóa
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 2.5 tấn
+                                </li>
+                                <li><i class="fas fa-check text-success"></i> 1 tài xế</li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm tiêu
+                                    chuẩn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp cơ bản
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Đóng gói tái chế
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='eco')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gói 8: Luxury -->
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.8s">
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-2.jpg}"
+                                    alt="Gói Luxury"
+                            />
+                            <div class="service-overlay">
+                                <p>Dành cho hàng hóa sang trọng</p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3>Gói Luxury</h3>
+                            <div class="price mb-3">
+                                <span class="text-primary h4">10.000.000đ</span>
+                                <small class="text-muted">/chuyến</small>
+                            </div>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Vận chuyển hàng
+                                    hóa sang trọng
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Xe tải 15 tấn
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> 1 tài xế + 4 phụ
+                                    lái
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bảo hiểm toàn
+                                    diện
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Bốc xếp cao cấp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Theo dõi GPS
+                                    24/7
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Giám sát chuyên
+                                    nghiệp
+                                </li>
+                                <li>
+                                    <i class="fas fa-check text-success"></i> Dọn dẹp sau vận
+                                    chuyển
+                                </li>
+                            </ul>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(category='van-chuyen-lien-tinh', package='luxury')}"
+                            >Chọn gói</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Service Packages End -->
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+<script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+<script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+<script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+<script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+<script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+
+<!-- Template Javascript -->
+<script th:src="@{/homepage/js/main.js}"></script>
+</body>
+</html>

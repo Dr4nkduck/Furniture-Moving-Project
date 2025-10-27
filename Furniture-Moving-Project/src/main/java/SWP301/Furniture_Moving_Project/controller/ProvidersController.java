@@ -1,49 +1,46 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.DTO.ProviderDTO;
+import SWP301.Furniture_Moving_Project.model.Provider;
 import SWP301.Furniture_Moving_Project.model.User;
+import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.repository.UserRepository;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
-public class HomeController {
+public class ProvidersController {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final ProviderRepository providerRepository;
     private final UserRepository userRepository;
 
-    public HomeController(JdbcTemplate jdbcTemplate, UserRepository userRepository) {
-        this.jdbcTemplate = jdbcTemplate;
+    public ProvidersController(ProviderRepository providerRepository, UserRepository userRepository) {
+        this.providerRepository = providerRepository;
         this.userRepository = userRepository;
     }
 
-    // Redirect root -> /homepage
-    @GetMapping("/")
-    public String root() {
-        return "redirect:/homepage";
-    }
+    @GetMapping("/providers")
+    public String providers(Model model) {
+        List<Provider> entities = providerRepository.findAll();
 
-    // Render templates/homepage/homepage.html
-    @GetMapping("/homepage")
-    public String homepage(Model model) {
-        boolean dbOk = false;
-        String msg = "Không thể kết nối SQL Server";
-        try {
-            Integer one = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-            dbOk = (one != null && one == 1);
-            if (dbOk) msg = "Kết nối SQL Server: OK";
-        } catch (Exception e) {
-            msg = "Kết nối SQL Server lỗi: " + e.getMessage();
-        }
-        model.addAttribute("dbOk", dbOk);
-        model.addAttribute("dbMsg", msg);
+        List<ProviderDTO> providers = entities.stream()
+                .map(p -> new ProviderDTO(
+                        p.getProviderId(),
+                        p.getCompanyName(),
+                        p.getRating()
+                ))
+                .collect(Collectors.toList());
 
-        // Thêm thông tin user nếu đã đăng nhập
+        model.addAttribute("providers", providers);
+
+        // Thêm thông tin user nếu đã đăng nhập (giống HomeController)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
             Optional<User> userOpt = userRepository.findByUsername(auth.getName());
@@ -56,7 +53,6 @@ public class HomeController {
             model.addAttribute("isLoggedIn", false);
         }
 
-        // View name khớp với templates/homepage/homepage.html
-        return "homepage/homepage";
+        return "providers";
     }
 }
