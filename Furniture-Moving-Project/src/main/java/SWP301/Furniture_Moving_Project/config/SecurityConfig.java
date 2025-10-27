@@ -6,14 +6,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
@@ -49,12 +47,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/", "/homepage", "/login", "/register", "/forgot/**",
-                    "/homepage/**", "/chatbot/**", "/providers", "/service/**",
-                    // static
-                    "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico",
-                    "/accountmanage/**", "/dashbooard/**", "/uploads/**"
+                .requestMatchers("/", "/homepage", "/login", "/register",
+                                 "/forgot/**",
+                                 "/css/**", "/js/**", "/images/**",
+                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
+                                 "/superadmin/**",
+                                 "/dashbooard/**","/customer-trends/**",
+                                 "/provider-stats/**" //✅ static của superadmin (css/js)
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
@@ -66,17 +65,15 @@ public class SecurityConfig {
             .formLogin(login -> login
                 .loginPage("/login")
                 .loginProcessingUrl("/perform_login")
-                .successHandler(successHandler)     // GIỮ NGUYÊN
+                .successHandler(successHandler)
                 .failureUrl("/login?error=true")
-                .permitAll()
-            )
+                .permitAll())
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/homepage")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-                .permitAll()
-            );
+                .permitAll());
         return http.build();
     }
 }

@@ -1,4 +1,4 @@
-package SWP301.Furniture_Moving_Project.DTO;
+package SWP301.Furniture_Moving_Project.dto;
 
 import SWP301.Furniture_Moving_Project.model.User;
 

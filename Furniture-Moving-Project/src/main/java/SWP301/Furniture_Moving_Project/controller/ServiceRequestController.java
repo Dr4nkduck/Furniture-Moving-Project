@@ -1,7 +1,7 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.DTO.CreateServiceRequestDTO;
-import SWP301.Furniture_Moving_Project.DTO.CreateFullRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.FullRequestService;
 import SWP301.Furniture_Moving_Project.service.ServiceRequestService;

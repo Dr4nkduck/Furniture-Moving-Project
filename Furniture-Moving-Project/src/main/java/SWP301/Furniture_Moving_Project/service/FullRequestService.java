@@ -1,8 +1,8 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.DTO.AddressDTO;
-import SWP301.Furniture_Moving_Project.DTO.CreateFullRequestDTO;
-import SWP301.Furniture_Moving_Project.DTO.CreateServiceRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.AddressDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
 import SWP301.Furniture_Moving_Project.model.Address;
 import SWP301.Furniture_Moving_Project.repository.AddressRepository;
 import org.springframework.stereotype.Service;

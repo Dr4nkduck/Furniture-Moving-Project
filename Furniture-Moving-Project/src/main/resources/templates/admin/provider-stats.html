@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Provider Statistics</title>
+
+    <!-- Early theme boot -->
+    <script>(function(){try{var s=localStorage.getItem('theme');var prefers=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',s?s==='dark':prefers);}catch(e){}})();</script>
+
+    <!-- Assets -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <style>
+        /* Enhanced color variables - đồng bộ với customer-trends */
+        :root {
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-info: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
+        }
+
+        .dark {
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-info: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        /* Enhanced sidebar - giống customer-trends */
+        .sidebar{
+            position:fixed;
+            top:0;
+            left:0;
+            bottom:0;
+            width:250px;
+            z-index:1030;
+            transform:translateX(-100%);
+            transition:transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+        }
+        .sidebar.open{transform:translateX(0);}
+        .content,.content.open{margin-left:0!important;}
+        .dark .sidebar{background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%)!important;}
+
+        .sidebar .nav-link{
+            display:flex;
+            align-items:center;
+            gap:.6rem;
+            padding:.75rem 1rem;
+            margin: 0.25rem 0;
+            border-radius:.75rem;
+            color:var(--text-muted)!important;
+            transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover{
+            transform: translateX(4px);
+            background: rgba(148,163,184,.12);
+        }
+
+        .dark .sidebar .nav-link:hover{
+            color:var(--text)!important;
+            background:rgba(148,163,184,.14);
+        }
+
+        .sidebar .nav-link.active{
+            color:#fff!important;
+            background: var(--gradient-primary);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        #sidebar-backdrop{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.4);
+            backdrop-filter:blur(4px);
+            opacity:0;
+            pointer-events:none;
+            transition:opacity .3s;
+            z-index:1029;
+        }
+        #sidebar-backdrop.show{opacity:1;pointer-events:auto;}
+
+        /* Enhanced stat cards - giống customer-trends */
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); color: #667eea; }
+        .stat-icon.success { background: linear-gradient(135deg, rgba(17, 153, 142, 0.2) 0%, rgba(56, 239, 125, 0.2) 100%); color: #11998e; }
+        .stat-icon.info { background: linear-gradient(135deg, rgba(33, 147, 176, 0.2) 0%, rgba(109, 213, 237, 0.2) 100%); color: #2193b0; }
+        .stat-icon.warning { background: linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.2) 100%); color: #f093fb; }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0.5rem 0;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover .stat-value {
+            transform: scale(1.05);
+        }
+
+        /* Progress bars */
+        .progress-bar-wrapper {
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-success);
+            border-radius: 10px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Enhanced card */
+        .card-dark{
+            background:var(--surface)!important;
+            border:1px solid var(--border)!important;
+            border-radius:20px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.3s;
+        }
+
+        .card-dark:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Glass morphism effect for dark mode */
+        .dark .card-dark {
+            background: rgba(15, 23, 42, 0.6)!important;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.1)!important;
+        }
+
+        .dark .stat-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        /* Enhanced headers */
+        .dark h6,.dark h4{color:#e2e8f0; font-weight: 600;}
+        h4 { font-weight: 700; }
+        h6 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Enhanced form controls */
+        .form-select, .form-control {
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Enhanced buttons */
+        .btn {
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0.5rem 1.25rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5), 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--surface);
+            transform: translateY(-2px);
+        }
+
+        /* Enhanced table */
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--text);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            border: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .dark .table thead th {
+            color: #dbeafe;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .table tbody tr {
+            transition: all 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.08);
+            transform: scale(1.01);
+        }
+
+        .table tbody tr:nth-child(even) {
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-color: var(--border);
+            transition: all 0.2s;
+        }
+
+        /* Enhanced navbar */
+        .navbar {
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand h3 {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: transform 0.3s;
+        }
+
+        .navbar-brand:hover h3 {
+            transform: scale(1.05);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-dark, .stat-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        /* Number counter animation */
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-value {
+            animation: countUp 0.5s ease-out;
+        }
+
+        /* Loading state */
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Responsive grid for stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Enhanced scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #764ba2, #667eea);
+        }
+
+        /* Provider Badge */
+        .provider-badge {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            border-radius: 6px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .dark .provider-badge {
+            background: rgba(129, 140, 248, 0.2);
+            color: #818cf8;
+        }
+
+        /* Highlight Cell */
+        .highlight-cell {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .dark .highlight-cell {
+            color: #818cf8;
+        }
+
+        /* Floating animation for icons */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .stat-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .stat-card:hover .stat-icon {
+            animation: none;
+        }
+
+        /* Avatar enhancement */
+        .rounded-circle {
+            transition: transform 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .rounded-circle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Status indicator pulse */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .bg-success.rounded-circle {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Filter section enhancement */
+        .d-flex.flex-wrap.gap-2.align-items-center {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        /* Icon rotation on active */
+        .sidebar .nav-link.active i {
+            animation: iconBounce 0.5s ease;
+        }
+
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Theme toggle enhancement */
+        #theme-toggle {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        #theme-toggle:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Improved footer */
+        .bg-light.rounded-top {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)!important;
+            border-top: 2px solid var(--border);
+        }
+
+        /* Search input enhancement */
+        .form-control[type="search"] {
+            background: rgba(148, 163, 184, 0.1);
+            transition: all 0.3s;
+        }
+
+        .form-control[type="search"]:focus {
+            background: var(--surface);
+            transform: scale(1.02);
+        }
+
+        /* Alert styling */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: var(--shadow-sm);
+            animation: fadeInUp 0.3s ease-out;
+            border-left: 4px solid;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(245, 87, 108, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
+            color: #f5576c;
+            border-left-color: #f5576c;
+        }
+
+        /* Responsive text sizing */
+        @media (max-width: 576px) {
+            .stat-value { font-size: 1.5rem; }
+            h4 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid position-relative d-flex p-0">
+    <!-- Sidebar -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a th:href="@{/admin/dashboard}" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>AdminOP</h3>
+            </a>
+
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:40px;height:40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0" th:text="${#authentication?.name}">Admin</h6>
+                    <span>Admin</span>
+                </div>
+            </div>
+
+            <div class="navbar-nav w-100">
+                <a th:href="@{/admin/dashboard}" class="nav-item nav-link"><i class="fa fa-tachometer-alt"></i>Dashboard</a>
+                <a th:href="@{/provider-stats}" class="nav-item nav-link active"><i class="fa fa-chart-bar"></i>Thông tin nhà cung cấp</a>
+                <a th:href="@{/customer-trends}" class="nav-item nav-link"><i class="fa fa-users"></i>Customer Trends</a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a th:href="@{/admin/dashboard}" class="navbar-brand d-flex d-lg-none me-4"><h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2></a>
+            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></a>
+
+            <!-- search theo tên provider -->
+            <form id="quick-search" class="d-none d-md-flex ms-4" role="search" onsubmit="return false;">
+                <input id="q" class="form-control border-0" type="search" placeholder="Tìm kiếm nhà cung cấp…">
+            </form>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button">🌙 Dark</button>
+                <button id="exportCsv" class="btn btn-sm btn-outline-secondary"><i class="fa fa-download me-1"></i>CSV</button>
+            </div>
+        </nav>
+
+        <!-- Body -->
+        <div class="container-fluid pt-4 px-4">
+            <!-- Header -->
+            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-0"><i class="fa fa-chart-bar me-2"></i>Provider Statistics</h4>
+                    <p class="text-muted mb-0 mt-1">Theo dõi hiệu suất nhà cung cấp theo thời gian</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <input id="from" type="date" class="form-control form-control-sm" aria-label="From date">
+                    <input id="to"   type="date" class="form-control form-control-sm" aria-label="To date">
+                    <button id="filter"  class="btn btn-sm btn-primary"><i class="fa fa-filter me-1"></i>Lọc</button>
+                    <button id="alltime" class="btn btn-sm btn-outline-secondary"><i class="fa fa-clock me-1"></i>All time</button>
+                </div>
+            </div>
+
+            <!-- Alert lỗi validate/API -->
+            <div id="ps-alert" class="alert alert-danger py-2 px-3 d-none" role="alert"></div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary"><i class="fa fa-industry"></i></div>
+                    <div class="stat-label">Providers</div>
+                    <div class="stat-value" id="st-providers">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: 0%; background: var(--gradient-primary)" id="providers-progress"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success"><i class="fa fa-tasks"></i></div>
+                    <div class="stat-label">Jobs</div>
+                    <div class="stat-value" id="st-jobs">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: 0%; background: var(--gradient-success)" id="jobs-progress"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon info"><i class="fa fa-check-circle"></i></div>
+                    <div class="stat-label">Completed</div>
+                    <div class="stat-value" id="st-completed">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: 0%; background: var(--gradient-info)" id="completed-progress"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon warning"><i class="fa fa-ban"></i></div>
+                    <div class="stat-label">Cancelled</div>
+                    <div class="stat-value" id="st-cancelled">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: 0%; background: var(--gradient-warning)" id="cancelled-progress"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon primary"><i class="fa fa-percentage"></i></div>
+                    <div class="stat-label">Avg Accept %</div>
+                    <div class="stat-value" id="st-acc">0%</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: 0%" id="acc-progress"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success"><i class="fa fa-dollar-sign"></i></div>
+                    <div class="stat-label">Revenue</div>
+                    <div class="stat-value" id="st-revenue">0</div>
+                    <small class="text-muted d-block mt-1">Total Revenue</small>
+                </div>
+            </div>
+
+            <!-- Bảng chi tiết -->
+            <div class="card-dark p-4 shadow-sm mb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th><i class="fa fa-building me-2"></i>Provider</th>
+                            <th class="text-end"><i class="fa fa-tasks me-2"></i>Jobs</th>
+                            <th class="text-end"><i class="fa fa-check me-2"></i>Completed</th>
+                            <th class="text-end"><i class="fa fa-times me-2"></i>Cancelled</th>
+                            <th class="text-end"><i class="fa fa-percentage me-2"></i>Accept %</th>
+                            <th class="text-end"><i class="fa fa-star me-2"></i>Avg Rating</th>
+                            <th class="text-end"><i class="fa fa-dollar-sign me-2"></i>Revenue</th>
+                        </tr>
+                        </thead>
+                        <tbody id="ps-tbody">
+                        <tr><td colspan="7" class="text-center loading-shimmer">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded-top p-4">
+                <div class="row">
+                    <div class="col-12 col-sm-6 text-center text-sm-start">&copy; <a href="#">Your Site Name</a>, All Right Reserved.</div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sidebar-backdrop" aria-hidden="true"></div>
+
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/dashbooard/js/main.js}"></script>
+
+<script>
+    (function(){
+        const api = '/api/admin/analytics/provider-stats';
+        const $tbody = $('#ps-tbody');
+        const $alert = $('#ps-alert');
+
+        // Đồng bộ backdrop sidebar
+        (function(){
+            var $s=$('.sidebar'),$b=$('#sidebar-backdrop');function sync(){ $b.toggleClass('show',$s.hasClass('open')); }
+            sync(); try{ new MutationObserver(sync).observe($s.get(0),{attributes:true,attributeFilter:['class']}); }catch(e){ setInterval(sync,250); }
+            $(document).off('click.ps-backdrop').on('click.ps-backdrop','#sidebar-backdrop',function(){ $s.removeClass('open'); sync(); });
+        })();
+
+        function showError(msg){
+            $alert.text(msg).removeClass('d-none');
+            setTimeout(()=> $alert.addClass('d-none'), 4000);
+        }
+        function buildQS(params){
+            const u = new URLSearchParams();
+            if(params.from) u.set('from', params.from);
+            if(params.to)   u.set('to', params.to);
+            if(params.q)    u.set('q', params.q);
+            return u.toString();
+        }
+        function isValidRange(from, to){
+            if(!from || !to) return true;
+            return new Date(from) <= new Date(to);
+        }
+
+        function setStats(rows){
+            const nProv = rows.length;
+            const sum = (k) => rows.reduce((a,b)=>a + (Number(b[k]||0)), 0);
+
+            const jobs = sum('jobsTotal');
+            const comp = sum('jobsCompleted');
+            const canc = sum('cancellations');
+
+            // Avg acceptance: trung bình theo provider (bỏ null), làm tròn 1 chữ số
+            const accVals = rows.map(r => r.acceptancePercent).filter(v => v!==null && v!==undefined);
+            const avgAcc = accVals.length ? (accVals.reduce((a,b)=>a+Number(b),0)/accVals.length) : 0;
+            const revenueTotal = rows.reduce((a,b)=> a + (b.revenueTotal ? Number(b.revenueTotal) : 0), 0);
+
+            // Hiển thị số liệu đơn giản - không animate
+            $('#st-providers').text(nProv.toLocaleString());
+            $('#st-jobs').text(jobs.toLocaleString());
+            $('#st-completed').text(comp.toLocaleString());
+            $('#st-cancelled').text(canc.toLocaleString());
+            $('#st-acc').text(Math.round(avgAcc * 10) / 10 + '%');
+            $('#st-revenue').text(revenueTotal.toLocaleString());
+
+            // Animate progress bars
+            setTimeout(() => {
+                $('#providers-progress').css('width', '100%');
+                $('#jobs-progress').css('width', '100%');
+                $('#completed-progress').css('width', (jobs ? (comp/jobs)*100 : 0) + '%');
+                $('#cancelled-progress').css('width', (jobs ? (canc/jobs)*100 : 0) + '%');
+                $('#acc-progress').css('width', avgAcc + '%');
+            }, 100);
+        }
+
+        async function load(){
+            const from = $('#from').val() || '';
+            const to   = $('#to').val() || '';
+            if(!isValidRange(from, to)){
+                showError("Ngày 'Từ' phải nhỏ hơn hoặc bằng ngày 'Đến'.");
+                return;
+            }
+            $tbody.html('<tr><td colspan="7" class="text-center loading-shimmer">Đang tải...</td></tr>');
+            const params = { from, to, q: $('#q').val() || '' };
+
+            const res = await fetch(`${api}?${buildQS(params)}`);
+            if(!res.ok){
+                const text = await res.text();
+                showError(text || 'Không thể tải dữ liệu (kiểm tra khoảng ngày).');
+                $tbody.html('<tr><td colspan="7" class="text-center">Lỗi tải dữ liệu</td></tr>');
+                return;
+            }
+            const data = await res.json();
+
+            if(!Array.isArray(data) || data.length===0){
+                setStats([]);
+                $tbody.html('<tr><td colspan="7" class="text-center">Không có dữ liệu</td></tr>');
+                return;
+            }
+            setStats(data);
+
+            const fmt = (n) => (n ?? 0).toLocaleString();
+            const rows = data.map(r => `
+      <tr>
+        <td>
+          <strong>${r.companyName}</strong>
+          <span class="provider-badge">#${r.providerId}</span>
+        </td>
+        <td class="text-end highlight-cell">${fmt(r.jobsTotal)}</td>
+        <td class="text-end">${fmt(r.jobsCompleted)}</td>
+        <td class="text-end">${fmt(r.cancellations)}</td>
+        <td class="text-end">${r.acceptancePercent ?? '-'}</td>
+        <td class="text-end">
+          ${r.avgRating ? `<span style="color: #f59e0b;">★ ${r.avgRating}</span>` : '-'}
+        </td>
+        <td class="text-end highlight-cell">${r.revenueTotal ?? '-'}</td>
+      </tr>
+    `).join('');
+            $tbody.html(rows);
+
+            // CSV
+            $('#exportCsv').off('click').on('click', () => {
+                window.location = `${api}.csv?${buildQS(params)}`;
+            });
+        }
+
+        // Events
+        $('#filter').on('click', load);
+        $('#alltime').on('click', function(){ $('#from').val(''); $('#to').val(''); load(); });
+        $('#q').on('input', function(){ clearTimeout(window.__ps_t); window.__ps_t = setTimeout(load, 300); });
+
+        // Theme toggle - giống customer-trends
+        $('#theme-toggle').on('click', function(){
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            $(this).html(isDark ? '☀️ Light' : '🌙 Dark');
+        });
+
+        // Set initial theme toggle text
+        if(document.documentElement.classList.contains('dark')) {
+            $('#theme-toggle').html('☀️ Light');
+        }
+
+        load();
+    })();
+</script>
+</body>
+</html>
