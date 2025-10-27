@@ -1,6 +1,6 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.DTO.ProviderDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderPricingDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderPackagePricingDTO;
