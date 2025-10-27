@@ -58,6 +58,15 @@ public class ServiceRequest {
         if (status == null) status = "pending";
     }
 
+    @ManyToOne
+    @JoinColumn(name="assigned_provider_id")
+    private Provider assignedProvider;
+
+    // Optional: thời gian dự kiến
+    private java.time.LocalDateTime eta;
+    private String providerNote;
+
+
     // getters & setters
     public Integer getRequestId() { return requestId; }
     public void setRequestId(Integer requestId) { this.requestId = requestId; }

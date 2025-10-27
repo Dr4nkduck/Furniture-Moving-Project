@@ -55,7 +55,7 @@ public class ServiceRequestService {
         sr.setCustomerId(dto.getCustomerId());
         sr.setProviderId(dto.getProviderId());
         sr.setPreferredDate(dto.getPreferredDate());
-        sr.setStatus(dto.getStatus() == null || dto.getStatus().isBlank() ? "pending" : dto.getStatus());
+//        sr.setStatus(dto.getStatus() == null || dto.getStatus().isBlank() ? "pending" : dto.getStatus());
         sr.setTotalCost(dto.getTotalCost());
 
         // set quan hệ address (entity managed)

@@ -1,0 +1,105 @@
+/* theme.css — light/dark variables + Bootstrap-friendly overrides */
+
+/* -------- Light (default) -------- */
+:root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-2: #f8f9fa;    /* similar to .bg-light */
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #0d6efd;
+
+    --table-row: #ffffff;
+    --table-row-alt: #f9fafb;
+    --table-hover: #f1f5f9;
+
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+    --input-text: #111827;
+    --input-placeholder: #6b7280;
+}
+
+/* -------- Dark mode -------- */
+.dark {
+    --bg: #0b0e14;
+    --surface: #111827;      /* main cards/navbars */
+    --surface-2: #0f172a;    /* lighter surface (replaces .bg-light) */
+    --text: #e5e7eb;
+    --text-muted: #94a3b8;
+    --border: #1f2937;
+
+    --table-row: #0f172a;
+    --table-row-alt: #111827;
+    --table-hover: #0b1220;
+
+    --input-bg: #0f172a;
+    --input-border: #334155;
+    --input-text: #e5e7eb;
+    --input-placeholder: #94a3b8;
+}
+
+/* ---------- Global surfaces ---------- */
+html, body { background: var(--bg); color: var(--text); }
+
+.bg-light { background-color: var(--surface-2) !important; }
+.bg-white, .card, .dropdown-menu, .modal-content { background-color: var(--surface) !important; color: var(--text); }
+
+.navbar, .sidebar, .content { background-color: var(--surface) !important; color: var(--text); }
+.navbar .nav-link, .sidebar .nav-link { color: var(--text-muted); }
+.navbar .nav-link:hover, .sidebar .nav-link:hover, .sidebar .nav-link.active { color: var(--text) !important; }
+
+/* ---------- Borders / dividers ---------- */
+.table, .table th, .table td,
+.form-control, .form-select,
+.input-group .form-control,
+.dropdown-menu, .modal-content,
+.card, .navbar, .sidebar {
+    border-color: var(--border) !important;
+}
+
+/* ---------- Tables ---------- */
+.table { color: var(--text); }
+.table thead th { background: var(--surface-2); color: var(--text); border-bottom-color: var(--border) !important; }
+.table tbody tr { background: var(--table-row); }
+.table tbody tr:nth-child(2n) { background: var(--table-row-alt); }
+.table-hover tbody tr:hover { background-color: var(--table-hover) !important; }
+
+/* ---------- Forms ---------- */
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--input-border);
+}
+.form-control::placeholder { color: var(--input-placeholder); }
+.form-control:focus, .form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+}
+
+/* ---------- Buttons ---------- */
+.btn-outline-secondary {
+    color: var(--text);
+    border-color: var(--input-border);
+    background: transparent;
+}
+.btn-outline-secondary:hover {
+    background: var(--table-hover);
+    color: var(--text);
+}
+
+.btn-primary { color: #fff; }
+
+/* ---------- Pagination/selects/etc ---------- */
+.form-select option { background: var(--surface); color: var(--text); }
+
+/* ---------- Badges/pills ---------- */
+.badge.bg-dark { background-color: #334155 !important; color: #e5e7eb; }
+.badge.bg-secondary { background-color: #64748b !important; color: #e5e7eb; }
+
+/* ---------- Misc ---------- */
+.text-muted, small, .small { color: var(--text-muted) !important; }
+.table-light { background-color: var(--surface-2) !important; color: var(--text) !important; }
+.shadow-sm, .shadow { /* keep shadows visible on dark */ box-shadow: 0 .125rem .25rem rgba(0,0,0,.25) !important; }
