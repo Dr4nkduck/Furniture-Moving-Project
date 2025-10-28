@@ -123,7 +123,6 @@ fileInput?.addEventListener('change', (e) => {
   fileInput.value = '';
 });
 
-
 // ========= Items table =========
 const itemsBody = $('#itemsBody');
 const addItemBtn = $('#addItem');
@@ -295,6 +294,14 @@ function serialize(){
   };
 }
 
+// ===== CSRF helper (tuỳ chọn, chỉ thêm header nếu có token trong DOM) =====
+function getCsrfHeaders() {
+  const meta = document.querySelector('meta[name="_csrf"]');
+  const input = document.querySelector('input[name="_csrf"]');
+  const token = meta?.content || input?.value;
+  return token ? { 'X-CSRF-TOKEN': token } : {};
+}
+
 // ===== Submit/reset helpers =====
 const form = $('#reqForm');
 const submitBtn = form?.querySelector('[type="submit"]');
@@ -315,6 +322,7 @@ function resetFormUI(){
   }
   if (fileInput) fileInput.value = '';
   if (thumbs) thumbs.innerHTML = '';
+  selectedFiles = []; // <<< đảm bảo xoá danh sách ảnh đã chọn
   const sumImgs = $('#sumImgs');
   if (sumImgs) sumImgs.textContent = '0';
 
@@ -366,6 +374,29 @@ function buildFullRequestPayload(viewPayload){
   };
 }
 
+// ===== Upload images API =====
+async function uploadImagesForRequest(requestId) {
+  if (!selectedFiles?.length) return { ok: true, saved: 0 };
+
+  const fd = new FormData();
+  selectedFiles.forEach(f => fd.append('images', f)); // name="images" khớp BE
+
+  const res = await fetch(`/api/requests/${requestId}/images`, {
+    method: 'POST',
+    headers: { ...getCsrfHeaders() }, // KHÔNG set Content-Type khi dùng FormData
+    body: fd
+  });
+
+  let json = null;
+  try { json = await res.json(); } catch(_) {}
+
+  if (!res.ok || !json?.success) {
+    const msg = (json && json.message) ? json.message : `${res.status} ${res.statusText}`;
+    throw new Error(`Upload ảnh thất bại: ${msg}`);
+  }
+  return { ok: true, saved: json.data?.saved ?? 0 };
+}
+
 // ========= Submit handler =========
 $('#reqForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -394,7 +425,7 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
     setSubmitting(true);
     const res = await fetch('/api/requests/full', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
       body: JSON.stringify(body)
     });
 
@@ -402,7 +433,22 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
     try { json = await res.json(); } catch(_) {}
 
     if (res.ok && json?.success) {
-      notify(`Đã tạo đơn #${json.data.requestId} thành công!`, 'success', 3000);
+      const id = json.data.requestId;
+
+      // 1) Thử upload ảnh (nếu có)
+      try {
+        const up = await uploadImagesForRequest(id);
+        if (up.saved > 0) {
+          notify(`Đã tạo đơn #${id} và upload ${up.saved} ảnh ✔`, 'success', 3500);
+        } else {
+          notify(`Đã tạo đơn #${id}. (Không có ảnh để upload)`, 'success', 3000);
+        }
+      } catch (e) {
+        alert(e.message);
+        notify('Upload ảnh bị lỗi. Bạn có thể thử lại trong trang chi tiết đơn.', 'error', 4000);
+      }
+
+      // 2) Reset UI
       clearDraft();
       resetFormUI();
       return;

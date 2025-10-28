@@ -1,16 +1,16 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.FullRequestService;
 import SWP301.Furniture_Moving_Project.service.ServiceRequestService;
-
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,6 +76,19 @@ public class ServiceRequestController {
         body.put("success", true);
         body.put("data", Map.of("requestId", id));
         return ResponseEntity.status(201).body(body);
+    }
+
+    // POST /api/requests/{id}/images  (upload ảnh cho request đã tạo)
+    @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String,Object>> uploadImages(
+            @PathVariable Integer id,
+            @RequestParam(name = "images", required = false) List<MultipartFile> images) {
+
+        int saved = fullRequestService.saveImagesToRequest(id, images == null ? List.of() : images);
+        Map<String,Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("requestId", id, "saved", saved));
+        return ResponseEntity.ok(body);
     }
 
     // GET /api/requests/{id}
