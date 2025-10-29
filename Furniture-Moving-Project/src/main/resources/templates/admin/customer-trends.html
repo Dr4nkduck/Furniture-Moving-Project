@@ -2,24 +2,24 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Customer Trends</title>
+    <title>Xu Hướng Khách Hàng</title>
 
-    <!-- Early theme boot -->
+    <!-- Khởi động chủ đề sớm (giữ chế độ tối) -->
     <script>(function(){try{var s=localStorage.getItem('theme');var prefers=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',s?s==='dark':prefers);}catch(e){}})();</script>
 
-    <!-- Reuse dashboard assets -->
+    <!-- Tái sử dụng tài nguyên dashboard -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
 
-    <!-- Icons -->
+    <!-- Biểu tượng -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-    <!-- Page overrides -->
+    <!-- Tuỳ biến giao diện trang -->
     <style>
-        /* Enhanced color variables */
+        /* Biến màu nâng cao */
         :root {
             --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
@@ -40,7 +40,7 @@
             --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
         }
 
-        /* Enhanced sidebar */
+        /* Sidebar nâng cao */
         .sidebar{
             position:fixed;
             top:0;
@@ -101,7 +101,7 @@
         }
         #sidebar-backdrop.show{opacity:1;pointer-events:auto;}
 
-        /* Enhanced stat cards */
+        /* Thẻ thống kê */
         .stat-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -164,7 +164,7 @@
             margin: 0.5rem 0;
         }
 
-        /* Enhanced card */
+        /* Card nâng cao */
         .card-dark{
             background:var(--surface)!important;
             border:1px solid var(--border)!important;
@@ -177,7 +177,7 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* Enhanced list items */
+        /* Danh sách nâng cao */
         .list-group-item{
             background:var(--surface)!important;
             color:var(--text)!important;
@@ -193,11 +193,9 @@
             transform: translateX(4px);
         }
 
-        .list-group {
-            gap: 0;
-        }
+        .list-group { gap: 0; }
 
-        /* Enhanced headers */
+        /* Tiêu đề */
         .dark h6,.dark h4{color:#e2e8f0; font-weight: 600;}
         h4 { font-weight: 700; }
         h6 {
@@ -207,7 +205,7 @@
             border-bottom: 2px solid var(--border);
         }
 
-        /* Enhanced form controls */
+        /* Form control */
         .form-select, .form-control {
             border-radius: 10px;
             border: 1px solid var(--border);
@@ -220,7 +218,7 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        /* Enhanced buttons */
+        /* Nút bấm */
         .btn {
             border-radius: 10px;
             font-weight: 500;
@@ -249,7 +247,7 @@
             transform: translateY(-2px);
         }
 
-        /* Enhanced table */
+        /* Bảng */
         .table {
             border-radius: 12px;
             overflow: hidden;
@@ -266,26 +264,12 @@
             border: none;
         }
 
-        .table tbody tr {
-            transition: background 0.2s;
-        }
+        .table tbody tr { transition: background 0.2s; }
+        .table tbody tr:hover { background: rgba(102, 126, 234, 0.05); }
+        .table tbody td { padding: 1rem; vertical-align: middle; border-color: var(--border); }
 
-        .table tbody tr:hover {
-            background: rgba(102, 126, 234, 0.05);
-        }
-
-        .table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-            border-color: var(--border);
-        }
-
-        /* Enhanced navbar */
-        .navbar {
-            box-shadow: var(--shadow-sm);
-            backdrop-filter: blur(10px);
-        }
-
+        /* Navbar */
+        .navbar { box-shadow: var(--shadow-sm); backdrop-filter: blur(10px); }
         .navbar-brand h3 {
             background: var(--gradient-primary);
             -webkit-background-clip: text;
@@ -293,35 +277,22 @@
             background-clip: text;
         }
 
-        /* Animations */
+        /* Hiệu ứng */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .card-dark, .stat-card { animation: fadeInUp 0.5s ease-out; }
 
-        .card-dark, .stat-card {
-            animation: fadeInUp 0.5s ease-out;
-        }
-
-        /* Loading state */
+        /* Trạng thái tải */
         .loading-shimmer {
             background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
         }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-
-        /* Responsive grid for stats */
+        /* Lưới thống kê phản hồi */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -329,26 +300,13 @@
             margin-bottom: 2rem;
         }
 
-        /* Enhanced scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
+        /* Thanh cuộn */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #667eea, #764ba2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #764ba2, #667eea); }
 
-        ::-webkit-scrollbar-track {
-            background: var(--surface);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #667eea, #764ba2);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #764ba2, #667eea);
-        }
-
-        /* Badge styles */
+        /* Huy hiệu */
         .badge-gradient {
             background: var(--gradient-primary);
             color: white;
@@ -358,20 +316,19 @@
             display: inline-block;
         }
 
-        /* Glass morphism effect for dark mode */
+        /* Glass cho chế độ tối */
         .dark .card-dark {
             background: rgba(15, 23, 42, 0.6)!important;
             backdrop-filter: blur(20px);
             border: 1px solid rgba(148, 163, 184, 0.1)!important;
         }
-
         .dark .stat-card {
             background: rgba(30, 41, 59, 0.5);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(148, 163, 184, 0.1);
         }
 
-        /* Progress bar for rates */
+        /* Thanh tiến trình */
         .progress-bar-wrapper {
             height: 8px;
             background: rgba(148, 163, 184, 0.2);
@@ -379,7 +336,6 @@
             overflow: hidden;
             margin-top: 0.5rem;
         }
-
         .progress-bar-fill {
             height: 100%;
             background: var(--gradient-success);
@@ -387,106 +343,57 @@
             transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Micro interactions */
-        .stat-value {
-            transition: transform 0.3s;
-        }
+        /* Vi tương tác */
+        .stat-value { transition: transform 0.3s; }
+        .stat-card:hover .stat-value { transform: scale(1.05); }
 
-        .stat-card:hover .stat-value {
-            transform: scale(1.05);
-        }
+        /* Sọc bảng */
+        .table tbody tr:nth-child(even) { background: rgba(102, 126, 234, 0.02); }
 
-        /* Enhanced table rows with alternating colors */
-        .table tbody tr:nth-child(even) {
-            background: rgba(102, 126, 234, 0.02);
-        }
+        /* Danh sách nổi bật */
+        .list-group-item strong { font-weight: 700; color: #667eea; }
 
-        /* Tooltip-like effect for list items */
-        .list-group-item strong {
-            font-weight: 700;
-            color: #667eea;
-        }
+        /* Nổi lơ lửng biểu tượng */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .stat-icon { animation: float 3s ease-in-out infinite; }
+        .stat-card:hover .stat-icon { animation: none; transform: scale(1.1) rotate(5deg); }
 
-        /* Floating action effect */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        .stat-icon {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .stat-card:hover .stat-icon {
-            animation: none;
-            transform: scale(1.1) rotate(5deg);
-        }
-
-        /* Skeleton loading state */
-        @keyframes skeleton-loading {
-            0% { background-position: -200px 0; }
-            100% { background-position: calc(200px + 100%) 0; }
-        }
-
+        /* Skeleton loading */
+        @keyframes skeleton-loading { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
         .skeleton {
             background: linear-gradient(90deg, rgba(148, 163, 184, 0.1) 0px, rgba(148, 163, 184, 0.2) 40px, rgba(148, 163, 184, 0.1) 80px);
             background-size: 200px 100%;
             animation: skeleton-loading 1.4s ease-in-out infinite;
         }
 
-        /* Improved footer */
+        /* Footer */
         .bg-light.rounded-top {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)!important;
             border-top: 2px solid var(--border);
         }
 
-        /* Search input enhancement */
-        .form-control[type="search"] {
-            background: rgba(148, 163, 184, 0.1);
-            transition: all 0.3s;
-        }
+        /* Tìm kiếm */
+        .form-control[type="search"] { background: rgba(148, 163, 184, 0.1); transition: all 0.3s; }
+        .form-control[type="search"]:focus { background: var(--surface); transform: scale(1.02); }
 
-        .form-control[type="search"]:focus {
-            background: var(--surface);
-            transform: scale(1.02);
-        }
+        /* Hiệu ứng thương hiệu */
+        .navbar-brand:hover h3 { transform: scale(1.05); transition: transform 0.3s; }
 
-        /* Navbar enhancements */
-        .navbar-brand:hover h3 {
-            transform: scale(1.05);
-            transition: transform 0.3s;
-        }
+        /* Avatar */
+        .rounded-circle { transition: transform 0.3s; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+        .rounded-circle:hover { transform: scale(1.1); }
 
-        /* Avatar enhancement */
-        .rounded-circle {
-            transition: transform 0.3s;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
+        /* Nhấp nháy trạng thái */
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .bg-success.rounded-circle { animation: pulse 2s ease-in-out infinite; }
 
-        .rounded-circle:hover {
-            transform: scale(1.1);
-        }
-
-        /* Status indicator pulse */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .bg-success.rounded-circle {
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        /* Enhanced dropdown */
+        /* Dropdown */
         .form-select {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23667eea' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
         }
 
-        /* Card section dividers */
-        .card-dark .row {
-            position: relative;
-        }
-
+        /* Vạch phân đoạn trong card */
+        .card-dark .row { position: relative; }
         .card-dark .col-md-6:first-child::after {
             content: '';
             position: absolute;
@@ -496,29 +403,16 @@
             width: 1px;
             background: linear-gradient(180deg, transparent, var(--border), transparent);
         }
+        @media (max-width: 768px) { .card-dark .col-md-6:first-child::after { display: none; } }
 
-        @media (max-width: 768px) {
-            .card-dark .col-md-6:first-child::after {
-                display: none;
-            }
-        }
+        /* Đếm số mượt */
+        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .stat-value { animation: countUp 0.5s ease-out; }
 
-        /* Number counter animation */
-        @keyframes countUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* Hiệu ứng phát sáng khi hover */
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5), 0 0 30px rgba(102, 126, 234, 0.3); }
 
-        .stat-value {
-            animation: countUp 0.5s ease-out;
-        }
-
-        /* Glow effect on hover */
-        .btn-primary:hover {
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5), 0 0 30px rgba(102, 126, 234, 0.3);
-        }
-
-        /* Filter section enhancement */
+        /* Khối lọc */
         .d-flex.flex-wrap.gap-2.align-items-center {
             background: var(--surface);
             padding: 1rem;
@@ -526,54 +420,34 @@
             border: 1px solid var(--border);
         }
 
-        /* Icon rotation on active */
-        .sidebar .nav-link.active i {
-            animation: iconBounce 0.5s ease;
-        }
+        /* Hiệu ứng biểu tượng ở link đang hoạt động */
+        .sidebar .nav-link.active i { animation: iconBounce 0.5s ease; }
+        @keyframes iconBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
-        @keyframes iconBounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
+        /* Header bảng dính */
+        .table thead { position: sticky; top: 0; z-index: 10; }
 
-        /* Enhanced table header */
-        .table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        /* Responsive text sizing */
+        /* Chữ linh hoạt */
         @media (max-width: 576px) {
             .stat-value { font-size: 1.5rem; }
             h4 { font-size: 1.5rem; }
         }
 
-        /* Theme toggle enhancement */
-        #theme-toggle {
-            position: relative;
-            overflow: hidden;
-        }
-
+        /* Nút đổi chủ đề */
+        #theme-toggle { position: relative; overflow: hidden; }
         #theme-toggle::before {
             content: '';
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
+            width: 0; height: 0; border-radius: 50%;
             background: rgba(102, 126, 234, 0.3);
             transform: translate(-50%, -50%);
             transition: width 0.6s, height 0.6s;
         }
+        #theme-toggle:hover::before { width: 300px; height: 300px; }
 
-        #theme-toggle:hover::before {
-            width: 300px;
-            height: 300px;
-        }
-
-        /* Sidebar link counter badge */
+        /* Huy hiệu đếm ở liên kết sidebar */
         .nav-link .badge {
             background: rgba(102, 126, 234, 0.2);
             color: #667eea;
@@ -586,7 +460,7 @@
 </head>
 <body>
 <div class="container-fluid position-relative d-flex p-0">
-    <!-- Sidebar -->
+    <!-- Thanh bên -->
     <div class="sidebar pe-4 pb-3">
         <nav class="navbar bg-light navbar-light">
             <a th:href="@{/admin/dashboard}" class="navbar-brand mx-4 mb-3">
@@ -599,70 +473,70 @@
                     <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                 </div>
                 <div class="ms-3">
-                    <h6 class="mb-0" th:text="${#authentication?.name}">Admin</h6>
-                    <span>Admin</span>
+                    <h6 class="mb-0" th:text="${#authentication?.name}">Quản trị</h6>
+                    <span>Quản trị</span>
                 </div>
             </div>
 
             <div class="navbar-nav w-100">
-                <a th:href="@{/admin/dashboard}" class="nav-item nav-link"><i class="fa fa-tachometer-alt"></i>Dashboard</a>
+                <a th:href="@{/accountmanagement}" class="nav-item nav-link"><i class="fa fa-tachometer-alt"></i>Quản lí tài khoản</a>
                 <a th:href="@{/provider-stats}" class="nav-item nav-link"><i class="fa fa-chart-bar"></i>Thông tin nhà cung cấp</a>
-                <a th:href="@{/customer-trends}" class="nav-item nav-link active"><i class="fa fa-users"></i>Customer Trends</a>
+                <a th:href="@{/customer-trends}" class="nav-item nav-link active"><i class="fa fa-users"></i>Xu hướng khách hàng</a>
             </div>
         </nav>
     </div>
 
-    <!-- Content -->
+    <!-- Nội dung -->
     <div class="content">
-        <!-- Top Navbar -->
+        <!-- Navbar trên -->
         <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
             <a th:href="@{/admin/dashboard}" class="navbar-brand d-flex d-lg-none me-4"><h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2></a>
-            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></a>
-            <form class="d-none d-md-flex ms-4" role="search">
+            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Bật/tắt thanh bên"><i class="fa fa-bars"></i></a>
+            <form class="d-none d-md-flex ms-4" role="search" aria-label="Tìm kiếm nhanh">
                 <input class="form-control border-0" type="search" placeholder="Tìm kiếm nhanh…">
             </form>
             <div class="navbar-nav align-items-center ms-auto">
-                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Dark</button>
-                <button id="exportCsv" class="btn btn-sm btn-outline-secondary"><i class="fa fa-download me-1"></i>CSV</button>
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Tối</button>
+                <button id="exportCsv" class="btn btn-sm btn-outline-secondary"><i class="fa fa-download me-1"></i>Tải CSV</button>
             </div>
         </nav>
 
-        <!-- Body -->
+        <!-- Thân trang -->
         <div class="container-fluid pt-4 px-4">
             <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 class="mb-0"><i class="fa fa-chart-line me-2"></i>Customer Trends</h4>
+                    <h4 class="mb-0"><i class="fa fa-chart-line me-2"></i>Xu hướng khách hàng</h4>
                     <p class="text-muted mb-0 mt-1">Phân tích xu hướng khách hàng và hiệu suất</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <select id="granularity" class="form-select form-select-sm" style="width:auto;">
-                        <option value="month" selected>Monthly</option>
-                        <option value="year">Yearly</option>
+                        <option value="month" selected>Theo tháng</option>
+                        <option value="year">Theo năm</option>
                     </select>
 
-                    <!-- Month range -->
+                    <!-- Khoảng tháng -->
                     <div id="range-month" class="d-flex gap-2">
-                        <input id="mFrom" type="month" class="form-control form-control-sm">
-                        <input id="mTo"   type="month" class="form-control form-control-sm">
+                        <input id="mFrom" type="month" class="form-control form-control-sm" aria-label="Tháng bắt đầu">
+                        <input id="mTo"   type="month" class="form-control form-control-sm" aria-label="Tháng kết thúc">
                     </div>
 
-                    <!-- Year range -->
+                    <!-- Khoảng năm -->
                     <div id="range-year" class="d-flex gap-2" style="display:none;">
-                        <input id="yFrom" type="number" min="1970" max="2100" step="1" class="form-control form-control-sm" placeholder="From year">
-                        <input id="yTo"   type="number" min="1970" max="2100" step="1" class="form-control form-control-sm" placeholder="To year">
+                        <input id="yFrom" type="number" min="1970" max="2100" step="1" class="form-control form-control-sm" placeholder="Từ năm" aria-label="Năm bắt đầu">
+                        <input id="yTo"   type="number" min="1970" max="2100" step="1" class="form-control form-control-sm" placeholder="Đến năm" aria-label="Năm kết thúc">
                     </div>
 
                     <button id="filter" class="btn btn-sm btn-primary"><i class="fa fa-filter me-1"></i>Lọc</button>
                 </div>
             </div>
 
-            <!-- Stats Grid -->
+            <!-- Lưới thống kê -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon primary">
                         <i class="fa fa-search"></i>
                     </div>
-                    <div class="stat-label">Searches</div>
+                    <div class="stat-label">Lượt tìm kiếm</div>
                     <div class="stat-value" id="st-search">0</div>
                     <div class="progress-bar-wrapper">
                         <div class="progress-bar-fill" id="search-progress" style="width: 0%"></div>
@@ -673,7 +547,7 @@
                     <div class="stat-icon success">
                         <i class="fa fa-file-alt"></i>
                     </div>
-                    <div class="stat-label">Quotes</div>
+                    <div class="stat-label">Báo giá</div>
                     <div class="stat-value" id="st-quote">0</div>
                     <div class="progress-bar-wrapper">
                         <div class="progress-bar-fill" id="quote-progress" style="width: 0%; background: var(--gradient-success)"></div>
@@ -684,7 +558,7 @@
                     <div class="stat-icon info">
                         <i class="fa fa-calendar-check"></i>
                     </div>
-                    <div class="stat-label">Bookings</div>
+                    <div class="stat-label">Đặt lịch</div>
                     <div class="stat-value" id="st-book">0</div>
                     <div class="progress-bar-wrapper">
                         <div class="progress-bar-fill" id="book-progress" style="width: 0%; background: var(--gradient-info)"></div>
@@ -695,7 +569,7 @@
                     <div class="stat-icon warning">
                         <i class="fa fa-percentage"></i>
                     </div>
-                    <div class="stat-label">Quote Rate</div>
+                    <div class="stat-label">Tỉ lệ báo giá</div>
                     <div class="stat-value" id="st-qr">0%</div>
                     <div class="progress-bar-wrapper">
                         <div class="progress-bar-fill" id="qr-progress" style="width: 0%; background: var(--gradient-warning)"></div>
@@ -706,7 +580,7 @@
                     <div class="stat-icon primary">
                         <i class="fa fa-chart-line"></i>
                     </div>
-                    <div class="stat-label">Book Rate</div>
+                    <div class="stat-label">Tỉ lệ đặt lịch</div>
                     <div class="stat-value" id="st-br">0%</div>
                     <div class="progress-bar-wrapper">
                         <div class="progress-bar-fill" id="br-progress" style="width: 0%"></div>
@@ -717,29 +591,29 @@
                     <div class="stat-icon success">
                         <i class="fa fa-dollar-sign"></i>
                     </div>
-                    <div class="stat-label">AOV</div>
+                    <div class="stat-label">Giá trị TB</div>
                     <div class="stat-value" id="st-aov">0</div>
-                    <small class="text-muted d-block mt-1">Average Order Value</small>
+                    <small class="text-muted d-block mt-1">Giá trị đơn hàng trung bình</small>
                 </div>
             </div>
 
             <div class="card-dark p-4 shadow-sm mb-4">
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <h6><i class="fa fa-route me-2"></i>Top Corridors</h6>
+                        <h6><i class="fa fa-route me-2"></i>Tuyến phổ biến</h6>
                         <div class="list-group" id="ct-corridors"><div class="list-group-item loading-shimmer">Đang tải...</div></div>
                     </div>
                     <div class="col-md-6">
-                        <h6><i class="fa fa-exclamation-circle me-2"></i>Cancel Reasons</h6>
+                        <h6><i class="fa fa-exclamation-circle me-2"></i>Lý do huỷ</h6>
                         <div class="list-group" id="ct-reasons"><div class="list-group-item loading-shimmer">Đang tải...</div></div>
                     </div>
                 </div>
 
                 <div class="mt-4">
-                    <h6 class="mb-3"><i class="fa fa-filter me-2"></i>Funnel (Search → Quote → Booking)</h6>
+                    <h6 class="mb-3"><i class="fa fa-filter me-2"></i>Phễu (Tìm kiếm → Báo giá → Đặt lịch)</h6>
                     <div class="table-responsive">
                         <table class="table table-hover">
-                            <thead><tr><th>Period</th><th>Searches</th><th>Quotes</th><th>Bookings</th></tr></thead>
+                            <thead><tr><th>Giai đoạn</th><th>Tìm kiếm</th><th>Báo giá</th><th>Đặt lịch</th></tr></thead>
                             <tbody id="funnel"></tbody>
                         </table>
                     </div>
@@ -747,12 +621,12 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Chân trang -->
         <div class="container-fluid pt-4 px-4">
             <div class="bg-light rounded-top p-4">
                 <div class="row">
-                    <div class="col-12 col-sm-6 text-center text-sm-start">&copy; <a href="#">Your Site Name</a>, All Right Reserved.</div>
-                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a></div>
+                    <div class="col-12 col-sm-6 text-center text-sm-start">&copy; <a href="#">Your Site Name</a>, Bảo lưu mọi quyền.</div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">Thiết kế bởi <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a></div>
                 </div>
             </div>
         </div>
@@ -814,7 +688,7 @@
             const res = await fetch(`${apiBase}?${qs}`);
             const data = await res.json();
 
-            // Summary stats
+            // Tổng quan
             const sum = (arr, k) => (arr||[]).reduce((a,b)=>a + (b[k]||0), 0);
             const totalSearch = sum(data.funnel, 'searches');
             const totalQuote  = sum(data.funnel, 'quotes');
@@ -826,7 +700,7 @@
             $('#st-br').text(totalQuote ? Math.round(totalBook*100/totalQuote) + '%' : '0%');
             $('#st-aov').text(data.aov ?? '0');
 
-            // Funnel table
+            // Bảng phễu
             if(!data.funnel || data.funnel.length===0){
                 $funnel.html('<tr><td colspan="4" class="text-center">Không có dữ liệu</td></tr>');
             } else {
@@ -840,32 +714,32 @@
       `).join(''));
             }
 
-            // Corridors
+            // Tuyến phổ biến
             if(!data.topCorridors || data.topCorridors.length===0){
                 $corr.html('<div class="list-group-item">Không có dữ liệu</div>');
             } else {
                 $corr.html(data.topCorridors.map(r => `<div class="list-group-item d-flex justify-content-between align-items-center"><span><i class="fa fa-map-marker-alt me-2 text-primary"></i>${r.pickupCity||''} → ${r.deliveryCity||''}</span><span class="badge-gradient">${(r.trips||0).toLocaleString()}</span></div>`).join(''));
             }
 
-            // Reasons
+            // Lý do huỷ
             if(!data.cancelReasons || data.cancelReasons.length===0){
                 $reasons.html('<div class="list-group-item">Không có dữ liệu</div>');
             } else {
                 $reasons.html(data.cancelReasons.map(r => `<div class="list-group-item d-flex justify-content-between align-items-center"><span><i class="fa fa-times-circle me-2 text-danger"></i>${r.reason||''}</span><span class="badge-gradient">${(r.count||0).toLocaleString()}</span></div>`).join(''));
             }
 
-            // CSV button
+            // Nút CSV
             $('#exportCsv').off('click').on('click', () => {
                 window.location = `${apiBase}/funnel.csv?${qs}`;
             });
         }
 
-        // init UI
+        // Khởi tạo UI
         $('#granularity').on('change', function(){ setGranularityUI(); });
         $('#filter').on('click', load);
         setGranularityUI();
 
-        // prefill defaults
+        // Điền mặc định
         const now = new Date();
         const yyyy = now.getFullYear();
         const mm = String(now.getMonth()+1).padStart(2,'0');
@@ -874,7 +748,7 @@
         $('#yFrom').val(yyyy-1);
         $('#yTo').val(yyyy);
 
-        // backdrop sync
+        // Đồng bộ backdrop
         (function(){
             var $s=$('.sidebar'),$b=$('#sidebar-backdrop');function sync(){ $b.toggleClass('show',$s.hasClass('open')); }
             sync(); try{ new MutationObserver(sync).observe($s.get(0),{attributes:true,attributeFilter:['class']}); }catch(e){ setInterval(sync,250);}

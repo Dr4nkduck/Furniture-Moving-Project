@@ -518,3 +518,141 @@ BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK TRAN;
     PRINT 'ERROR: ' + ERROR_MESSAGE();
 END CATCH
+
+
+
+IF OBJECT_ID('service_packages') IS NULL
+BEGIN
+  CREATE TABLE service_packages (
+    package_id INT IDENTITY(1,1) PRIMARY KEY,
+    code NVARCHAR(50) UNIQUE NOT NULL,
+    name NVARCHAR(150) NOT NULL,
+    is_active BIT NOT NULL DEFAULT 1
+  );
+  INSERT INTO service_packages(code,name) VALUES
+  (N'HOME_FULL',N'Chuyển nhà trọn gói'),
+  (N'OFFICE',N'Chuyển văn phòng'),
+  (N'LOADING',N'Bốc xếp & kho bãi'),
+  (N'INSTALL',N'Tháo lắp & đóng gói'),
+  (N'INTERCITY',N'Vận chuyển liên tỉnh'),
+  (N'TRUCK_RENT',N'Cho thuê xe tải');
+END;
+
+IF OBJECT_ID('provider_service_packages') IS NULL
+BEGIN
+  CREATE TABLE provider_service_packages(
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    provider_id INT NOT NULL,
+    package_id INT NOT NULL,
+    base_fee DECIMAL(12,2) NULL,
+    per_km DECIMAL(12,2) NULL,
+    per_minute DECIMAL(12,2) NULL,
+    surcharge_stairs DECIMAL(12,2) NULL,
+    surcharge_no_elevator DECIMAL(12,2) NULL,
+    surcharge_narrow_alley DECIMAL(12,2) NULL,
+    surcharge_weekend DECIMAL(12,2) NULL,
+    CONSTRAINT uq_provider_package UNIQUE(provider_id, package_id)
+  );
+END;
+
+IF OBJECT_ID('furniture_types') IS NULL
+BEGIN
+  CREATE TABLE furniture_types(
+    furniture_type_id INT IDENTITY(1,1) PRIMARY KEY,
+    code NVARCHAR(50) UNIQUE NOT NULL,
+    name NVARCHAR(120) NOT NULL,
+    unit NVARCHAR(30) NULL
+  );
+  INSERT INTO furniture_types(code,name,unit) VALUES
+  (N'TABLE',N'Bàn',N'cái'),
+  (N'BED',N'Giường',N'cái'),
+  (N'SOFA',N'Sofa',N'cái'),
+  (N'CABINET',N'Tủ',N'cái');
+END;
+
+IF OBJECT_ID('provider_furniture_prices') IS NULL
+BEGIN
+  CREATE TABLE provider_furniture_prices(
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    provider_id INT NOT NULL,
+    furniture_type_id INT NOT NULL,
+    price DECIMAL(12,2) NOT NULL,
+    CONSTRAINT uq_provider_furniture UNIQUE(provider_id, furniture_type_id)
+  );
+END;
+
+
+
+
+
+
+
+
+ALTER TABLE service_requests ADD cancel_reason NVARCHAR(255) NULL;
+
+
+
+
+
+BEGIN TRY
+    BEGIN TRAN;
+
+    -- 1) Đổi tên bảng nếu cần
+    IF OBJECT_ID('dbo.service_providers','U') IS NOT NULL
+    AND OBJECT_ID('dbo.providers','U') IS NULL
+    BEGIN
+        EXEC sp_rename 'dbo.service_providers', 'providers';
+    END
+
+    -- 2) Đổi tên các CONSTRAINT/INDEX còn mang tiền tố service_providers_ → providers_
+    ;WITH c AS (
+        SELECT o.name AS old_name, 
+               REPLACE(o.name, 'service_providers', 'providers') AS new_name
+        FROM sys.objects o
+        WHERE o.name LIKE 'service_providers%' 
+          AND o.type IN ('PK','F','UQ','C','D') -- PK/FK/Unique/Check/Default
+    )
+    SELECT * INTO #todo FROM c WHERE old_name <> new_name;
+
+    DECLARE @old sysname, @new sysname, @sql nvarchar(4000);
+    WHILE EXISTS(SELECT 1 FROM #todo)
+    BEGIN
+        SELECT TOP(1) @old = old_name, @new = new_name FROM #todo ORDER BY old_name;
+        BEGIN TRY
+            EXEC sp_rename @objname = @old, @newname = @new, @objtype = 'OBJECT';
+        END TRY BEGIN CATCH
+            PRINT 'Skip rename object: ' + @old + ' → ' + @new + ' (' + ERROR_MESSAGE() + ')';
+        END CATCH
+        DELETE FROM #todo WHERE old_name = @old;
+    END
+
+    -- 3) Đổi tên các index (sys.indexes) nếu còn prefix cũ
+    ;WITH ix AS (
+        SELECT QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.' + QUOTENAME(OBJECT_NAME(i.object_id)) AS tbl,
+               i.name old_name,
+               REPLACE(i.name,'service_providers','providers') AS new_name
+        FROM sys.indexes i
+        WHERE i.name IS NOT NULL
+          AND i.name LIKE 'service_providers%'
+    )
+    SELECT * INTO #todoix FROM ix WHERE old_name <> new_name;
+
+    WHILE EXISTS(SELECT 1 FROM #todoix)
+    BEGIN
+        SELECT TOP(1) @sql = N'EXEC sp_rename N''' + tbl + '.' + old_name + ''', N''' + new_name + ''', N''INDEX'';'
+        FROM #todoix ORDER BY old_name;
+        BEGIN TRY
+            EXEC sp_executesql @sql;
+        END TRY BEGIN CATCH
+            PRINT 'Skip rename index: ' + @sql + ' (' + ERROR_MESSAGE() + ')';
+        END CATCH
+        DELETE TOP(1) FROM #todoix;
+    END
+
+    COMMIT;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    THROW;
+END CATCH
+GO
