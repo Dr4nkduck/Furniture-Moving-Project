@@ -1,17 +1,25 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.model.User;
+import SWP301.Furniture_Moving_Project.repository.UserRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.Optional;
 
 @Controller
 public class HomeController {
 
     private final JdbcTemplate jdbcTemplate;
+    private final UserRepository userRepository;
 
-    public HomeController(JdbcTemplate jdbcTemplate) {
+    public HomeController(JdbcTemplate jdbcTemplate, UserRepository userRepository) {
         this.jdbcTemplate = jdbcTemplate;
+        this.userRepository = userRepository;
     }
 
     // Redirect root -> /homepage
@@ -34,6 +42,19 @@ public class HomeController {
         }
         model.addAttribute("dbOk", dbOk);
         model.addAttribute("dbMsg", msg);
+
+        // Thêm thông tin user nếu đã đăng nhập
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            Optional<User> userOpt = userRepository.findByUsername(auth.getName());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                model.addAttribute("currentUser", user);
+                model.addAttribute("isLoggedIn", true);
+            }
+        } else {
+            model.addAttribute("isLoggedIn", false);
+        }
 
         // View name khớp với templates/homepage/homepage.html
         return "homepage/homepage";

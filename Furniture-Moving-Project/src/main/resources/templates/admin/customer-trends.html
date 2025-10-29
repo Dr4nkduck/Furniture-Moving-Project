@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Customer Trends</title>
+
+    <!-- Early theme boot -->
+    <script>(function(){try{var s=localStorage.getItem('theme');var prefers=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',s?s==='dark':prefers);}catch(e){}})();</script>
+
+    <!-- Reuse dashboard assets -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- Page overrides -->
+    <style>
+        /* Enhanced color variables */
+        :root {
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-info: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
+        }
+
+        .dark {
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-info: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        /* Enhanced sidebar */
+        .sidebar{
+            position:fixed;
+            top:0;
+            left:0;
+            bottom:0;
+            width:250px;
+            z-index:1030;
+            transform:translateX(-100%);
+            transition:transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+        }
+        .sidebar.open{transform:translateX(0);}
+        .content,.content.open{margin-left:0!important;}
+        .dark .sidebar{background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%)!important;}
+
+        .sidebar .nav-link{
+            display:flex;
+            align-items:center;
+            gap:.6rem;
+            padding:.75rem 1rem;
+            margin: 0.25rem 0;
+            border-radius:.75rem;
+            color:var(--text-muted)!important;
+            transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover{
+            transform: translateX(4px);
+            background: rgba(148,163,184,.12);
+        }
+
+        .dark .sidebar .nav-link:hover{
+            color:var(--text)!important;
+            background:rgba(148,163,184,.14);
+        }
+
+        .sidebar .nav-link.active{
+            color:#fff!important;
+            background: var(--gradient-primary);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        #sidebar-backdrop{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.4);
+            backdrop-filter:blur(4px);
+            opacity:0;
+            pointer-events:none;
+            transition:opacity .3s;
+            z-index:1029;
+        }
+        #sidebar-backdrop.show{opacity:1;pointer-events:auto;}
+
+        /* Enhanced stat cards */
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); color: #667eea; }
+        .stat-icon.success { background: linear-gradient(135deg, rgba(17, 153, 142, 0.2) 0%, rgba(56, 239, 125, 0.2) 100%); color: #11998e; }
+        .stat-icon.info { background: linear-gradient(135deg, rgba(33, 147, 176, 0.2) 0%, rgba(109, 213, 237, 0.2) 100%); color: #2193b0; }
+        .stat-icon.warning { background: linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.2) 100%); color: #f093fb; }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0.5rem 0;
+        }
+
+        /* Enhanced card */
+        .card-dark{
+            background:var(--surface)!important;
+            border:1px solid var(--border)!important;
+            border-radius:20px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.3s;
+        }
+
+        .card-dark:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Enhanced list items */
+        .list-group-item{
+            background:var(--surface)!important;
+            color:var(--text)!important;
+            border-color:var(--border)!important;
+            padding: 1rem 1.25rem;
+            transition: all 0.2s;
+            border-radius: 12px!important;
+            margin-bottom: 0.5rem;
+        }
+
+        .list-group-item:hover {
+            background: rgba(102, 126, 234, 0.05)!important;
+            transform: translateX(4px);
+        }
+
+        .list-group {
+            gap: 0;
+        }
+
+        /* Enhanced headers */
+        .dark h6,.dark h4{color:#e2e8f0; font-weight: 600;}
+        h4 { font-weight: 700; }
+        h6 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* Enhanced form controls */
+        .form-select, .form-control {
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Enhanced buttons */
+        .btn {
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0.5rem 1.25rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--surface);
+            transform: translateY(-2px);
+        }
+
+        /* Enhanced table */
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--text);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            border: none;
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-color: var(--border);
+        }
+
+        /* Enhanced navbar */
+        .navbar {
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand h3 {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-dark, .stat-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        /* Loading state */
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Responsive grid for stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Enhanced scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #764ba2, #667eea);
+        }
+
+        /* Badge styles */
+        .badge-gradient {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* Glass morphism effect for dark mode */
+        .dark .card-dark {
+            background: rgba(15, 23, 42, 0.6)!important;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.1)!important;
+        }
+
+        .dark .stat-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        /* Progress bar for rates */
+        .progress-bar-wrapper {
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-success);
+            border-radius: 10px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Micro interactions */
+        .stat-value {
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover .stat-value {
+            transform: scale(1.05);
+        }
+
+        /* Enhanced table rows with alternating colors */
+        .table tbody tr:nth-child(even) {
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        /* Tooltip-like effect for list items */
+        .list-group-item strong {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        /* Floating action effect */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .stat-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .stat-card:hover .stat-icon {
+            animation: none;
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Skeleton loading state */
+        @keyframes skeleton-loading {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(148, 163, 184, 0.1) 0px, rgba(148, 163, 184, 0.2) 40px, rgba(148, 163, 184, 0.1) 80px);
+            background-size: 200px 100%;
+            animation: skeleton-loading 1.4s ease-in-out infinite;
+        }
+
+        /* Improved footer */
+        .bg-light.rounded-top {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)!important;
+            border-top: 2px solid var(--border);
+        }
+
+        /* Search input enhancement */
+        .form-control[type="search"] {
+            background: rgba(148, 163, 184, 0.1);
+            transition: all 0.3s;
+        }
+
+        .form-control[type="search"]:focus {
+            background: var(--surface);
+            transform: scale(1.02);
+        }
+
+        /* Navbar enhancements */
+        .navbar-brand:hover h3 {
+            transform: scale(1.05);
+            transition: transform 0.3s;
+        }
+
+        /* Avatar enhancement */
+        .rounded-circle {
+            transition: transform 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .rounded-circle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Status indicator pulse */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .bg-success.rounded-circle {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Enhanced dropdown */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23667eea' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        }
+
+        /* Card section dividers */
+        .card-dark .row {
+            position: relative;
+        }
+
+        .card-dark .col-md-6:first-child::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 10%;
+            bottom: 10%;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--border), transparent);
+        }
+
+        @media (max-width: 768px) {
+            .card-dark .col-md-6:first-child::after {
+                display: none;
+            }
+        }
+
+        /* Number counter animation */
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-value {
+            animation: countUp 0.5s ease-out;
+        }
+
+        /* Glow effect on hover */
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5), 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Filter section enhancement */
+        .d-flex.flex-wrap.gap-2.align-items-center {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        /* Icon rotation on active */
+        .sidebar .nav-link.active i {
+            animation: iconBounce 0.5s ease;
+        }
+
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Enhanced table header */
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Responsive text sizing */
+        @media (max-width: 576px) {
+            .stat-value { font-size: 1.5rem; }
+            h4 { font-size: 1.5rem; }
+        }
+
+        /* Theme toggle enhancement */
+        #theme-toggle {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        #theme-toggle:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Sidebar link counter badge */
+        .nav-link .badge {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid position-relative d-flex p-0">
+    <!-- Sidebar -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a th:href="@{/admin/dashboard}" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>AdminOP</h3>
+            </a>
+
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:40px;height:40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0" th:text="${#authentication?.name}">Admin</h6>
+                    <span>Admin</span>
+                </div>
+            </div>
+
+            <div class="navbar-nav w-100">
+                <a th:href="@{/admin/dashboard}" class="nav-item nav-link"><i class="fa fa-tachometer-alt"></i>Dashboard</a>
+                <a th:href="@{/provider-stats}" class="nav-item nav-link"><i class="fa fa-chart-bar"></i>Thông tin nhà cung cấp</a>
+                <a th:href="@{/customer-trends}" class="nav-item nav-link active"><i class="fa fa-users"></i>Customer Trends</a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a th:href="@{/admin/dashboard}" class="navbar-brand d-flex d-lg-none me-4"><h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2></a>
+            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></a>
+            <form class="d-none d-md-flex ms-4" role="search">
+                <input class="form-control border-0" type="search" placeholder="Tìm kiếm nhanh…">
+            </form>
+            <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Dark</button>
+                <button id="exportCsv" class="btn btn-sm btn-outline-secondary"><i class="fa fa-download me-1"></i>CSV</button>
+            </div>
+        </nav>
+
+        <!-- Body -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-0"><i class="fa fa-chart-line me-2"></i>Customer Trends</h4>
+                    <p class="text-muted mb-0 mt-1">Phân tích xu hướng khách hàng và hiệu suất</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <select id="granularity" class="form-select form-select-sm" style="width:auto;">
+                        <option value="month" selected>Monthly</option>
+                        <option value="year">Yearly</option>
+                    </select>
+
+                    <!-- Month range -->
+                    <div id="range-month" class="d-flex gap-2">
+                        <input id="mFrom" type="month" class="form-control form-control-sm">
+                        <input id="mTo"   type="month" class="form-control form-control-sm">
+                    </div>
+
+                    <!-- Year range -->
+                    <div id="range-year" class="d-flex gap-2" style="display:none;">
+                        <input id="yFrom" type="number" min="1970" max="2100" step="1" class="form-control form-control-sm" placeholder="From year">
+                        <input id="yTo"   type="number" min="1970" max="2100" step="1" class="form-control form-control-sm" placeholder="To year">
+                    </div>
+
+                    <button id="filter" class="btn btn-sm btn-primary"><i class="fa fa-filter me-1"></i>Lọc</button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fa fa-search"></i>
+                    </div>
+                    <div class="stat-label">Searches</div>
+                    <div class="stat-value" id="st-search">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" id="search-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fa fa-file-alt"></i>
+                    </div>
+                    <div class="stat-label">Quotes</div>
+                    <div class="stat-value" id="st-quote">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" id="quote-progress" style="width: 0%; background: var(--gradient-success)"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fa fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-label">Bookings</div>
+                    <div class="stat-value" id="st-book">0</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" id="book-progress" style="width: 0%; background: var(--gradient-info)"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fa fa-percentage"></i>
+                    </div>
+                    <div class="stat-label">Quote Rate</div>
+                    <div class="stat-value" id="st-qr">0%</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" id="qr-progress" style="width: 0%; background: var(--gradient-warning)"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fa fa-chart-line"></i>
+                    </div>
+                    <div class="stat-label">Book Rate</div>
+                    <div class="stat-value" id="st-br">0%</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" id="br-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fa fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-label">AOV</div>
+                    <div class="stat-value" id="st-aov">0</div>
+                    <small class="text-muted d-block mt-1">Average Order Value</small>
+                </div>
+            </div>
+
+            <div class="card-dark p-4 shadow-sm mb-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6><i class="fa fa-route me-2"></i>Top Corridors</h6>
+                        <div class="list-group" id="ct-corridors"><div class="list-group-item loading-shimmer">Đang tải...</div></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fa fa-exclamation-circle me-2"></i>Cancel Reasons</h6>
+                        <div class="list-group" id="ct-reasons"><div class="list-group-item loading-shimmer">Đang tải...</div></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6 class="mb-3"><i class="fa fa-filter me-2"></i>Funnel (Search → Quote → Booking)</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead><tr><th>Period</th><th>Searches</th><th>Quotes</th><th>Bookings</th></tr></thead>
+                            <tbody id="funnel"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded-top p-4">
+                <div class="row">
+                    <div class="col-12 col-sm-6 text-center text-sm-start">&copy; <a href="#">Your Site Name</a>, All Right Reserved.</div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sidebar-backdrop" aria-hidden="true"></div>
+
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/dashbooard/js/main.js}"></script>
+
+<script>
+    (function(){
+        const $funnel = $('#funnel');
+        const $corr   = $('#ct-corridors');
+        const $reasons= $('#ct-reasons');
+        const apiBase = '/api/admin/analytics/customer-trends';
+
+        function setGranularityUI(){
+            const g = $('#granularity').val();
+            if(g==='month'){ $('#range-month').show(); $('#range-year').hide(); }
+            else { $('#range-month').hide(); $('#range-year').show(); }
+        }
+
+        function toDateRange(){
+            const g = $('#granularity').val();
+            if(g==='month'){
+                const mFrom = $('#mFrom').val();
+                const mTo   = $('#mTo').val();
+                if(!mFrom || !mTo) return {};
+                const from = mFrom + '-01';
+                return { from, to: mTo + '-01' };
+            }else{
+                const yFrom = $('#yFrom').val();
+                const yTo   = $('#yTo').val();
+                if(!yFrom || !yTo) return {};
+                return { from: yFrom + '-01-01', to: yTo + '-12-31' };
+            }
+        }
+
+        function buildQS(o){
+            const u = new URLSearchParams();
+            if(o.from) u.set('from', o.from);
+            if(o.to) u.set('to', o.to);
+            if(o.granularity) u.set('granularity', o.granularity);
+            if(o.top) u.set('top', o.top);
+            return u.toString();
+        }
+
+        async function load(){
+            $funnel.html('<tr><td colspan="4" class="text-center loading-shimmer">Đang tải...</td></tr>');
+            $corr.html('<div class="list-group-item loading-shimmer">Đang tải...</div>');
+            $reasons.html('<div class="list-group-item loading-shimmer">Đang tải...</div>');
+
+            const rng = toDateRange();
+            const qs = buildQS({ ...rng, granularity: $('#granularity').val(), top: 10 });
+            const res = await fetch(`${apiBase}?${qs}`);
+            const data = await res.json();
+
+            // Summary stats
+            const sum = (arr, k) => (arr||[]).reduce((a,b)=>a + (b[k]||0), 0);
+            const totalSearch = sum(data.funnel, 'searches');
+            const totalQuote  = sum(data.funnel, 'quotes');
+            const totalBook   = sum(data.funnel, 'bookings');
+            $('#st-search').text(totalSearch.toLocaleString());
+            $('#st-quote').text(totalQuote.toLocaleString());
+            $('#st-book').text(totalBook.toLocaleString());
+            $('#st-qr').text(totalSearch ? Math.round(totalQuote*100/totalSearch) + '%' : '0%');
+            $('#st-br').text(totalQuote ? Math.round(totalBook*100/totalQuote) + '%' : '0%');
+            $('#st-aov').text(data.aov ?? '0');
+
+            // Funnel table
+            if(!data.funnel || data.funnel.length===0){
+                $funnel.html('<tr><td colspan="4" class="text-center">Không có dữ liệu</td></tr>');
+            } else {
+                const g = $('#granularity').val();
+                const fmt = d => {
+                    const [y,m] = d.split('-');
+                    return g==='year' ? y : `${y}-${m}`;
+                };
+                $funnel.html(data.funnel.map(p => `
+        <tr><td><strong>${fmt(p.date)}</strong></td><td>${(p.searches||0).toLocaleString()}</td><td>${(p.quotes||0).toLocaleString()}</td><td>${(p.bookings||0).toLocaleString()}</td></tr>
+      `).join(''));
+            }
+
+            // Corridors
+            if(!data.topCorridors || data.topCorridors.length===0){
+                $corr.html('<div class="list-group-item">Không có dữ liệu</div>');
+            } else {
+                $corr.html(data.topCorridors.map(r => `<div class="list-group-item d-flex justify-content-between align-items-center"><span><i class="fa fa-map-marker-alt me-2 text-primary"></i>${r.pickupCity||''} → ${r.deliveryCity||''}</span><span class="badge-gradient">${(r.trips||0).toLocaleString()}</span></div>`).join(''));
+            }
+
+            // Reasons
+            if(!data.cancelReasons || data.cancelReasons.length===0){
+                $reasons.html('<div class="list-group-item">Không có dữ liệu</div>');
+            } else {
+                $reasons.html(data.cancelReasons.map(r => `<div class="list-group-item d-flex justify-content-between align-items-center"><span><i class="fa fa-times-circle me-2 text-danger"></i>${r.reason||''}</span><span class="badge-gradient">${(r.count||0).toLocaleString()}</span></div>`).join(''));
+            }
+
+            // CSV button
+            $('#exportCsv').off('click').on('click', () => {
+                window.location = `${apiBase}/funnel.csv?${qs}`;
+            });
+        }
+
+        // init UI
+        $('#granularity').on('change', function(){ setGranularityUI(); });
+        $('#filter').on('click', load);
+        setGranularityUI();
+
+        // prefill defaults
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth()+1).padStart(2,'0');
+        $('#mFrom').val(`${yyyy}-${mm}`);
+        $('#mTo').val(`${yyyy}-${mm}`);
+        $('#yFrom').val(yyyy-1);
+        $('#yTo').val(yyyy);
+
+        // backdrop sync
+        (function(){
+            var $s=$('.sidebar'),$b=$('#sidebar-backdrop');function sync(){ $b.toggleClass('show',$s.hasClass('open')); }
+            sync(); try{ new MutationObserver(sync).observe($s.get(0),{attributes:true,attributeFilter:['class']}); }catch(e){ setInterval(sync,250);}
+            $(document).off('click.ct-backdrop').on('click.ct-backdrop','#sidebar-backdrop',function(){ $s.removeClass('open'); sync(); });
+        })();
+
+        load();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Đơn vị vận chuyển - Furniture Moving</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="Danh sách đơn vị vận chuyển" name="keywords" />
+    <meta content="Danh sách đơn vị vận chuyển" name="description" />
+
+    <!-- Favicon -->
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
+
+    <!-- Google Font -->
+    <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+    />
+
+    <!-- CSS Libraries -->
+    <link
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/flaticon/font/flaticon.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet" />
+    <link
+            th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}"
+            rel="stylesheet"
+    />
+    <link
+            th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}"
+            rel="stylesheet"
+    />
+    <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet" />
+    <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet" />
+
+    <!-- Template Stylesheet -->
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
+</head>
+
+<body>
+<div class="wrapper">
+    <!-- Top Bar Start -->
+    <div th:replace="fragments/header :: topbar"></div>
+
+    <!-- Nav Bar -->
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <!-- Page Header Start -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h2>Đơn vị vận chuyển</h2>
+                </div>
+                <div class="col-12">
+                    <a href="/homepage">Trang chủ</a>
+                    <a href="/providers">Đơn vị vận chuyển</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+    <!-- Providers Start -->
+    <div class="providers">
+        <div class="container">
+            <div class="section-header text-center">
+                <p>Đối tác vận chuyển</p>
+                <h2>Danh sách đơn vị vận chuyển</h2>
+            </div>
+
+            <div class="row" th:if="${providers != null and !providers.empty}">
+                <div
+                        class="col-lg-4 col-md-6 wow fadeInUp"
+                        th:each="provider : ${providers}"
+                        data-wow-delay="0.1s"
+                >
+                    <div class="service-item">
+                        <div class="service-img">
+                            <img
+                                    th:src="@{/homepage/img/service-remake-1.jpg}"
+                                    alt="Đơn vị vận chuyển"
+                            />
+                            <div class="service-overlay">
+                                <p th:text="'Đánh giá: ' + ${provider.rating} + '/5.0'">
+                                    Đánh giá
+                                </p>
+                            </div>
+                        </div>
+                        <div class="service-text">
+                            <h3 th:text="${provider.companyName}">Tên công ty</h3>
+                            <div class="rating mb-2">
+                    <span class="text-warning">
+                      <i
+                              class="fas fa-star"
+                              th:each="i : ${#numbers.sequence(1, 5)}"
+                              th:classappend="${i <= provider.rating} ? 'fas' : 'far'"
+                      ></i>
+                    </span>
+                                <span th:text="${provider.rating} + '/5.0'">4.8/5.0</span>
+                            </div>
+                            <a
+                                    class="btn"
+                                    th:href="@{/homepage/request(providerId=${provider.providerId})}"
+                            >Chọn dịch vụ</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div class="row" th:if="${providers == null or providers.empty}">
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <h4>Chưa có đơn vị vận chuyển nào</h4>
+                        <p>Hiện tại chưa có đơn vị vận chuyển nào trong hệ thống.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Providers End -->
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+<script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+<script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+<script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+<script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+<script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+
+<!-- Template Javascript -->
+<script th:src="@{/homepage/js/main.js}"></script>
+</body>
+</html>

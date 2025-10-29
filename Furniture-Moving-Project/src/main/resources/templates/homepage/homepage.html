@@ -90,6 +90,76 @@
 <!-- Carousel End -->
 
 
+<!--AI bao gia start-->
+<div class="wrapper">
+    <section class="user-actions">
+      <div class="container">
+        <div class="section-header text-center">
+          <p>Chọn cách tạo báo giá</p>
+          <h2>Bạn muốn làm gì?</h2>
+        </div>
+
+        <div class="row">
+          <!-- Báo giá bằng AI -->
+          <div class="col-lg-6 col-md-12 mb-4">
+            <div class="action-card">
+              <div class="action-header">
+                <i class="fas fa-robot"></i>
+                <h5 class="mb-0">Báo giá bằng AI</h5>
+              </div>
+              <div class="action-body">
+                <p>Tạo báo giá nhanh từ ảnh… AI sẽ đếm số lượng và gợi ý giá tham khảo.</p>
+                <ul>
+                  <li>Phù hợp khi có ảnh tổng quan</li>
+                  <li>Tự động đếm theo hàng–cột (nếu nhận diện được)</li>
+                  <li>Xuất bảng gợi ý giá theo từng mục</li>
+                </ul>
+              </div>
+              <div class="action-footer">
+                <!-- CHỈ SỬA DÒNG NÀY: dùng th:href để điều hướng -->
+                <a class="btn btn-primary" th:href="@{/user/ai-quote}">
+                  <i class="fas fa-bolt mr-1"></i> Dùng AI
+                </a>
+                <button id="btn-ai-guide" type="button" class="btn btn-outline-dark">
+                  <i class="far fa-question-circle mr-1"></i> Hướng dẫn
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Báo giá thủ công -->
+          <div class="col-lg-6 col-md-12 mb-4">
+            <div class="action-card">
+              <div class="action-header">
+                <i class="fas fa-edit"></i>
+                <h5 class="mb-0">Báo giá thủ công</h5>
+              </div>
+              <div class="action-body">
+                <p>Tự nhập hạng mục, số lượng và đơn giá.</p>
+                <ul>
+                  <li>Kiểm soát chi tiết từng dòng</li>
+                  <li>Phù hợp yêu cầu đặc thù</li>
+                  <li>Dễ chỉnh sửa & lưu nháp</li>
+                </ul>
+              </div>
+              <div class="action-footer">
+                <button id="btn-manual-start" type="button" class="btn btn-primary">
+                  <i class="fas fa-plus mr-1"></i> Tạo báo giá
+                </button>
+                <button id="btn-manual-template" type="button" class="btn btn-outline-dark">
+                  <i class="far fa-file-alt mr-1"></i> Xem mẫu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!--AI bao gia End-->
+
+
 <!-- Feature Start-->
 <div class="feature wow fadeInUp" data-wow-delay="0.1s">
   <div class="container-fluid">
@@ -229,7 +299,7 @@
           </div>
           <div class="service-text">
             <h3>Chuyển nhà trọn gói</h3>
-            <a class="btn" th:href="@{/homepage/request(category='chuyen-nha')}">+</a>
+            <a class="btn" th:href="@{/service/chuyen-nha}">+</a>
           </div>
         </div>
       </div>
@@ -245,7 +315,7 @@
           </div>
           <div class="service-text">
             <h3>Chuyển văn phòng</h3>
-            <a class="btn" th:href="@{/request(category='chuyen-van-phong')}">+</a>
+            <a class="btn" th:href="@{/service/chuyen-van-phong}">+</a>
           </div>
         </div>
       </div>
@@ -261,7 +331,7 @@
           </div>
           <div class="service-text">
             <h3>Bốc xếp &amp; kho bãi</h3>
-            <a class="btn" th:href="@{/homepage/request(category='boc-xep-kho-bai')}">+</a>
+            <a class="btn" th:href="@{/service/boc-xep-kho-bai}">+</a>
           </div>
         </div>
       </div>
@@ -277,7 +347,7 @@
           </div>
           <div class="service-text">
             <h3>Tháo lắp &amp; đóng gói</h3>
-            <a class="btn" th:href="@{/homepage/request(category='thao-lap-dong-goi')}">+</a>
+            <a class="btn" th:href="@{/service/thao-lap-dong-goi}">+</a>
           </div>
         </div>
       </div>
@@ -293,7 +363,7 @@
           </div>
           <div class="service-text">
             <h3>Vận chuyển liên tỉnh</h3>
-            <a class="btn" th:href="@{/homepage/request(category='lien-tinh')}">+</a>
+            <a class="btn" th:href="@{/service/van-chuyen-lien-tinh}">+</a>
           </div>
         </div>
       </div>
@@ -309,7 +379,7 @@
           </div>
           <div class="service-text">
             <h3>Cho thuê xe tải</h3>
-            <a class="btn" th:href="@{/homepage/request(category='cho-thue-xe')}">+</a>
+            <a class="btn" th:href="@{/service/cho-thue-xe-tai}">+</a>
           </div>
         </div>
       </div>
