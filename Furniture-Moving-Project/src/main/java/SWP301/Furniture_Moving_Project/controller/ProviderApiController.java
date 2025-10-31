@@ -6,6 +6,7 @@ import SWP301.Furniture_Moving_Project.dto.ProviderPackagePricingDTO;
 import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
 import SWP301.Furniture_Moving_Project.model.Provider;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
+import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
 import SWP301.Furniture_Moving_Project.service.ProviderCatalogService;
 // import SWP301.Furniture_Moving_Project.service.ProviderOrderService; // <- Uncomment if you already added PV-003
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class ProviderApiController {
 
     private final ProviderRepository providerRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
 
     // PV-002 (existing global pricing)
     private final ProviderPricingService providerPricingService;
@@ -36,12 +39,14 @@ public class ProviderApiController {
 
     public ProviderApiController(ProviderRepository providerRepository,
                                  ProviderPricingService providerPricingService,
-                                 ProviderCatalogService providerCatalogService
+                                 ProviderCatalogService providerCatalogService,
+                                 ServiceRequestRepository serviceRequestRepository
                                  // , ProviderOrderService providerOrderService
     ) {
         this.providerRepository = providerRepository;
         this.providerPricingService = providerPricingService;
         this.providerCatalogService = providerCatalogService;
+        this.serviceRequestRepository = serviceRequestRepository;
         // this.providerOrderService = providerOrderService;
     }
 
@@ -59,6 +64,53 @@ public class ProviderApiController {
                         p.getRating()
                 ))
                 .collect(Collectors.toList());
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("data", data);
+        return ResponseEntity.ok(resp);
+    }
+
+    // Search providers by name: GET /api/providers/search?name=...
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> search(@RequestParam("name") String name) {
+        List<Provider> entities = (name == null || name.isBlank())
+                ? providerRepository.findAll()
+                : providerRepository.findByCompanyNameContainingIgnoreCase(name.trim());
+
+        List<ProviderDTO> data = entities.stream()
+                .map(p -> new ProviderDTO(
+                        p.getProviderId(),
+                        p.getCompanyName(),
+                        p.getRating()
+                ))
+                .collect(Collectors.toList());
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("data", data);
+        return ResponseEntity.ok(resp);
+    }
+
+    // Availability by date: GET /api/providers/availability?date=YYYY-MM-DD
+    @GetMapping("/availability")
+    public ResponseEntity<Map<String, Object>> availability(@RequestParam("date") String dateStr) {
+        LocalDate date = LocalDate.parse(dateStr);
+        List<Provider> providers = providerRepository.findAll();
+        List<String> busyStatuses = Arrays.asList("assigned", "in_progress");
+
+        List<Map<String, Object>> data = new ArrayList<>();
+        for (Provider p : providers) {
+            long busyCount = serviceRequestRepository
+                    .countByProviderIdAndPreferredDateAndStatusIn(p.getProviderId(), date, busyStatuses);
+            Map<String, Object> m = new HashMap<>();
+            m.put("providerId", p.getProviderId());
+            m.put("companyName", p.getCompanyName());
+            m.put("rating", p.getRating());
+            m.put("available", busyCount == 0);
+            m.put("busyCount", busyCount);
+            data.add(m);
+        }
 
         Map<String, Object> resp = new HashMap<>();
         resp.put("success", true);
