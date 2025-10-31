@@ -1,18 +1,12 @@
 package SWP301.Furniture_Moving_Project.service.impl;
 
-import SWP301.Furniture_Moving_Project.controller.dto.UserAccountResponse;
+import SWP301.Furniture_Moving_Project.dto.UserAccountResponseDTO;
 import SWP301.Furniture_Moving_Project.model.AccountStatus;
 import SWP301.Furniture_Moving_Project.model.UserAccount;
 import SWP301.Furniture_Moving_Project.repository.UserAccountRepository;
-// (Tùy chọn) bật nếu bạn thêm RoleRepository để lấy primaryRole
-// import SWP301.Furniture_Moving_Project.repository.RoleRepository;
-
+// import SWP301.Furniture_Moving_Project.repository.RoleRepository; // optional
 import SWP301.Furniture_Moving_Project.service.AdminUserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,47 +14,34 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserAccountRepository repo;
+    // private final RoleRepository roleRepo; // optional
 
-    // (Tùy chọn) Nếu muốn lấy primaryRole, tạo RoleRepository và bật Autowired optional
-    // @Autowired(required = false)
-    // private RoleRepository roleRepo;
-
-    public AdminUserServiceImpl(UserAccountRepository repo) {
+    public AdminUserServiceImpl(UserAccountRepository repo /*, RoleRepository roleRepo */) {
         this.repo = repo;
+        // this.roleRepo = roleRepo;
     }
 
     @Override
-    public Page<UserAccountResponse> list(String q, Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page == null ? 0 : page,
-                size == null ? 10 : size,
-                Sort.by("id").descending());
-
-        Page<UserAccount> pg;
-        if (q == null || q.isBlank()) {
-            pg = repo.findAll(pageable);
-        } else {
-            String s = q.trim();
-            pg = repo.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                    s, s, s, s, pageable
-            );
-        }
-
-        return pg.map(this::toDtoEntityOnly);
+    public Page<UserAccountResponseDTO> list(String q, Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page == null ? 0 : page, size == null ? 10 : size, Sort.by("id").descending());
+        Page<UserAccount> pg = (q == null || q.isBlank())
+                ? repo.findAll(pageable)
+                : repo.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                q.trim(), q.trim(), q.trim(), q.trim(), pageable);
+        return pg.map(this::toDto);
     }
 
     @Override
-    public UserAccountResponse get(Long id) {
-        UserAccount u = repo.findById(id).orElseThrow();
-        return toDtoEntityOnly(u);
+    public UserAccountResponseDTO get(Long id) {
+        return toDto(repo.findById(id).orElseThrow());
     }
 
     @Override
     @Transactional
-    public UserAccountResponse changeStatus(Long id, AccountStatus status) {
+    public UserAccountResponseDTO changeStatus(Long id, AccountStatus status) {
         UserAccount u = repo.findById(id).orElseThrow();
-        u.setStatus(status); // AccountStatusConverter sẽ lưu xuống DB dạng lowercase
-        UserAccount saved = repo.save(u);
-        return toDtoEntityOnly(saved);
+        u.setStatus(status);           // converter persists lowercase strings in DB
+        return toDto(repo.save(u));
     }
 
     @Override
@@ -69,25 +50,14 @@ public class AdminUserServiceImpl implements AdminUserService {
         changeStatus(id, AccountStatus.DELETED);
     }
 
-    // ----------------- Helpers -----------------
-
-    private UserAccountResponse toDtoEntityOnly(UserAccount u) {
+    private UserAccountResponseDTO toDto(UserAccount u) {
         String fullName = ((u.getFirstName() == null ? "" : u.getFirstName()) + " " +
                 (u.getLastName()  == null ? "" : u.getLastName())).trim();
-
-        // (Tùy chọn) Nếu đã tạo RoleRepository:
-        // String primaryRole = (roleRepo != null) ? roleRepo.findPrimaryRoleByUserId(u.getId()) : null;
-
-        return new UserAccountResponse(
-                u.getId(),
-                u.getUsername(),
-                u.getEmail(),
-                fullName,
-                u.getPhone(),
-                null,            // đổi thành primaryRole nếu bạn bật RoleRepository ở trên
-                u.getStatus(),
-                u.getCreatedAt(),
-                u.getUpdatedAt()
+        // String role = (roleRepo != null) ? roleRepo.findPrimaryRoleByUserId(u.getId()) : null;
+        return new UserAccountResponseDTO(
+                u.getId(), u.getUsername(), u.getEmail(), fullName, u.getPhone(),
+                null, /* role */
+                u.getStatus(), u.getCreatedAt(), u.getUpdatedAt()
         );
     }
 }

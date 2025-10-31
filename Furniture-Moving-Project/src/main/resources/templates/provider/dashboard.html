@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Provider Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Early theme boot (no flash) -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');
+                var prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var dark = saved ? (saved === 'dark') : prefers;
+                document.documentElement.classList.toggle('dark', !!dark);
+            } catch (e) {
+            }
+        })();
+    </script>
+
+    <!-- DASHBOARD ASSETS (reuse) -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- Overlay sidebar & sidebar readability tweaks (page-only overrides) -->
+    <style>
+        /* Sidebar overlays content; content never shifts */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 250px;
+            z-index: 1030;
+            transform: translateX(-100%);
+            transition: transform .2s ease;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .content, .content.open {
+            margin-left: 0 !important;
+        }
+
+        /* Improve dark-mode contrast for sidebar items */
+        .dark .sidebar {
+            background-color: #0f172a !important;
+        }
+
+        .sidebar .nav-link {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .6rem .85rem;
+            border-radius: .6rem;
+            color: var(--text-muted) !important;
+            transition: background-color .15s, color .15s;
+        }
+
+        .sidebar .nav-link .fa, .sidebar .nav-link .bi {
+            color: currentColor !important;
+            opacity: .95;
+        }
+
+        .dark .sidebar .nav-link:hover {
+            color: var(--text) !important;
+            background: rgba(148, 163, 184, .14);
+        }
+
+        .sidebar .nav-link.active {
+            color: #e5e7eb !important;
+            background: linear-gradient(90deg, rgba(59, 130, 246, .18) 0%, rgba(59, 130, 246, .12) 40%, rgba(59, 130, 246, .06) 100%);
+            box-shadow: inset 3px 0 0 #3b82f6;
+        }
+
+        /* Optional backdrop when sidebar is open */
+        #sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .25);
+            backdrop-filter: blur(1px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
+            z-index: 1029;
+        }
+
+        #sidebar-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Cards for KPIs in both themes */
+        .card-dark {
+            background: var(--surface) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 14px;
+        }
+
+        .kpi .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .kpi .label {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container-fluid position-relative d-flex p-0">
+
+    <!-- Sidebar (reused structure) -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a th:href="@{/provider/dashboard}" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>ProviderOP</h3>
+            </a>
+
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar"
+                         style="width:40px;height:40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0" th:text="${#authentication?.name}">provider1</h6>
+                    <span>Provider</span>
+                </div>
+            </div>
+
+            <div class="navbar-nav w-100">
+                <a th:href="@{/provider/dashboard}" class="nav-item nav-link active"><i
+                        class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
+                <a th:href="@{/provider/services}" class="nav-item nav-link"><i
+                        class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ</a>
+                <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box-seam me-2"></i>Đơn
+                    hàng</a>
+                <a th:href="@{/provider/analytics}" class="nav-item nav-link"><i class="bi bi-graph-up me-2"></i>Phân
+                    tích</a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Top Navbar (reused) -->
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a th:href="@{/provider/dashboard}" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2>
+            </a>
+            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <form class="d-none d-md-flex ms-4" role="search">
+                <input class="form-control border-0" type="search" placeholder="Tìm kiếm nhanh…">
+            </form>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button"
+                        aria-pressed="false">🌙 Dark
+                </button>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a href="#" class="dropdown-item"><h6 class="fw-normal mb-0">Không có thông báo</h6>
+                            <small>—</small></a>
+                    </div>
+                </div>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt=""
+                             style="width:40px;height:40px;">
+                        <span class="d-none d-lg-inline-flex" th:text="${#authentication?.name}">provider1</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" href="/provider/profile">Hồ sơ</a>
+                        <a class="dropdown-item" href="/provider/settings">Cài đặt</a>
+                        <div class="dropdown-divider"></div>
+                        <form th:action="@{/logout}" method="post" id="logoutForm"></form>
+                        <a href="#" class="dropdown-item"
+                           onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Body -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card-dark p-3 kpi">
+                        <div class="value" id="kpi-total">0</div>
+                        <div class="label">Tổng đơn</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-dark p-3 kpi">
+                        <div class="value" id="kpi-assigned">0</div>
+                        <div class="label">Assigned</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-dark p-3 kpi">
+                        <div class="value" id="kpi-progress">0</div>
+                        <div class="label">In Progress</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-dark p-3 kpi">
+                        <div class="value" id="kpi-completed">0</div>
+                        <div class="label">Completed</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-lg-8">
+                    <div class="card-dark p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="m-0">Đơn gần đây</h6>
+                            <a href="/provider/orders" class="btn btn-sm btn-outline-secondary">Xem tất cả</a>
+                        </div>
+                        <div id="recent" class="mt-3"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-dark p-3">
+                        <h6 class="m-0 mb-2">7 ngày qua</h6>
+                        <canvas id="miniChart" height="180"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded-top p-4">
+                <div class="row">
+                    <div class="col-12 col-sm-6 text-center text-sm-start">
+                        &copy; <a href="#">Your Site Name</a>, All Right Reserved.
+                    </div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a></div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- /content -->
+</div> <!-- /container-fluid -->
+
+<!-- Backdrop for overlay sidebar -->
+<div id="sidebar-backdrop" aria-hidden="true"></div>
+
+<!-- JS order: jQuery -> Bootstrap -> main.js (dashboard) -> page JS -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/dashbooard/js/main.js}"></script>
+
+<!-- Optional: your provider-specific JS (KPIs, chart, list) -->
+<script th:src="@{/provider/js/provider-dashboard.js}"></script>
+
+<script>
+    // Backdrop sync with existing main.js toggle (.sidebar.open)
+    (function () {
+        var $sidebar = $('.sidebar');
+        var $backdrop = $('#sidebar-backdrop');
+
+        function syncBackdrop() {
+            $backdrop.toggleClass('show', $sidebar.hasClass('open'));
+        }
+
+        // initial
+        syncBackdrop();
+
+        // observe class changes on sidebar to show/hide backdrop
+        try {
+            var obs = new MutationObserver(syncBackdrop);
+            obs.observe($sidebar.get(0), {attributes: true, attributeFilter: ['class']});
+        } catch (e) {
+            // fallback
+            setInterval(syncBackdrop, 250);
+        }
+
+        // click backdrop to close
+        $(document).off('click.provider-backdrop').on('click.provider-backdrop', '#sidebar-backdrop', function () {
+            $sidebar.removeClass('open');
+            syncBackdrop();
+        });
+    })();
+</script>
+</body>
+</html>

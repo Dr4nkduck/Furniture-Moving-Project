@@ -202,6 +202,64 @@
         }
     });
 
+
+    var HIDE_DELAY_MS = 180;
+    var hideTimer = null;
+
+    var $sidebar = $('.sidebar');
+    var $content = $('.content');
+    var $togglers = $('.sidebar-toggler');
+
+    // If the layout isn't present, bail out silently
+    if ($sidebar.length === 0 || $content.length === 0 || $togglers.length === 0) return;
+
+    function showPeek() {
+        clearTimeout(hideTimer);
+        $sidebar.addClass('open');
+        $content.addClass('open');
+    }
+    function scheduleHidePeek() {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () {
+            $sidebar.removeClass('open');
+            $content.removeClass('open');
+        }, HIDE_DELAY_MS);
+    }
+
+    // Prevent duplicate bindings: remove our namespaced handlers first, then bind
+    $togglers.off('.peek').on('mouseenter.peek', function () {
+        showPeek();
+    }).on('mouseleave.peek', function () {
+        scheduleHidePeek();
+    }).on('click.peek touchstart.peek', function (e) {
+        // On touch/click, just do a quick peek; existing click toggler (above) still toggles.
+        // Prevent double navigation on anchors with "#"
+        e.preventDefault();
+        if ($sidebar.hasClass('open')) {
+            scheduleHidePeek();
+        } else {
+            showPeek();
+        }
+    });
+
+    $sidebar.off('.peek').on('mouseenter.peek', function () {
+        showPeek();
+    }).on('mouseleave.peek', function () {
+        scheduleHidePeek();
+    });
+
+    // If user clicks anywhere outside sidebar & toggler, hide immediately (mobile friendly)
+    $(document).off('click.peek').on('click.peek', function (e) {
+        var $t = $(e.target);
+        var insideSidebar = $t.closest('.sidebar').length > 0;
+        var onToggler = $t.closest('.sidebar-toggler').length > 0;
+        if (!insideSidebar && !onToggler) {
+            clearTimeout(hideTimer);
+            $sidebar.removeClass('open');
+            $content.removeClass('open');
+        }
+    });
+
     
 })(jQuery);
 
