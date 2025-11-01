@@ -1,96 +1,120 @@
-(function () {
-    const providerId = new URLSearchParams(location.search).get('providerId') || '';
+// ===== CONFIG =====
+const qs = new URLSearchParams(location.search);
+const providerId = qs.get('providerId');
+if (!providerId) alert("Thiếu providerId trên URL (?providerId=...)");
 
-    function toast(msg, ok = true) {
-        Toastify({
-            text: msg, duration: 2200, gravity: "bottom", position: "right",
-            backgroundColor: ok ? "#22c55e" : "#ef4444"
-        }).showToast();
-    }
+const API_BASE = `/api/providers/pricing/${providerId}`;
 
-    async function api(path, opts) {
-        const sep = path.includes('?') ? '&' : '?';
-        const url = providerId ? (path + sep + 'providerId=' + providerId) : path;
-        const res = await fetch(url, opts);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.status === 204 ? null : res.json();
-    }
+// CSRF (nếu bật)
+const CSRF_TOKEN  = document.querySelector('meta[name="_csrf"]')?.content;
+const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-    const pkgSelect = document.getElementById('packageSelect');
+// ===== DOM =====
+const packageSelect = document.getElementById('packageSelect');
+const pricePerKm    = document.getElementById('pricePerKm');
+const itemsBody     = document.getElementById('itemsBody');
+const filterInput   = document.getElementById('filterInput');
+const saveAllBtn    = document.getElementById('saveAllBtn');
+const saveTableBtn  = document.getElementById('saveTableBtn');
 
-    async function loadPackages() {
-        const list = await api('/api/providers/packages');
-        pkgSelect.innerHTML = '';
-        list.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.packageId;
-            opt.textContent = p.name;
-            pkgSelect.appendChild(opt);
-        });
-        if (window.jQuery && jQuery.fn && jQuery.fn.select2) jQuery(pkgSelect).select2({placeholder: 'Chọn gói dịch vụ'});
-        if (list.length) {
-            await loadPerKm();
-        }
-    }
+// ===== STATE =====
+let currentPackageId = null;
+let currentItems = []; // [{furnitureItemId, furnitureItemName, price}]
 
-    async function loadPerKm() {
-        const d = await api('/api/providers/packages/pricing?packageId=' + pkgSelect.value);
-        document.getElementById('perKm').value = (d && d.perKm) ? d.perKm : 0;
-    }
+// ===== Helpers =====
+function currency(v){ return v?.toLocaleString('vi-VN'); }
 
-    async function savePerKm() {
-        const dto = {packageId: +pkgSelect.value, perKm: +document.getElementById('perKm').value};
-        await api('/api/providers/packages/pricing', {
-            method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dto)
-        });
-        toast('Đã lưu giá theo km.');
-    }
-
-    async function loadFurniture() {
-        const list = await api('/api/providers/furniture-prices');
-        const body = document.getElementById('furnitureBody');
-        body.innerHTML = '';
-        list.forEach(it => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-        <td>${it.furnitureName}</td>
-        <td class="text-muted">${it.unit || ''}</td>
-        <td>
-          <div class="input-group">
-            <span class="input-group-text">₫</span>
-            <input type="number" class="form-control" min="0" step="1000" value="${it.price || 0}" data-id="${it.furnitureTypeId}">
-          </div>
-        </td>`;
-            body.appendChild(tr);
-        });
-    }
-
-    async function saveFurniture() {
-        const rows = [...document.querySelectorAll('#furnitureBody input')];
-        const items = rows.map(i => ({furnitureTypeId: +i.dataset.id, price: +i.value}));
-        await api('/api/providers/furniture-prices', {
-            method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(items)
-        });
-        toast('Đã lưu bảng giá đồ.');
-    }
-
-    pkgSelect.addEventListener('change', () => loadPerKm().catch(() => toast('Lỗi tải giá/km', false)));
-    document.getElementById('btnSavePerKm').addEventListener('click', e => {
-        e.preventDefault();
-        savePerKm().catch(() => toast('Lưu giá/km thất bại', false));
+async function apiGet(url){
+    const res = await fetch(url, {credentials:'same-origin'});
+    if(!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+async function apiPut(url, body){
+    const headers = {'Content-Type':'application/json'};
+    if (CSRF_HEADER && CSRF_TOKEN) headers[CSRF_HEADER] = CSRF_TOKEN;
+    const res = await fetch(url, {method:'PUT', headers, credentials:'same-origin', body: JSON.stringify(body)});
+    if(!res.ok) throw new Error(await res.text());
+    return true;
+}
+function numberInput(value){
+    const el = document.createElement('input');
+    el.type='number'; el.min='0'; el.step='1000';
+    el.className='form-control';
+    if(value!=null) el.value=value;
+    el.placeholder='để trống = xoá giá riêng';
+    return el;
+}
+function renderItems(list){
+    itemsBody.innerHTML='';
+    list.forEach(it=>{
+        const tr=document.createElement('tr');
+        const td1=document.createElement('td');
+        td1.textContent=it.furnitureItemName;
+        const td2=document.createElement('td');
+        const inp=numberInput(it.price);
+        inp.dataset.itemId=it.furnitureItemId;
+        td2.appendChild(inp);
+        tr.append(td1,td2);
+        itemsBody.appendChild(tr);
     });
-    document.getElementById('btnSaveFurniture').addEventListener('click', e => {
-        e.preventDefault();
-        saveFurniture().catch(() => toast('Lưu bảng giá đồ thất bại', false));
-    });
+}
+function filtered(){
+    const q = filterInput.value.trim().toLowerCase();
+    return q? currentItems.filter(x=>x.furnitureItemName.toLowerCase().includes(q)) : currentItems;
+}
 
-    (async function init() {
-        try {
-            await loadPackages();
-            await loadPerKm();
-            await loadFurniture();
-        } catch (err) {
-            toast('Không tải được dữ liệu. Thử thêm ?providerId=... để test.', false);
-        }
-    })();
-})();
+// ===== Load =====
+async function loadPackages(){
+    const data = await apiGet(`${API_BASE}/packages`);
+    packageSelect.innerHTML='';
+    data.forEach(p=>{
+        const opt=document.createElement('option');
+        opt.value=p.packageId;
+        opt.textContent = `${p.packageName}${p.pricePerKm!=null?' • '+currency(p.pricePerKm)+' đ/km':''}`;
+        packageSelect.appendChild(opt);
+    });
+    if(data.length){
+        packageSelect.value=data[0].packageId;
+        await onPackageChange();
+    }
+}
+async function onPackageChange(){
+    currentPackageId = parseInt(packageSelect.value,10);
+    const d = await apiGet(`${API_BASE}/packages/${currentPackageId}`);
+    pricePerKm.value = d.pricePerKm ?? '';
+    currentItems = d.furniturePrices || [];
+    renderItems(filtered());
+}
+
+// ===== Save =====
+function collectPayload(includePerKm=true){
+    const items = Array.from(itemsBody.querySelectorAll('input[type="number"]')).map(inp=>{
+        const val = inp.value === '' ? null : Number(inp.value);
+        return { furnitureItemId: Number(inp.dataset.itemId), furnitureItemName: undefined, price: val };
+    });
+    return {
+        providerId: Number(providerId),
+        packageId: Number(currentPackageId),
+        pricePerKm: includePerKm ? (pricePerKm.value===''? null : Number(pricePerKm.value)) : undefined,
+        furniturePrices: items
+    };
+}
+async function saveAll(){
+    const body = collectPayload(true);
+    await apiPut(`${API_BASE}/packages/${currentPackageId}`, body);
+    alert('Đã lưu cấu hình gói!');
+    await loadPackages();
+}
+async function saveTableOnly(){
+    const body = collectPayload(false);
+    await apiPut(`${API_BASE}/packages/${currentPackageId}`, body);
+    alert('Đã lưu bảng giá đồ!');
+}
+
+// ===== Bind =====
+packageSelect?.addEventListener('change', onPackageChange);
+filterInput?.addEventListener('input', ()=>renderItems(filtered()));
+saveAllBtn?.addEventListener('click', ()=>saveAll().catch(e=>alert('Lỗi: '+e.message)));
+saveTableBtn?.addEventListener('click', ()=>saveTableOnly().catch(e=>alert('Lỗi: '+e.message)));
+
+loadPackages().catch(e=>alert('Lỗi tải dữ liệu: '+e.message));

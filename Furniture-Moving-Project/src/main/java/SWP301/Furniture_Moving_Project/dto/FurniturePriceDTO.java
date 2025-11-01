@@ -1,39 +1,26 @@
 package SWP301.Furniture_Moving_Project.dto;
 
-import jakarta.validation.constraints.NotNull;
-
 import java.math.BigDecimal;
 
 public class FurniturePriceDTO {
-    @NotNull
-    private Integer furnitureTypeId;
-    private String furnitureName; // for UI
-    private String unit;          // for UI
-    @NotNull
-    private BigDecimal price;
+    private Integer furnitureItemId;
+    private String furnitureItemName; // dùng để hiển thị
+    private BigDecimal price;          // null => xóa giá riêng
 
-    public Integer getFurnitureTypeId() {
-        return furnitureTypeId;
+    public Integer getFurnitureItemId() {
+        return furnitureItemId;
     }
 
-    public void setFurnitureTypeId(Integer furnitureTypeId) {
-        this.furnitureTypeId = furnitureTypeId;
+    public void setFurnitureItemId(Integer furnitureItemId) {
+        this.furnitureItemId = furnitureItemId;
     }
 
-    public String getFurnitureName() {
-        return furnitureName;
+    public String getFurnitureItemName() {
+        return furnitureItemName;
     }
 
-    public void setFurnitureName(String furnitureName) {
-        this.furnitureName = furnitureName;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
+    public void setFurnitureItemName(String furnitureItemName) {
+        this.furnitureItemName = furnitureItemName;
     }
 
     public BigDecimal getPrice() {

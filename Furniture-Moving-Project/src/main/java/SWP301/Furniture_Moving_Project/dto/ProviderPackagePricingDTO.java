@@ -1,19 +1,22 @@
 package SWP301.Furniture_Moving_Project.dto;
 
-import jakarta.validation.constraints.NotNull;
-
 import java.math.BigDecimal;
+import java.util.List;
 
 public class ProviderPackagePricingDTO {
-    @NotNull
+    private Integer providerId;
     private Integer packageId;
     private String packageName;
+    private BigDecimal pricePerKm;
+    private List<FurniturePriceDTO> furniturePrices;
 
-    @NotNull
-    private BigDecimal baseFee;
-    @NotNull
-    private BigDecimal perKm;
+    public Integer getProviderId() {
+        return providerId;
+    }
 
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
+    }
 
     public Integer getPackageId() {
         return packageId;
@@ -31,20 +34,19 @@ public class ProviderPackagePricingDTO {
         this.packageName = packageName;
     }
 
-    public BigDecimal getBaseFee() {
-        return baseFee;
+    public BigDecimal getPricePerKm() {
+        return pricePerKm;
     }
 
-    public void setBaseFee(BigDecimal baseFee) {
-        this.baseFee = baseFee;
+    public void setPricePerKm(BigDecimal pricePerKm) {
+        this.pricePerKm = pricePerKm;
     }
 
-    public BigDecimal getPerKm() {
-        return perKm;
+    public List<FurniturePriceDTO> getFurniturePrices() {
+        return furniturePrices;
     }
 
-    public void setPerKm(BigDecimal perKm) {
-        this.perKm = perKm;
+    public void setFurniturePrices(List<FurniturePriceDTO> furniturePrices) {
+        this.furniturePrices = furniturePrices;
     }
-
 }

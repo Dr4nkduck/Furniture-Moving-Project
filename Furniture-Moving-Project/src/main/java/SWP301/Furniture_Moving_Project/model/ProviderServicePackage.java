@@ -1,29 +1,48 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 
-@Entity @Table(name="provider_service_packages",
-        uniqueConstraints=@UniqueConstraint(columnNames={"provider_id","package_id"}))
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
+@Entity
+@Table(name = "provider_service_packages",
+        uniqueConstraints = @UniqueConstraint(name = "uk_psp_provider_package",
+                columnNames = {"provider_id", "service_package_id"}),
+        indexes = {
+                @Index(name = "idx_psp_provider", columnList = "provider_id"),
+                @Index(name = "idx_psp_package", columnList = "service_package_id")
+        })
 public class ProviderServicePackage {
-    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name="provider_id", nullable=false) private Integer providerId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "provider_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_psp_provider"))
+    private Provider provider;
 
-    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="package_id", nullable=false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "service_package_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_psp_service_package"))
     private ServicePackage servicePackage;
 
-    private BigDecimal baseFee;
-    private BigDecimal perKm;
-    private BigDecimal perMinute;
-    private BigDecimal surchargeStairs;
-    private BigDecimal surchargeNoElevator;
-    private BigDecimal surchargeNarrowAlley;
-    private BigDecimal surchargeWeekend;
+    @Column(name = "price_per_km", precision = 18, scale = 2)
+    private BigDecimal pricePerKm; // có thể null nếu chưa cấu hình
+
+    @Column(name = "created_at", nullable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = OffsetDateTime.now();
+    }
+
     // getters/setters
-
-
     public Integer getId() {
         return id;
     }
@@ -32,12 +51,12 @@ public class ProviderServicePackage {
         this.id = id;
     }
 
-    public Integer getProviderId() {
-        return providerId;
+    public Provider getProvider() {
+        return provider;
     }
 
-    public void setProviderId(Integer providerId) {
-        this.providerId = providerId;
+    public void setProvider(Provider provider) {
+        this.provider = provider;
     }
 
     public ServicePackage getServicePackage() {
@@ -48,59 +67,27 @@ public class ProviderServicePackage {
         this.servicePackage = servicePackage;
     }
 
-    public BigDecimal getBaseFee() {
-        return baseFee;
+    public BigDecimal getPricePerKm() {
+        return pricePerKm;
     }
 
-    public void setBaseFee(BigDecimal baseFee) {
-        this.baseFee = baseFee;
+    public void setPricePerKm(BigDecimal pricePerKm) {
+        this.pricePerKm = pricePerKm;
     }
 
-    public BigDecimal getPerKm() {
-        return perKm;
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setPerKm(BigDecimal perKm) {
-        this.perKm = perKm;
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public BigDecimal getPerMinute() {
-        return perMinute;
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setPerMinute(BigDecimal perMinute) {
-        this.perMinute = perMinute;
-    }
-
-    public BigDecimal getSurchargeStairs() {
-        return surchargeStairs;
-    }
-
-    public void setSurchargeStairs(BigDecimal surchargeStairs) {
-        this.surchargeStairs = surchargeStairs;
-    }
-
-    public BigDecimal getSurchargeNoElevator() {
-        return surchargeNoElevator;
-    }
-
-    public void setSurchargeNoElevator(BigDecimal surchargeNoElevator) {
-        this.surchargeNoElevator = surchargeNoElevator;
-    }
-
-    public BigDecimal getSurchargeNarrowAlley() {
-        return surchargeNarrowAlley;
-    }
-
-    public void setSurchargeNarrowAlley(BigDecimal surchargeNarrowAlley) {
-        this.surchargeNarrowAlley = surchargeNarrowAlley;
-    }
-
-    public BigDecimal getSurchargeWeekend() {
-        return surchargeWeekend;
-    }
-
-    public void setSurchargeWeekend(BigDecimal surchargeWeekend) {
-        this.surchargeWeekend = surchargeWeekend;
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
