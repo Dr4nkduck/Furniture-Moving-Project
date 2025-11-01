@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Nhà vận chuyển - Chi tiết</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
+    <style>
+        .provider-hero img { width: 100%; height: 260px; object-fit: cover; border-radius: 8px; }
+        .review-item { border-bottom: 1px solid #eee; padding: 14px 0; }
+        .review-item:last-child { border-bottom: 0; }
+        .rating i { color: #f1c40f; }
+    </style>
+
+</head>
+<body>
+<div class="wrapper">
+    <div th:replace="fragments/header :: topbar"></div>
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <div class="container py-4">
+        <div class="mb-3">
+            <a th:href="@{/providers}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i>Quay lại danh sách</a>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8 mb-4">
+                <div class="provider-hero mb-3">
+                    <img th:src="@{/homepage/img/service-remake-2.jpg}" alt="provider">
+                </div>
+                <h3 th:text="${provider.companyName}">Tên đơn vị</h3>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rating mr-2">
+                        <i class="fa-star" th:each="i : ${#numbers.sequence(1, 5)}" th:classappend="${i <= provider.rating} ? 'fas' : 'far'"></i>
+                    </div>
+                    <span class="text-muted" th:text="${provider.rating} + ' / 5 • ' + ${provider.totalReviews} + ' đánh giá'">4.8 / 5 • 120 đánh giá</span>
+                </div>
+
+                <a class="btn btn-primary" th:href="@{/homepage/request(providerId=${provider.providerId})}">Đặt dịch vụ</a>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Đánh giá của khách</h5>
+                        <div th:if="${reviews == null or #lists.isEmpty(reviews)}" class="text-muted">Chưa có đánh giá nào.</div>
+                        <div th:each="rv : ${reviews}" class="review-item">
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="rating mr-2">
+                                    <i class="fa-star" th:each="i : ${#numbers.sequence(1, 5)}" th:classappend="${i <= rv.rating} ? 'fas' : 'far'"></i>
+                                </div>
+                                <small class="text-muted" th:text="${#temporals.format(rv.createdAt, 'dd/MM/yyyy HH:mm')}">01/10/2025 09:30</small>
+                            </div>
+                            <div th:text="${rv.comment}">Hài lòng, đúng giờ, làm cẩn thận.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="fragments/footer :: footer"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+

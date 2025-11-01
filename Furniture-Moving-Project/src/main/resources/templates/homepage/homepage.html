@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <title>FURNITURE MOVING</title>
-    <meta content   ="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="Construction Company Website Template" name="keywords">
     <meta content="Construction Company Website Template" name="description">
 
     <!-- Favicon -->
-    <link rel="icon" th:href="@{/homepage/img/favicon.ico}"/>
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -90,6 +90,76 @@
     <!-- Carousel End -->
 
 
+    <!--AI bao gia start-->
+    <div class="wrapper">
+        <section class="user-actions">
+            <div class="container">
+                <div class="section-header text-center">
+                    <p>Chọn cách tạo báo giá</p>
+                    <h2>Bạn muốn làm gì?</h2>
+                </div>
+
+                <div class="row">
+                    <!-- Báo giá bằng AI -->
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="action-card">
+                            <div class="action-header">
+                                <i class="fas fa-robot"></i>
+                                <h5 class="mb-0">Báo giá bằng AI</h5>
+                            </div>
+                            <div class="action-body">
+                                <p>Tạo báo giá nhanh từ ảnh… AI sẽ đếm số lượng và gợi ý giá tham khảo.</p>
+                                <ul>
+                                    <li>Phù hợp khi có ảnh tổng quan</li>
+                                    <li>Tự động đếm theo hàng–cột (nếu nhận diện được)</li>
+                                    <li>Xuất bảng gợi ý giá theo từng mục</li>
+                                </ul>
+                            </div>
+                            <div class="action-footer">
+                                <!-- CHỈ SỬA DÒNG NÀY: dùng th:href để điều hướng -->
+                                <a class="btn btn-primary" th:href="@{/user/ai-quote}">
+                                    <i class="fas fa-bolt mr-1"></i> Dùng AI
+                                </a>
+                                <button id="btn-ai-guide" type="button" class="btn btn-outline-dark">
+                                    <i class="far fa-question-circle mr-1"></i> Hướng dẫn
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Báo giá thủ công -->
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="action-card">
+                            <div class="action-header">
+                                <i class="fas fa-edit"></i>
+                                <h5 class="mb-0">Báo giá thủ công</h5>
+                            </div>
+                            <div class="action-body">
+                                <p>Tự nhập hạng mục, số lượng và đơn giá.</p>
+                                <ul>
+                                    <li>Kiểm soát chi tiết từng dòng</li>
+                                    <li>Phù hợp yêu cầu đặc thù</li>
+                                    <li>Dễ chỉnh sửa & lưu nháp</li>
+                                </ul>
+                            </div>
+                            <div class="action-footer">
+                                <button id="btn-manual-start" type="button" class="btn btn-primary">
+                                    <i class="fas fa-plus mr-1"></i> Tạo báo giá
+                                </button>
+                                <button id="btn-manual-template" type="button" class="btn btn-outline-dark">
+                                    <i class="far fa-file-alt mr-1"></i> Xem mẫu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!--AI bao gia End-->
+
+
     <!-- Feature Start-->
     <div class="feature wow fadeInUp" data-wow-delay="0.1s">
         <div class="container-fluid">
@@ -136,8 +206,7 @@
             <div class="row align-items-center">
                 <div class="col-lg-5 col-md-6">
                     <div class="about-img">
-                        <img th:src="@{/homepage/img/about-remake-1.jpg}"
-                             alt="Nền tảng kết nối nhà vận chuyển & khách hàng">
+                        <img th:src="@{/homepage/img/about-remake-1.jpg}" alt="Nền tảng kết nối nhà vận chuyển & khách hàng">
                     </div>
                 </div>
                 <div class="col-lg-7 col-md-6">
@@ -147,14 +216,11 @@
                     </div>
                     <div class="about-text">
                         <p>
-                            Chúng tôi là <strong>nền tảng trung gian</strong> giúp bạn đăng yêu cầu chuyển nhà/văn
-                            phòng,
-                            nhận <strong>nhiều báo giá</strong> từ các đối tác đã xác minh, so sánh theo <em>giá – đánh
-                            giá – năng lực</em> và đặt lịch thuận tiện.
+                            Chúng tôi là <strong>nền tảng trung gian</strong> giúp bạn đăng yêu cầu chuyển nhà/văn phòng,
+                            nhận <strong>nhiều báo giá</strong> từ các đối tác đã xác minh, so sánh theo <em>giá – đánh giá – năng lực</em> và đặt lịch thuận tiện.
                         </p>
                         <p>
-                            Thanh toán linh hoạt, theo dõi đơn tập trung, hỗ trợ 24/7 và chính sách giải quyết tranh
-                            chấp minh bạch giúp trải nghiệm của bạn an tâm hơn.
+                            Thanh toán linh hoạt, theo dõi đơn tập trung, hỗ trợ 24/7 và chính sách giải quyết tranh chấp minh bạch giúp trải nghiệm của bạn an tâm hơn.
                         </p>
                         <a class="btn" th:href="@{/homepage/how-it-works}">Cách hoạt động</a>
                     </div>
@@ -213,6 +279,32 @@
     <!-- Fact End -->
 
 
+    <!-- Providers Teaser (between homepage and service packages) -->
+    <div class="about wow fadeInUp" data-wow-delay="0.1s">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-7 col-md-6">
+                    <div class="section-header text-left">
+                        <p>Các nhà vận chuyển</p>
+                        <h2>Chọn đơn vị theo đánh giá & lịch rảnh</h2>
+                    </div>
+                    <div class="about-text">
+                        <p>
+                            Xem danh sách nhà vận chuyển đã xác minh, bộ lọc theo tên và kiểm tra <strong>lịch rảnh theo ngày</strong> để đặt nhanh.
+                        </p>
+                        <a class="btn" th:href="@{/providers}">Xem nhà vận chuyển</a>
+                    </div>
+                </div>
+                <div class="col-lg-5 col-md-6">
+                    <div class="about-img">
+                        <img th:src="@{/homepage/img/service-remake-2.jpg}" alt="Danh sách nhà vận chuyển">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+    </div>
+
     <!-- Service Start -->
     <div class="service">
         <div class="container">
@@ -228,13 +320,12 @@
                         <div class="service-img">
                             <img th:src="@{/homepage/img/service-remake-1.jpg}" alt="Chuyển nhà trọn gói">
                             <div class="service-overlay">
-                                <p>Đăng yêu cầu chuyển nhà, nhận nhiều báo giá từ đối tác gần bạn, so sánh &amp;
-                                    chọn.</p>
+                                <p>Đăng yêu cầu chuyển nhà, nhận nhiều báo giá từ đối tác gần bạn, so sánh &amp; chọn.</p>
                             </div>
                         </div>
                         <div class="service-text">
                             <h3>Chuyển nhà trọn gói</h3>
-                            <a class="btn" th:href="@{/homepage/request(category='chuyen-nha')}">+</a>
+                            <a class="btn" th:href="@{/service/chuyen-nha}">+</a>
                         </div>
                     </div>
                 </div>
@@ -245,13 +336,12 @@
                         <div class="service-img">
                             <img th:src="@{/homepage/img/service-remake-2.jpg}" alt="Chuyển văn phòng">
                             <div class="service-overlay">
-                                <p>Di dời văn phòng, hồ sơ, thiết bị. Đặt ngoài giờ, xem đánh giá &amp; năng lực đối
-                                    tác.</p>
+                                <p>Di dời văn phòng, hồ sơ, thiết bị. Đặt ngoài giờ, xem đánh giá &amp; năng lực đối tác.</p>
                             </div>
                         </div>
                         <div class="service-text">
                             <h3>Chuyển văn phòng</h3>
-                            <a class="btn" th:href="@{/homepage/request(category='chuyen-van-phong')}">+</a>
+                            <a class="btn" th:href="@{/service/chuyen-van-phong}">+</a>
                         </div>
                     </div>
                 </div>
@@ -283,7 +373,7 @@
                         </div>
                         <div class="service-text">
                             <h3>Tháo lắp &amp; đóng gói</h3>
-                            <a class="btn" th:href="@{/homepage/request(category='thao-lap-dong-goi')}">+</a>
+                            <a class="btn" th:href="@{/service/thao-lap-dong-goi}">+</a>
                         </div>
                     </div>
                 </div>
@@ -294,13 +384,12 @@
                         <div class="service-img">
                             <img th:src="@{/homepage/img/service-remake-5.jpg}" alt="Vận chuyển liên tỉnh">
                             <div class="service-overlay">
-                                <p>Xe tải đa tải trọng, tuyến liên tỉnh. Theo dõi hành trình &amp; chính sách bảo hiểm
-                                    rõ ràng.</p>
+                                <p>Xe tải đa tải trọng, tuyến liên tỉnh. Theo dõi hành trình &amp; chính sách bảo hiểm rõ ràng.</p>
                             </div>
                         </div>
                         <div class="service-text">
                             <h3>Vận chuyển liên tỉnh</h3>
-                            <a class="btn" th:href="@{/homepage/request(category='lien-tinh')}">+</a>
+                            <a class="btn" th:href="@{/service/van-chuyen-lien-tinh}">+</a>
                         </div>
                     </div>
                 </div>
@@ -316,7 +405,7 @@
                         </div>
                         <div class="service-text">
                             <h3>Cho thuê xe tải</h3>
-                            <a class="btn" th:href="@{/homepage/request(category='cho-thue-xe')}">+</a>
+                            <a class="btn" th:href="@{/service/cho-thue-xe-tai}">+</a>
                         </div>
                     </div>
                 </div>
@@ -325,6 +414,7 @@
         </div>
     </div>
     <!-- Service End -->
+
 
 
     <!-- FAQs Start -->
@@ -342,49 +432,41 @@
                         <!-- 1 -->
                         <div class="card wow fadeInLeft" data-wow-delay="0.1s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL1"
-                                   aria-expanded="false" aria-controls="faqL1">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL1" aria-expanded="false" aria-controls="faqL1">
                                     Nền tảng hoạt động như thế nào?
                                 </a>
                             </div>
                             <div id="faqL1" class="collapse" data-parent="#accordion-1">
                                 <div class="card-body">
-                                    Chúng tôi là nền tảng kết nối nhu cầu chuyển nhà/văn phòng của bạn với các <strong>đối
-                                    tác vận chuyển đã xác minh</strong>.
-                                    Bạn tạo yêu cầu &rarr; nhận báo giá &rarr; chọn nhà vận chuyển phù hợp &rarr; theo
-                                    dõi &amp; hoàn tất đơn.
+                                    Chúng tôi là nền tảng kết nối nhu cầu chuyển nhà/văn phòng của bạn với các <strong>đối tác vận chuyển đã xác minh</strong>.
+                                    Bạn tạo yêu cầu &rarr; nhận báo giá &rarr; chọn nhà vận chuyển phù hợp &rarr; theo dõi &amp; hoàn tất đơn.
                                 </div>
                             </div>
                         </div>
                         <!-- 2 -->
                         <div class="card wow fadeInLeft" data-wow-delay="0.2s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL2"
-                                   aria-expanded="false" aria-controls="faqL2">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL2" aria-expanded="false" aria-controls="faqL2">
                                     Làm sao để nhận báo giá nhanh?
                                 </a>
                             </div>
                             <div id="faqL2" class="collapse" data-parent="#accordion-1">
                                 <div class="card-body">
-                                    Điền form yêu cầu (địa điểm đi/đến, thời gian, khối lượng đồ, tầng, yêu cầu đóng
-                                    gói...).
-                                    Hệ thống sẽ gửi đến nhiều nhà vận chuyển để họ <strong>báo giá minh bạch</strong>;
-                                    bạn so sánh &amp; chọn.
+                                    Điền form yêu cầu (địa điểm đi/đến, thời gian, khối lượng đồ, tầng, yêu cầu đóng gói...).
+                                    Hệ thống sẽ gửi đến nhiều nhà vận chuyển để họ <strong>báo giá minh bạch</strong>; bạn so sánh &amp; chọn.
                                 </div>
                             </div>
                         </div>
                         <!-- 3 -->
                         <div class="card wow fadeInLeft" data-wow-delay="0.3s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL3"
-                                   aria-expanded="false" aria-controls="faqL3">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL3" aria-expanded="false" aria-controls="faqL3">
                                     Phí nền tảng được tính thế nào?
                                 </a>
                             </div>
                             <div id="faqL3" class="collapse" data-parent="#accordion-1">
                                 <div class="card-body">
-                                    Giá hiển thị gồm <strong>phí dịch vụ của nhà vận chuyển</strong> và (nếu có)
-                                    <strong>phí nền tảng</strong>, được tách bạch rõ trên màn hình đặt.
+                                    Giá hiển thị gồm <strong>phí dịch vụ của nhà vận chuyển</strong> và (nếu có) <strong>phí nền tảng</strong>, được tách bạch rõ trên màn hình đặt.
                                     Bạn luôn thấy tổng số tiền trước khi xác nhận.
                                 </div>
                             </div>
@@ -392,34 +474,28 @@
                         <!-- 4 -->
                         <div class="card wow fadeInLeft" data-wow-delay="0.4s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL4"
-                                   aria-expanded="false" aria-controls="faqL4">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL4" aria-expanded="false" aria-controls="faqL4">
                                     Thanh toán an toàn như thế nào?
                                 </a>
                             </div>
                             <div id="faqL4" class="collapse" data-parent="#accordion-1">
                                 <div class="card-body">
-                                    Bạn có thể thanh toán qua nền tảng hoặc trực tiếp cho nhà vận chuyển (tùy chính sách
-                                    nhà cung cấp).
-                                    Chúng tôi khuyến nghị thanh toán qua nền tảng để được <strong>ghi nhận giao dịch,
-                                    biên nhận và hỗ trợ khiếu nại</strong> tốt hơn.
+                                    Bạn có thể thanh toán qua nền tảng hoặc trực tiếp cho nhà vận chuyển (tùy chính sách nhà cung cấp).
+                                    Chúng tôi khuyến nghị thanh toán qua nền tảng để được <strong>ghi nhận giao dịch, biên nhận và hỗ trợ khiếu nại</strong> tốt hơn.
                                 </div>
                             </div>
                         </div>
                         <!-- 5 -->
                         <div class="card wow fadeInLeft" data-wow-delay="0.5s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL5"
-                                   aria-expanded="false" aria-controls="faqL5">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqL5" aria-expanded="false" aria-controls="faqL5">
                                     Hàng hóa có bảo hiểm không? Trách nhiệm thuộc về ai?
                                 </a>
                             </div>
                             <div id="faqL5" class="collapse" data-parent="#accordion-1">
                                 <div class="card-body">
-                                    Bảo hiểm/bồi thường do <strong>nhà vận chuyển</strong> cung cấp theo điều khoản dịch
-                                    vụ của họ.
-                                    Nền tảng hỗ trợ hiển thị chính sách, tư vấn chọn gói phù hợp và làm việc 3 bên khi
-                                    có phát sinh.
+                                    Bảo hiểm/bồi thường do <strong>nhà vận chuyển</strong> cung cấp theo điều khoản dịch vụ của họ.
+                                    Nền tảng hỗ trợ hiển thị chính sách, tư vấn chọn gói phù hợp và làm việc 3 bên khi có phát sinh.
                                 </div>
                             </div>
                         </div>
@@ -432,15 +508,13 @@
                         <!-- 6 -->
                         <div class="card wow fadeInRight" data-wow-delay="0.1s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR1"
-                                   aria-expanded="false" aria-controls="faqR1">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR1" aria-expanded="false" aria-controls="faqR1">
                                     Đối tác vận chuyển được xác minh ra sao?
                                 </a>
                             </div>
                             <div id="faqR1" class="collapse" data-parent="#accordion-2">
                                 <div class="card-body">
-                                    Chúng tôi kiểm tra hồ sơ pháp lý cơ bản, thông tin xe/nhân sự và <strong>đánh giá từ
-                                    khách hàng</strong>.
+                                    Chúng tôi kiểm tra hồ sơ pháp lý cơ bản, thông tin xe/nhân sự và <strong>đánh giá từ khách hàng</strong>.
                                     Xếp hạng hiển thị công khai để bạn lựa chọn minh bạch.
                                 </div>
                             </div>
@@ -448,41 +522,35 @@
                         <!-- 7 -->
                         <div class="card wow fadeInRight" data-wow-delay="0.2s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR2"
-                                   aria-expanded="false" aria-controls="faqR2">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR2" aria-expanded="false" aria-controls="faqR2">
                                     Hủy/đổi lịch và hoàn tiền như thế nào?
                                 </a>
                             </div>
                             <div id="faqR2" class="collapse" data-parent="#accordion-2">
                                 <div class="card-body">
-                                    Chính sách hủy/đổi lịch phụ thuộc từng nhà vận chuyển (thời điểm báo, có phát sinh
-                                    chuẩn bị vật tư…).
-                                    Chính sách luôn <strong>hiển thị trước khi đặt</strong>; hoàn tiền (nếu có) theo
-                                    đúng điều khoản đó.
+                                    Chính sách hủy/đổi lịch phụ thuộc từng nhà vận chuyển (thời điểm báo, có phát sinh chuẩn bị vật tư…).
+                                    Chính sách luôn <strong>hiển thị trước khi đặt</strong>; hoàn tiền (nếu có) theo đúng điều khoản đó.
                                 </div>
                             </div>
                         </div>
                         <!-- 8 -->
                         <div class="card wow fadeInRight" data-wow-delay="0.3s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR3"
-                                   aria-expanded="false" aria-controls="faqR3">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR3" aria-expanded="false" aria-controls="faqR3">
                                     Xử lý khiếu nại/tranh chấp ra sao?
                                 </a>
                             </div>
                             <div id="faqR3" class="collapse" data-parent="#accordion-2">
                                 <div class="card-body">
                                     Bạn gửi yêu cầu hỗ trợ trên nền tảng kèm hình ảnh/chứng cứ.
-                                    Bộ phận CSKH sẽ <strong>kết nối 3 bên</strong> để xác minh và đưa ra hướng xử lý
-                                    theo điều khoản dịch vụ đã thỏa thuận.
+                                    Bộ phận CSKH sẽ <strong>kết nối 3 bên</strong> để xác minh và đưa ra hướng xử lý theo điều khoản dịch vụ đã thỏa thuận.
                                 </div>
                             </div>
                         </div>
                         <!-- 9 -->
                         <div class="card wow fadeInRight" data-wow-delay="0.4s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR4"
-                                   aria-expanded="false" aria-controls="faqR4">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR4" aria-expanded="false" aria-controls="faqR4">
                                     Dữ liệu cá nhân của tôi có an toàn không?
                                 </a>
                             </div>
@@ -496,16 +564,14 @@
                         <!-- 10 -->
                         <div class="card wow fadeInRight" data-wow-delay="0.5s">
                             <div class="card-header">
-                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR5"
-                                   aria-expanded="false" aria-controls="faqR5">
+                                <a class="card-link collapsed" data-toggle="collapse" href="#faqR5" aria-expanded="false" aria-controls="faqR5">
                                     Có hỗ trợ xuất hóa đơn/chứng từ không?
                                 </a>
                             </div>
                             <div id="faqR5" class="collapse" data-parent="#accordion-2">
                                 <div class="card-body">
                                     Hóa đơn dịch vụ do <strong>nhà vận chuyển</strong> phát hành theo quy định.
-                                    Nền tảng hỗ trợ đối soát, tổng hợp chứng từ và cung cấp biên nhận giao dịch (nếu
-                                    thanh toán qua nền tảng).
+                                    Nền tảng hỗ trợ đối soát, tổng hợp chứng từ và cung cấp biên nhận giao dịch (nếu thanh toán qua nền tảng).
                                 </div>
                             </div>
                         </div>
@@ -524,22 +590,14 @@
             <div class="row">
                 <div class="col-12">
                     <div class="testimonial-slider-nav">
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-1.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-2.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-3.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-4.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-1.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-2.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-3.jpg}" alt="Testimonial">
-                        </div>
-                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-4.jpg}" alt="Testimonial">
-                        </div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-1.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-2.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-3.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-4.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-1.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-2.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-3.jpg}" alt="Testimonial"></div>
+                        <div class="slider-nav"><img th:src="@{/homepage/img/testimonial-4.jpg}" alt="Testimonial"></div>
                     </div>
                 </div>
             </div>
@@ -550,158 +608,48 @@
                         <div class="slider-item">
                             <h3>Nguyễn Minh Trang</h3>
                             <h4>Khách hàng chuyển nhà</h4>
-                            <p>Đăng yêu cầu rất nhanh, nhận 4 báo giá để so sánh. Đơn vị tôi chọn đến đúng giờ, đóng gói
-                                kỹ và có bảo hiểm hàng hóa rõ ràng.</p>
+                            <p>Đăng yêu cầu rất nhanh, nhận 4 báo giá để so sánh. Đơn vị tôi chọn đến đúng giờ, đóng gói kỹ và có bảo hiểm hàng hóa rõ ràng.</p>
                         </div>
                         <div class="slider-item">
                             <h3>Phạm Hữu Lộc</h3>
                             <h4>Chủ doanh nghiệp SME</h4>
-                            <p>Chuyển văn phòng ngoài giờ cuối tuần, gần như không gián đoạn kinh doanh. Nền tảng theo
-                                dõi tiến độ và hỗ trợ 24/7 rất tiện.</p>
+                            <p>Chuyển văn phòng ngoài giờ cuối tuần, gần như không gián đoạn kinh doanh. Nền tảng theo dõi tiến độ và hỗ trợ 24/7 rất tiện.</p>
                         </div>
                         <div class="slider-item">
                             <h3>Lê Bảo Ngọc</h3>
                             <h4>Khách hàng liên tỉnh</h4>
-                            <p>Tuyến TP.HCM → Đà Nẵng. Có nhiều mức xe để chọn, giá minh bạch, cập nhật hành trình đầy
-                                đủ. Hài lòng!</p>
+                            <p>Tuyến TP.HCM → Đà Nẵng. Có nhiều mức xe để chọn, giá minh bạch, cập nhật hành trình đầy đủ. Hài lòng!</p>
                         </div>
                         <div class="slider-item">
                             <h3>Trần Quốc Duy</h3>
                             <h4>Đối tác vận chuyển</h4>
-                            <p>Nguồn việc đều, mô tả yêu cầu rõ ràng. Quy trình nhận đơn – xác nhận – thanh toán gọn và
-                                minh bạch.</p>
+                            <p>Nguồn việc đều, mô tả yêu cầu rõ ràng. Quy trình nhận đơn – xác nhận – thanh toán gọn và minh bạch.</p>
                         </div>
                         <div class="slider-item">
                             <h3>Võ Thúy An</h3>
                             <h4>Khách hàng ký túc xá</h4>
-                            <p>Chuyển trọ nhanh trong buổi sáng, đồ dễ vỡ được chèn chống sốc kỹ. Giá đúng như đã báo
-                                trên nền tảng.</p>
+                            <p>Chuyển trọ nhanh trong buổi sáng, đồ dễ vỡ được chèn chống sốc kỹ. Giá đúng như đã báo trên nền tảng.</p>
                         </div>
                         <div class="slider-item">
                             <h3>Đặng Hoài Phong</h3>
                             <h4>Quản lý vận hành</h4>
-                            <p>Tính năng gọi nhiều báo giá cùng lúc giúp tối ưu chi phí, lại xem được đánh giá nhà vận
-                                chuyển trước khi chọn.</p>
+                            <p>Tính năng gọi nhiều báo giá cùng lúc giúp tối ưu chi phí, lại xem được đánh giá nhà vận chuyển trước khi chọn.</p>
                         </div>
                         <div class="slider-item">
                             <h3>Ngô Hải My</h3>
                             <h4>Khách hàng hộ gia đình</h4>
-                            <p>Đồ cồng kềnh như tủ lạnh, máy giặt, giường tủ được tháo lắp an toàn. Đội ngũ lịch sự, làm
-                                việc sạch sẽ.</p>
+                            <p>Đồ cồng kềnh như tủ lạnh, máy giặt, giường tủ được tháo lắp an toàn. Đội ngũ lịch sự, làm việc sạch sẽ.</p>
                         </div>
                         <div class="slider-item">
                             <h3>Hoàng Tấn Tài</h3>
                             <h4>Đối tác bốc xếp</h4>
-                            <p>Lịch làm rõ ràng, ghi chú hàng hóa cụ thể. Hỗ trợ khi có phát sinh nhanh chóng, tạo sự
-                                tin cậy đôi bên.</p>
+                            <p>Lịch làm rõ ràng, ghi chú hàng hóa cụ thể. Hỗ trợ khi có phát sinh nhanh chóng, tạo sự tin cậy đôi bên.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-      <!-- 1 -->
-      <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-        <div class="service-item">
-          <div class="service-img">
-            <img th:src="@{/homepage/img/service-remake-1.jpg}" alt="Chuyển nhà trọn gói">
-            <div class="service-overlay">
-              <p>Đăng yêu cầu chuyển nhà, nhận nhiều báo giá từ đối tác gần bạn, so sánh &amp; chọn.</p>
-            </div>
-          </div>
-          <div class="service-text">
-            <h3>Chuyển nhà trọn gói</h3>
-            <a class="btn" th:href="@{/service/chuyen-nha}">+</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2 -->
-      <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
-        <div class="service-item">
-          <div class="service-img">
-            <img th:src="@{/homepage/img/service-remake-2.jpg}" alt="Chuyển văn phòng">
-            <div class="service-overlay">
-              <p>Di dời văn phòng, hồ sơ, thiết bị. Đặt ngoài giờ, xem đánh giá &amp; năng lực đối tác.</p>
-            </div>
-          </div>
-          <div class="service-text">
-            <h3>Chuyển văn phòng</h3>
-            <a class="btn" th:href="@{/service/chuyen-van-phong}">+</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3 -->
-      <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
-        <div class="service-item">
-          <div class="service-img">
-            <img th:src="@{/homepage/img/service-remake-3.jpg}" alt="Bốc xếp & kho bãi">
-            <div class="service-overlay">
-              <p>Thuê nhân công theo ca, sắp xếp kho bãi, xử lý hàng cồng kềnh an toàn.</p>
-            </div>
-          </div>
-          <div class="service-text">
-            <h3>Bốc xếp &amp; kho bãi</h3>
-            <a class="btn" th:href="@{/service/boc-xep-kho-bai}">+</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4 -->
-      <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
-        <div class="service-item">
-          <div class="service-img">
-            <img th:src="@{/homepage/img/service-remake-4.jpg}" alt="Tháo lắp & đóng gói">
-            <div class="service-overlay">
-              <p>Tháo lắp nội thất, điện máy; đóng gói chống sốc theo chuẩn của từng đối tác.</p>
-            </div>
-          </div>
-          <div class="service-text">
-            <h3>Tháo lắp &amp; đóng gói</h3>
-            <a class="btn" th:href="@{/service/thao-lap-dong-goi}">+</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5 -->
-      <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
-        <div class="service-item">
-          <div class="service-img">
-            <img th:src="@{/homepage/img/service-remake-5.jpg}" alt="Vận chuyển liên tỉnh">
-            <div class="service-overlay">
-              <p>Xe tải đa tải trọng, tuyến liên tỉnh. Theo dõi hành trình &amp; chính sách bảo hiểm rõ ràng.</p>
-            </div>
-          </div>
-          <div class="service-text">
-            <h3>Vận chuyển liên tỉnh</h3>
-            <a class="btn" th:href="@{/service/van-chuyen-lien-tinh}">+</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 6 -->
-      <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.6s">
-        <div class="service-item">
-          <div class="service-img">
-            <img th:src="@{/homepage/img/service-remake-6.jpg}" alt="Cho thuê xe tải">
-            <div class="service-overlay">
-              <p>Thuê xe tải/người khuân vác theo giờ/chuyến. Hợp đồng linh hoạt trên nền tảng.</p>
-            </div>
-          </div>
-          <div class="service-text">
-            <h3>Cho thuê xe tải</h3>
-            <a class="btn" th:href="@{/service/cho-thue-xe-tai}">+</a>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-<!-- Service End -->
     <!-- Testimonial End -->
 
 
@@ -723,6 +671,5 @@
 
     <!-- Template Javascript -->
     <script th:src="@{/homepage/js/main.js}"></script>
-</div>
 </body>
 </html>
