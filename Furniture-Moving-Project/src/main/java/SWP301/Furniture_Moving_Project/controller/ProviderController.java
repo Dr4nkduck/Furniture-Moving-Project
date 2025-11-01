@@ -26,7 +26,7 @@ public class ProviderController {
     }
 
     @GetMapping("/provider/orders/{id}")
-    public String orderDetail(@PathVariable Integer id, Model model) { // PV-004/005
+    public String orderDetail(@PathVariable Integer id, Model model) {
         model.addAttribute("orderId", id);
         return "provider/order-detail";
     }
