@@ -4,8 +4,15 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
 @Table(name = "providers", schema = "dbo")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Provider {
 
     @Id
@@ -45,9 +52,6 @@ public class Provider {
     @Column(name = "surcharge_weekend")
     private BigDecimal surchargeWeekend;
 
-
-    public Provider() {
-    }
 
     @PrePersist
     public void prePersist() {
