@@ -1,98 +1,76 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
-import SWP301.Furniture_Moving_Project.model.Provider;
+import SWP301.Furniture_Moving_Project.dto.*;
+import SWP301.Furniture_Moving_Project.model.FurnitureType;
+import SWP301.Furniture_Moving_Project.repository.FurnitureTypeRepository;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
-
-import SWP301.Furniture_Moving_Project.dto.ProviderPackagePricingDTO;
-import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-
-
-
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/providers")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api")
 public class ProviderApiController {
 
-    private final ProviderRepository providerRepository;
+    private final ProviderRepository providerRepo;
+    private final ProviderPricingService pricingService;
+    private final FurnitureTypeRepository furnitureTypeRepo;
 
-    // PV-002 (existing global pricing)
-    private final ProviderPricingService providerPricingService;
-
-
-
-    // PV-003/004/005 (orders) – inject when you’re ready
-    // private final ProviderOrderService providerOrderService;
-
-    public ProviderApiController(ProviderRepository providerRepository,
-                                 ProviderPricingService providerPricingService
-
-                                 // , ProviderOrderService providerOrderService
-    ) {
-        this.providerRepository = providerRepository;
-        this.providerPricingService = providerPricingService;
-
-
+    public ProviderApiController(ProviderRepository providerRepo,
+                                 ProviderPricingService pricingService,
+                                 FurnitureTypeRepository furnitureTypeRepo) {
+        this.providerRepo = providerRepo;
+        this.pricingService = pricingService;
+        this.furnitureTypeRepo = furnitureTypeRepo;
     }
 
-    // -------------------------------------------------------------------------
-    // BASIC LIST
-    // -------------------------------------------------------------------------
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> list() {
-        List<Provider> entities = providerRepository.findAll();
-
-        List<ProviderDTO> data = entities.stream()
-                .map(p -> new ProviderDTO(
-                        p.getProviderId(),
-                        p.getCompanyName(),
-                        p.getRating()
-                ))
-                .collect(Collectors.toList());
-
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("success", true);
-        resp.put("data", data);
-        return ResponseEntity.ok(resp);
+    /* ---- FIX 404: Các biến thể /me (giữ tương thích JS cũ) ---- */
+    @GetMapping({"/providers/me","/provider/me","/me/provider","/auth/me"})
+    public Map<String,Object> me(Authentication auth) {
+        Integer providerId = null;
+        if (auth != null) {
+            providerId = providerRepo.findProviderIdByUsername(auth.getName()).orElse(null);
+        }
+        return Map.of("providerId", providerId);
     }
 
-
-    // ========== PV-002: Pricing APIs ==========
-    @GetMapping("/{providerId}/pricing/packages")
-    @PreAuthorize("hasRole('PROVIDER') or hasRole('ADMIN')")
-    public java.util.List<ProviderPackagePricingDTO> listPackages(@PathVariable Integer providerId) {
-        return providerPricingService.listPackagesForProvider(providerId);
+    /* ---- Packages list của provider ---- */
+    @GetMapping("/providers/{providerId}/service-packages")
+    public List<PackageOptionDTO> listPackages(@PathVariable Integer providerId) {
+        return pricingService.listPackages(providerId);
     }
 
-    @GetMapping("/{providerId}/pricing/packages/{packageId}")
-    @PreAuthorize("hasRole('PROVIDER') or hasRole('ADMIN')")
-    public ProviderPackagePricingDTO getPackage(@PathVariable Integer providerId,
-                                                @PathVariable Integer packageId) {
-        return providerPricingService.getPackagePricing(providerId, packageId);
+    /* ---- Chi tiết 1 package: perKm + bảng giá nội thất ---- */
+    @GetMapping("/providers/{providerId}/service-packages/{packageId}")
+    public PackagePricingDetailDTO packageDetail(@PathVariable Integer providerId,
+                                                 @PathVariable Integer packageId) {
+        return pricingService.getPackageDetail(providerId, packageId);
     }
 
-    @PutMapping("/{providerId}/pricing/packages/{packageId}")
-    @PreAuthorize("hasRole('PROVIDER') or hasRole('ADMIN')")
-    public ResponseEntity<?> savePackage(@PathVariable Integer providerId,
-                                         @PathVariable Integer packageId,
-                                         @RequestBody ProviderPackagePricingDTO body) {
-        body.setProviderId(providerId);
-        body.setPackageId(packageId);
-        providerPricingService.savePackagePricing(body);
-        return ResponseEntity.ok().build();
+    /* ---- Lưu cấu hình giá ---- */
+    @PutMapping("/providers/{providerId}/service-packages/{packageId}")
+    public ResponseEntity<?> save(@PathVariable Integer providerId,
+                                  @PathVariable Integer packageId,
+                                  @RequestBody PricingSaveRequestDTO req) {
+        req.providerId = providerId;
+        req.packageId  = packageId;
+        pricingService.savePackagePricing(req);
+        return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    /* ---- Catalog nội thất (để load lên bảng) ---- */
+    @GetMapping("/furniture-items")
+    public List<Map<String,Object>> furnitureItems() {
+        List<Map<String,Object>> out = new ArrayList<>();
+        for (FurnitureType ft : furnitureTypeRepo.findAll()) {
+            Map<String,Object> m = new LinkedHashMap<>();
+            m.put("furnitureItemId", ft.getFurnitureTypeId());
+            m.put("furnitureItemName", ft.getName());
+            out.add(m);
+        }
+        return out;
+    }
 }

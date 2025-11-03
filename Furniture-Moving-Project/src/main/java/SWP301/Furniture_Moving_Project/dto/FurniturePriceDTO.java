@@ -3,9 +3,9 @@ package SWP301.Furniture_Moving_Project.dto;
 import java.math.BigDecimal;
 
 public class FurniturePriceDTO {
-    private Integer furnitureItemId;
-    private String furnitureItemName; // dùng để hiển thị
-    private BigDecimal price;          // null => xóa giá riêng
+    public Integer furnitureItemId;   // furniture_type_id
+    public String  furnitureItemName; // nếu thêm mới theo tên
+    public BigDecimal price;
 
     public Integer getFurnitureItemId() {
         return furnitureItemId;

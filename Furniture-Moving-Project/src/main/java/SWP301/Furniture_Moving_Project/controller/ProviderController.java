@@ -15,20 +15,10 @@ public class ProviderController {
         return "provider/dashboard";
     }
 
+
     @GetMapping("/provider/services")
-    public String services() {                    // PV-002
+    public String services() {
         return "provider/services";
-    }
-
-    @GetMapping("/provider/orders")
-    public String orders() {                      // PV-003
-        return "provider/orders";
-    }
-
-    @GetMapping("/provider/orders/{id}")
-    public String orderDetail(@PathVariable Integer id, Model model) {
-        model.addAttribute("orderId", id);
-        return "provider/order-detail";
     }
 }
 
