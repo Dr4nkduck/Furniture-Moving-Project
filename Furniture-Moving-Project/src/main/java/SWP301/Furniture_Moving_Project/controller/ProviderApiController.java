@@ -5,7 +5,9 @@ import SWP301.Furniture_Moving_Project.dto.ProviderPricingDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderPackagePricingDTO;
 import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
 import SWP301.Furniture_Moving_Project.model.Provider;
+import SWP301.Furniture_Moving_Project.model.Review;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
+import SWP301.Furniture_Moving_Project.repository.ReviewRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
 import SWP301.Furniture_Moving_Project.service.ProviderCatalogService;
@@ -27,6 +29,7 @@ public class ProviderApiController {
 
     private final ProviderRepository providerRepository;
     private final ServiceRequestRepository serviceRequestRepository;
+    private final ReviewRepository reviewRepository;
 
     // PV-002 (existing global pricing)
     private final ProviderPricingService providerPricingService;
@@ -40,13 +43,15 @@ public class ProviderApiController {
     public ProviderApiController(ProviderRepository providerRepository,
                                  ProviderPricingService providerPricingService,
                                  ProviderCatalogService providerCatalogService,
-                                 ServiceRequestRepository serviceRequestRepository
+                                 ServiceRequestRepository serviceRequestRepository,
+                                 ReviewRepository reviewRepository
                                  // , ProviderOrderService providerOrderService
     ) {
         this.providerRepository = providerRepository;
         this.providerPricingService = providerPricingService;
         this.providerCatalogService = providerCatalogService;
         this.serviceRequestRepository = serviceRequestRepository;
+        this.reviewRepository = reviewRepository;
         // this.providerOrderService = providerOrderService;
     }
 
@@ -193,6 +198,24 @@ public class ProviderApiController {
                                                                          @RequestParam(required = false) Integer providerId) {
         Integer pid = resolveProviderId(auth, providerId);
         return ResponseEntity.ok(providerCatalogService.upsertFurniturePrices(pid, items));
+    }
+
+    // -------------------------------------------------------------------------
+    // Reviews API – customer feedback per provider
+    // -------------------------------------------------------------------------
+    @GetMapping("/{providerId}/reviews")
+    public ResponseEntity<List<Map<String, Object>>> listReviews(@PathVariable Integer providerId) {
+        List<Review> reviews = reviewRepository.findByProviderIdOrderByCreatedAtDesc(providerId);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Review r : reviews) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("reviewId", r.getReviewId());
+            m.put("rating", r.getRating());
+            m.put("comment", r.getComment());
+            m.put("createdAt", r.getCreatedAt());
+            out.add(m);
+        }
+        return ResponseEntity.ok(out);
     }
 
     // -------------------------------------------------------------------------

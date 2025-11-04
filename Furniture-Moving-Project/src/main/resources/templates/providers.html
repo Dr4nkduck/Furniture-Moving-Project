@@ -102,6 +102,11 @@
         padding: 6px 10px;
         border-radius: 4px;
       }
+      /* Reviews modal list: ensure multiple reviews are visible with scroll */
+      #reviewsList { max-height: 60vh; overflow-y: auto; }
+      #reviewsList .review-item { border-bottom: 1px solid #eee; padding: 8px 0; }
+      #reviewsList .review-item:last-child { border-bottom: 0; }
+      #reviewsList .comment { white-space: pre-line; }
     </style>
   </head>
 
@@ -193,18 +198,23 @@
                     >
                   </div>
                   </div>
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      Chọn dịch vụ
-                    </button>
-                    <div class="dropdown-menu">
-                      <a class="dropdown-item" th:href="@{/service/chuyen-nha(providerId=${provider.providerId})}">Chuyển nhà trọn gói</a>
-                      <a class="dropdown-item" th:href="@{/service/chuyen-van-phong(providerId=${provider.providerId})}">Chuyển văn phòng</a>
-                      <a class="dropdown-item" th:href="@{/service/cho-thue-xe-tai(providerId=${provider.providerId})}">Cho thuê xe tải</a>
-                      <a class="dropdown-item" th:href="@{/service/thao-lap-dong-goi(providerId=${provider.providerId})}">Tháo lắp &amp; đóng gói</a>
-                      <a class="dropdown-item" th:href="@{/service/van-chuyen-lien-tinh(providerId=${provider.providerId})}">Vận chuyển liên tỉnh</a>
-                      <a class="dropdown-item" th:href="@{/service/boc-xep-kho-bai(providerId=${provider.providerId})}">Bốc xếp &amp; kho bãi</a>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="btn-group mr-2">
+                      <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Chọn dịch vụ
+                      </button>
+                      <div class="dropdown-menu">
+                        <a class="dropdown-item" th:href="@{/service/chuyen-nha(providerId=${provider.providerId})}">Chuyển nhà trọn gói</a>
+                        <a class="dropdown-item" th:href="@{/service/chuyen-van-phong(providerId=${provider.providerId})}">Chuyển văn phòng</a>
+                        <a class="dropdown-item" th:href="@{/service/cho-thue-xe-tai(providerId=${provider.providerId})}">Cho thuê xe tải</a>
+                        <a class="dropdown-item" th:href="@{/service/thao-lap-dong-goi(providerId=${provider.providerId})}">Tháo lắp &amp; đóng gói</a>
+                        <a class="dropdown-item" th:href="@{/service/van-chuyen-lien-tinh(providerId=${provider.providerId})}">Vận chuyển liên tỉnh</a>
+                        <a class="dropdown-item" th:href="@{/service/boc-xep-kho-bai(providerId=${provider.providerId})}">Bốc xếp &amp; kho bãi</a>
+                      </div>
                     </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm view-reviews" th:attr="data-provider-id=${provider.providerId},data-provider-name=${provider.companyName}">
+                      <i class="far fa-comments mr-1"></i> Xem đánh giá
+                    </button>
                   </div>
                 </div>
               </div>
@@ -242,10 +252,96 @@
 
     <!-- Template Javascript -->
     <script th:src="@{/homepage/js/main.js}"></script>
+
+    <!-- Reviews Modal -->
+    <div class="modal fade" id="reviewsModal" tabindex="-1" role="dialog" aria-labelledby="reviewsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reviewsModalLabel">Đánh giá khách hàng</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="reviewsLoading" class="text-center py-3 d-none">
+              <div class="spinner-border text-primary" role="status"></div>
+              <div class="small mt-2">Đang tải đánh giá...</div>
+            </div>
+            <div id="reviewsEmpty" class="alert alert-light d-none">Chưa có đánh giá nào cho đơn vị này.</div>
+            <div id="reviewsError" class="alert alert-danger d-none">Không thể tải đánh giá. Vui lòng thử lại sau.</div>
+            <div id="reviewsList"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       (function () {
         const $search = document.getElementById("providerSearch");
         const $date = document.getElementById("availabilityDate");
+        const $reviewsModal = document.getElementById('reviewsModal');
+        const $reviewsList = document.getElementById('reviewsList');
+        const $reviewsLoading = document.getElementById('reviewsLoading');
+        const $reviewsEmpty = document.getElementById('reviewsEmpty');
+        const $reviewsError = document.getElementById('reviewsError');
+
+        function renderStars(rating) {
+          let html = '<span class="text-warning">';
+          for (let i = 1; i <= 5; i++) {
+            html += `<i class="${rating >= i ? 'fas fa-star' : (rating >= i - 0.5 ? 'fas fa-star-half-alt' : 'far fa-star')}"></i>`;
+          }
+          html += `</span> <small class="text-muted ml-1">${rating}/5</small>`;
+          return html;
+        }
+
+        async function openReviews(providerId, providerName) {
+          // Set title
+          const title = document.getElementById('reviewsModalLabel');
+          if (title) title.textContent = `Đánh giá – ${providerName}`;
+
+          // Reset states
+          $reviewsList.innerHTML = '';
+          $reviewsEmpty.classList.add('d-none');
+          $reviewsError.classList.add('d-none');
+          $reviewsLoading.classList.remove('d-none');
+
+          // Show modal
+          // jQuery is available because of Bootstrap 4
+          window.jQuery && window.jQuery('#reviewsModal').modal('show');
+
+          try {
+            const resp = await fetch(`/api/providers/${providerId}/reviews`);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            const items = Array.isArray(data) ? data : (data.data || []);
+
+            if (!items.length) {
+              $reviewsEmpty.classList.remove('d-none');
+              return;
+            }
+
+            const parts = items.map(it => {
+              const dt = it.createdAt ? new Date(it.createdAt) : null;
+              const when = dt ? dt.toLocaleString('vi-VN') : '';
+              return `<div class="review-item">
+                        <div class="d-flex align-items-center mb-1">
+                          ${renderStars(it.rating || 0)}
+                          <small class="text-muted ml-2">${when}</small>
+                        </div>
+                        <div class="comment">${(it.comment || '').replace(/</g, '&lt;')}</div>
+                      </div>`;
+            });
+            $reviewsList.innerHTML = parts.join('');
+          } catch (e) {
+            $reviewsError.classList.remove('d-none');
+          } finally {
+            $reviewsLoading.classList.add('d-none');
+          }
+        }
 
         function renderSearch(results) {
           const ids = new Set(results.map((p) => p.providerId));
@@ -322,6 +418,17 @@
           });
 
         $date && $date.addEventListener("change", checkAvailability);
+
+        // click handler for view reviews buttons
+        document.addEventListener('click', function(e) {
+          const btn = e.target.closest && e.target.closest('.view-reviews');
+          if (!btn) return;
+          const providerId = btn.getAttribute('data-provider-id');
+          const providerName = btn.getAttribute('data-provider-name') || '';
+          if (providerId) {
+            openReviews(providerId, providerName);
+          }
+        });
 
         // default date = today
         const today = new Date();
