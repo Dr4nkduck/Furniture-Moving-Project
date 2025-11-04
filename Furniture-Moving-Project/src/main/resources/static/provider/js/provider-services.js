@@ -24,9 +24,9 @@
     const $btnReset = document.getElementById('btnReset');
     const $itemsTableBody = document.querySelector('#itemsTable tbody');
 
-    // modal
+    // Optional modal (safe if not present)
     const addModalEl = document.getElementById('addPkgModal');
-    const addModal = addModalEl ? new bootstrap.Modal(addModalEl) : null;
+    const addModal = (window.bootstrap && addModalEl) ? new window.bootstrap.Modal(addModalEl) : null;
     const $modalPackageSelect = document.getElementById('modalPackageSelect');
     const $modalPerKm = document.getElementById('modalPerKm');
     const $btnCreatePkg = document.getElementById('btnCreatePkg');
@@ -37,9 +37,9 @@
     // ---------- STATE ----------
     const state = {
         providerId: getProviderIdFromMeta(),
-        allPackages: [],      // tất cả gói trong hệ thống
-        configured: [],       // các gói đã cấu hình (perKm != null)
-        unconfigured: [],     // các gói chưa cấu hình
+        allPackages: [],
+        configured: [],
+        unconfigured: [],
         current: {
             packageId: null,
             packageName: null,
@@ -48,6 +48,27 @@
         },
         lastLoadedSnapshotName: null
     };
+
+    // ---------- THEME ----------
+    initThemeToggle();
+
+    function initThemeToggle(){
+        const btn = document.getElementById('theme-toggle');
+        if (!btn) return;
+
+        function sync(){
+            const isDark = document.documentElement.classList.contains('dark');
+            btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+        }
+        btn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch(e){}
+            sync();
+        });
+        sync();
+    }
 
     // ---------- UTIL ----------
     function getProviderIdFromMeta() {
@@ -60,12 +81,13 @@
     }
 
     function toast(msg, type = 'info', timeoutMs = 3000) {
+        if (!$toastBox) return alert(msg);
         const div = document.createElement('div');
         div.className = `alert alert-${type === 'error' ? 'danger' : type} border-0 shadow mb-2`;
         div.innerHTML = `<div class="d-flex align-items-center">
-        <i class="bi ${typeIcon(type)} me-2"></i>
-        <div>${msg}</div>
-      </div>`;
+      <i class="bi ${typeIcon(type)} me-2"></i>
+      <div>${msg}</div>
+    </div>`;
         $toastBox.appendChild(div);
         setTimeout(() => { div.remove(); }, timeoutMs);
     }
@@ -97,7 +119,11 @@
         return Number.isNaN(num) ? '' : num.toLocaleString('vi-VN');
     }
 
-    // ---------- RENDER LEFT LIST ----------
+    function escapeHtml(s) {
+        return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ---------- LEFT LIST ----------
     function renderConfiguredList(filterText = '') {
         const rows = state.configured
             .filter(p => p.packageName.toLowerCase().includes(filterText.toLowerCase()))
@@ -105,20 +131,19 @@
                 const active = (state.current.packageId === p.packageId) ? ' active' : '';
                 const km = p.pricePerKm ? `${moneyOrEmpty(p.pricePerKm)} đ/km` : 'Chưa đặt giá/km';
                 return `<button type="button" class="list-group-item list-group-item-action${active}" data-id="${p.packageId}">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <div class="fw-semibold">${escapeHtml(p.packageName)}</div>
-                      <div class="small muted">${km}</div>
-                    </div>
-                    <i class="bi bi-chevron-right"></i>
-                  </div>
-                </button>`;
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">${escapeHtml(p.packageName)}</div>
+              <div class="small muted">${km}</div>
+            </div>
+            <i class="bi bi-chevron-right"></i>
+          </div>
+        </button>`;
             }).join('');
 
         $configuredList.innerHTML = rows || `<div class="small muted">Chưa có gói nào. Bấm <b>Thêm gói</b> để khởi tạo.</div>`;
         $configuredCount.textContent = state.configured.length;
 
-        // bind click
         $configuredList.querySelectorAll('button[data-id]').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const pkgId = parseInt(btn.getAttribute('data-id'), 10);
@@ -127,11 +152,7 @@
         });
     }
 
-    function escapeHtml(s) {
-        return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-
-    // ---------- RENDER DETAIL ----------
+    // ---------- DETAIL ----------
     function renderItemsTable() {
         const html = state.current.items.map((row, idx) => {
             const name = row.furnitureItemName ?? '';
@@ -151,7 +172,6 @@
         }).join('');
         $itemsTableBody.innerHTML = html;
 
-        // bind row events
         $itemsTableBody.querySelectorAll('tr').forEach(tr => {
             const idx = parseInt(tr.getAttribute('data-idx'), 10);
             tr.querySelector('.js-name').addEventListener('input', e => {
@@ -183,19 +203,18 @@
         try {
             const me = await apiGet('/api/providers/me');
             state.providerId = me.providerId || null;
-        } catch (_) { /* ignore */ }
+        } catch (_) { /* ignore; you can inject provider-id via meta */ }
     }
 
     async function loadPackages() {
         await ensureProviderId();
         if (!state.providerId) {
-            toast('Không xác định được Provider. Hãy đăng nhập bằng tài khoản Provider.', 'error');
+            toast('Không xác định được Provider. Hãy đăng nhập bằng tài khoản Provider.', 'error', 4000);
             return;
         }
         const all = await apiGet(`/api/providers/${state.providerId}/service-packages`);
         state.allPackages = all;
 
-        // tách đã cấu hình vs chưa cấu hình
         state.configured = all.filter(p => p.pricePerKm !== null && p.pricePerKm !== undefined);
         const configuredIds = new Set(state.configured.map(p => p.packageId));
         state.unconfigured = all.filter(p => !configuredIds.has(p.packageId));
@@ -205,16 +224,11 @@
     }
 
     async function afterPackagesLoaded() {
-        // Nếu đang mở gói mà không còn trong danh sách, đóng form
         if (state.current.packageId !== null) {
             const stillExists = state.allPackages.some(p => p.packageId === state.current.packageId);
-            if (!stillExists) {
-                clearCurrent();
-            }
+            if (!stillExists) clearCurrent();
         }
-        if (state.current.packageId === null) {
-            showDetailForm(false);
-        }
+        if (state.current.packageId === null) showDetailForm(false);
     }
 
     async function openPackage(packageId) {
@@ -222,8 +236,8 @@
         const d = await apiGet(`/api/providers/${state.providerId}/service-packages/${packageId}`);
 
         state.current.packageId = packageId;
-        const pkgMeta = state.allPackages.find(p => p.packageId === packageId);
-        state.current.packageName = pkgMeta ? pkgMeta.packageName : (d.packageNameSnapshot || '');
+        const meta = state.allPackages.find(p => p.packageId === packageId);
+        state.current.packageName = meta ? meta.packageName : (d.packageNameSnapshot || '');
         state.current.perKm = d.pricePerKm ?? null;
         state.current.items = (d.furniturePrices || []).map(x => ({
             furnitureItemId: x.furnitureItemId,
@@ -231,7 +245,6 @@
             price: x.price
         }));
 
-        // render
         $packageNameSnapshot.value = d.packageNameSnapshot || '';
         $pricePerKm.value = (state.current.perKm ?? '') === '' ? '' : state.current.perKm;
         renderItemsTable();
@@ -261,17 +274,14 @@
     // ---------- VALIDATION ----------
     function validateBeforeSave() {
         const errs = [];
-
         if (!state.providerId) errs.push('Không xác định được Provider.');
         if (!state.current.packageId) errs.push('Chưa chọn gói để lưu.');
 
-        // perKm
         const vkm = $pricePerKm.value;
         if (vkm !== '' && (isNaN(Number(vkm)) || Number(vkm) < 0)) {
             errs.push('Giá mỗi km không hợp lệ.');
         }
 
-        // items
         const namesSeen = new Set();
         for (let i = 0; i < state.current.items.length; i++) {
             const it = state.current.items[i];
@@ -289,17 +299,14 @@
                 errs.push(`Dòng ${i + 1}: giá không hợp lệ.`);
             }
         }
-
         return errs;
     }
 
     // ---------- SAVE / RESET ----------
     async function saveCurrent() {
         const errs = validateBeforeSave();
-        if (errs.length) {
-            toast(errs[0], 'warning', 4000);
-            return;
-        }
+        if (errs.length) return toast(errs[0], 'warning', 4000);
+
         const body = {
             providerId: state.providerId,
             packageId: state.current.packageId,
@@ -315,9 +322,7 @@
         await apiPut(`/api/providers/${state.providerId}/service-packages/${state.current.packageId}`, body);
         toast('Đã lưu cấu hình gói.', 'success');
 
-        // reload lists (để cập nhật “đã cấu hình/chưa cấu hình”)
         await loadPackages();
-        // mở lại gói vừa lưu
         await openPackage(state.current.packageId);
     }
 
@@ -326,7 +331,6 @@
         const ok = confirm('Đặt lại giá: xoá toàn bộ giá nội thất & để trống giá/km?');
         if (!ok) return;
 
-        // set rỗng local và gửi save
         $pricePerKm.value = '';
         state.current.items.forEach(it => it.price = null);
 
@@ -334,53 +338,56 @@
         toast('Đã đặt lại cấu hình giá của gói.', 'success');
     }
 
-    // ---------- ADD PACKAGE FLOW ----------
+    // ---------- ADD PACKAGE FLOW (optional modal present) ----------
     function openAddModal() {
-        // build select danh sách chưa cấu hình
+        if (!addModal) {
+            toast('Chức năng thêm gói nhanh yêu cầu modal trên trang.', 'warning');
+            return;
+        }
         const opts = state.unconfigured.map(p => `<option value="${p.packageId}">${escapeHtml(p.packageName)}</option>`).join('');
         $modalPackageSelect.innerHTML = opts || `<option disabled>(Không còn gói trống)</option>`;
         $modalPerKm.value = '';
-        addModal && addModal.show();
+        addModal.show();
     }
 
     async function createPackage() {
         const pkgId = parseInt($modalPackageSelect.value || '0', 10);
-        if (!pkgId) { toast('Chưa chọn gói.', 'warning'); return; }
+        if (!pkgId) return toast('Chưa chọn gói.', 'warning');
 
         const perKmInit = $modalPerKm.value === '' ? 0 : Number($modalPerKm.value);
-        if (isNaN(perKmInit) || perKmInit < 0) { toast('Giá mỗi km ban đầu không hợp lệ.', 'warning'); return; }
+        if (isNaN(perKmInit) || perKmInit < 0) return toast('Giá mỗi km ban đầu không hợp lệ.', 'warning');
 
         const body = {
             providerId: state.providerId,
             packageId: pkgId,
-            packageName: null, // sẽ snapshot bằng tên hệ thống lần đầu
+            packageName: null,
             pricePerKm: perKmInit,
             furniturePrices: []
         };
         await apiPut(`/api/providers/${state.providerId}/service-packages/${pkgId}`, body);
         toast('Đã tạo gói & đặt giá/km ban đầu.', 'success');
 
-        addModal && addModal.hide();
+        addModal.hide();
         await loadPackages();
         await openPackage(pkgId);
     }
 
     // ---------- EVENTS ----------
-    $btnRefresh.addEventListener('click', loadPackages);
-    $btnOpenAdd.addEventListener('click', openAddModal);
+    $btnRefresh && $btnRefresh.addEventListener('click', loadPackages);
+    $btnOpenAdd && $btnOpenAdd.addEventListener('click', openAddModal);
     $btnCreatePkg && $btnCreatePkg.addEventListener('click', createPackage);
 
-    $searchConfigured.addEventListener('input', e => {
+    $searchConfigured && $searchConfigured.addEventListener('input', e => {
         renderConfiguredList(e.target.value || '');
     });
 
-    $btnAddRow.addEventListener('click', () => {
+    $btnAddRow && $btnAddRow.addEventListener('click', () => {
         state.current.items.push({ furnitureItemId: null, furnitureItemName: '', price: null });
         renderItemsTable();
     });
 
-    $btnSave.addEventListener('click', saveCurrent);
-    $btnReset.addEventListener('click', resetCurrent);
+    $btnSave && $btnSave.addEventListener('click', saveCurrent);
+    $btnReset && $btnReset.addEventListener('click', resetCurrent);
 
     // ---------- INIT ----------
     (async function init() {
@@ -389,6 +396,26 @@
             toast('Đã tải danh sách gói.', 'success', 1800);
         } catch (e) {
             toast(e.message, 'error', 5000);
+        }
+
+        // Sidebar backdrop sync (matches dashboard behavior)
+        const $sidebar = document.querySelector('.sidebar');
+        const $backdrop = document.getElementById('sidebar-backdrop');
+        if ($sidebar && $backdrop) {
+            const syncBackdrop = () => $backdrop.classList.toggle('show', $sidebar.classList.contains('open'));
+            syncBackdrop();
+            try {
+                const obs = new MutationObserver(syncBackdrop);
+                obs.observe($sidebar, {attributes:true, attributeFilter:['class']});
+            } catch (e) {
+                setInterval(syncBackdrop, 300);
+            }
+            document.addEventListener('click', (ev) => {
+                if (ev.target.id === 'sidebar-backdrop') {
+                    $sidebar.classList.remove('open');
+                    syncBackdrop();
+                }
+            });
         }
     })();
 

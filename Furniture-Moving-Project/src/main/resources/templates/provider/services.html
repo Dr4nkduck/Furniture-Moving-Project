@@ -20,52 +20,15 @@
         })();
     </script>
 
-    <!-- DASHBOARD ASSETS (re-use đúng path dự án của bạn) -->
+    <!-- Dashboard assets -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-    <!-- Tối ưu hiển thị (không ảnh hưởng logic) -->
-    <style>
-        /* Sidebar overlays content; content never shifts */
-        .sidebar{
-            position:fixed; top:0; left:0; bottom:0; width:250px; z-index:1030;
-            transform:translateX(-100%); transition:transform .2s ease;
-        }
-        .sidebar.open{ transform:translateX(0); }
-        .content,.content.open{ margin-left:0!important; }
-        .dark .sidebar{ background-color:#0f172a!important; }
-
-        .sidebar .nav-link{
-            display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem;
-            border-radius:.6rem; color:var(--text-muted)!important; transition:background-color .15s,color .15s;
-        }
-        .sidebar .nav-link .fa,.sidebar .nav-link .bi{ color:currentColor!important; opacity:.95; }
-        .dark .sidebar .nav-link:hover{ color:var(--text)!important; background:rgba(148,163,184,.14); }
-        .sidebar .nav-link.active{
-            color:#e5e7eb!important;
-            background:linear-gradient(90deg,rgba(59,130,246,.18) 0%,rgba(59,130,246,.12) 40%,rgba(59,130,246,.06) 100%);
-            box-shadow:inset 3px 0 0 #3b82f6;
-        }
-        #sidebar-backdrop{
-            position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter:blur(1px);
-            opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:1029;
-        }
-        #sidebar-backdrop.show{ opacity:1; pointer-events:auto; }
-
-        /* Thẻ chung trang PV-002 */
-        body{ background:#0b1220; color:#e5e7eb; }
-        .card-dark{ background:#0f172a; border:1px solid #1f2937; border-radius:14px; }
-        .muted{ color:#94a3b8; }
-        .list-hover .list-group-item{ background:transparent; color:#e5e7eb; border-color:#1f2937; }
-        .list-hover .list-group-item:hover{ background:#111827; }
-        .list-hover .list-group-item.active{ background:#1e293b; border-color:#334155; }
-        .table thead th{ position:sticky; top:0; background:#0b1220; z-index:1; }
-        .badge-dim{ background:#1f2937; color:#cbd5e1; border:1px solid #334155; }
-        .toast-box{ position:fixed; right:16px; bottom:16px; z-index:1080; min-width:320px; }
-    </style>
+    <!-- PV-002 styles -->
+    <link rel="stylesheet" th:href="@{/provider/css/provider-services.css}">
 </head>
 
 <body>
@@ -90,7 +53,9 @@
             </div>
 
             <div class="navbar-nav w-100">
-                <a th:href="@{/provider/dashboard}" class="nav-item nav-link"><i class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
+                <a th:href="@{/provider/dashboard}" class="nav-item nav-link">
+                    <i class="bi bi-speedometer2 me-2"></i>Tổng quan
+                </a>
                 <a th:href="@{/provider/services}" class="nav-item nav-link active">
                     <i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ
                 </a>
@@ -116,7 +81,7 @@
             </form>
 
             <div class="navbar-nav align-items-center ms-auto">
-                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false" aria-label="Toggle dark mode">
                     🌙 Dark
                 </button>
 
@@ -149,7 +114,7 @@
         <!-- Page Body (PV-002) -->
         <div class="container-fluid pt-4 px-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="m-0">PV-002 • Thiết lập gói & bảng giá</h3>
+                <h3 class="m-0 text-shadow">PV-002 • Thiết lập gói & bảng giá</h3>
                 <div>
                     <button class="btn btn-outline-light btn-sm me-2" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
                     <button class="btn btn-primary btn-sm" id="btnOpenAdd"><i class="bi bi-plus-lg"></i> Thêm gói</button>
@@ -173,9 +138,7 @@
                             <input id="searchConfigured" class="form-control bg-transparent text-light border-secondary" placeholder="Tìm theo tên gói...">
                         </div>
 
-                        <div class="list-group list-hover" id="configuredList" style="max-height:66vh;overflow:auto;">
-                            <!-- render bằng JS -->
-                        </div>
+                        <div class="list-group list-hover" id="configuredList" style="max-height:66vh;overflow:auto;"></div>
                     </div>
                 </div>
 
@@ -254,28 +217,13 @@
 <!-- Backdrop for overlay sidebar -->
 <div id="sidebar-backdrop" aria-hidden="true"></div>
 
-<!-- JS order: jQuery -> Bootstrap (CDN) -> main.js (dashboard) -> provider-services.js -->
+<!-- Toast Container -->
+<div id="toastBox" class="toast-box"></div>
+
+<!-- JS order -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/dashbooard/js/main.js}"></script>
 <script th:src="@{/provider/js/provider-services.js}"></script>
-
-<!-- Đồng bộ backdrop với toggle trong main.js, không ảnh hưởng logic PV-002 -->
-<script>
-    (function () {
-        var $sidebar = $('.sidebar');
-        var $backdrop = $('#sidebar-backdrop');
-        function syncBackdrop(){ $backdrop.toggleClass('show', $sidebar.hasClass('open')); }
-        syncBackdrop();
-        try {
-            var obs = new MutationObserver(syncBackdrop);
-            obs.observe($sidebar.get(0), {attributes: true, attributeFilter: ['class']});
-        } catch (e) { setInterval(syncBackdrop, 250); }
-        $(document).off('click.provider-backdrop')
-            .on('click.provider-backdrop', '#sidebar-backdrop', function () {
-                $sidebar.removeClass('open'); syncBackdrop();
-            });
-    })();
-</script>
 </body>
 </html>
