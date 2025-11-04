@@ -1,3 +1,4 @@
+// model/FurnitureType.java  (map tới furniture_types)
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
@@ -10,19 +11,43 @@ public class FurnitureType {
     @Column(name = "furniture_type_id")
     private Integer furnitureTypeId;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String code;
 
     @Column(nullable = false)
     private String name;
 
-    // getters/setters
-    public Integer getFurnitureTypeId() { return furnitureTypeId; }
-    public void setFurnitureTypeId(Integer furnitureTypeId) { this.furnitureTypeId = furnitureTypeId; }
+    private String unit;
 
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
+    public Integer getFurnitureTypeId() {
+        return furnitureTypeId;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setFurnitureTypeId(Integer furnitureTypeId) {
+        this.furnitureTypeId = furnitureTypeId;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
 }

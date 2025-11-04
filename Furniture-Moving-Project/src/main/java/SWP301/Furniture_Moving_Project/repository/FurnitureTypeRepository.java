@@ -1,3 +1,4 @@
+// repository/FurnitureTypeRepository.java
 package SWP301.Furniture_Moving_Project.repository;
 
 import SWP301.Furniture_Moving_Project.model.FurnitureType;
@@ -7,5 +8,4 @@ import java.util.Optional;
 
 public interface FurnitureTypeRepository extends JpaRepository<FurnitureType, Integer> {
     Optional<FurnitureType> findByName(String name);
-    Optional<FurnitureType> findByCode(String code);
 }

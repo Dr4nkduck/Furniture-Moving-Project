@@ -2,142 +2,99 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
-    <title>PV-002 • Bảng giá & dịch vụ (Provider)</title>
+    <title>PV-002 • Bảng giá & Dịch vụ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Early theme boot: không nhấp nháy khi đổi theme -->
+    <!-- Nếu backend đã đẩy sẵn providerId, gắn vào meta để JS dùng (không bắt buộc) -->
+    <meta th:if="${providerId != null}" name="provider-id" th:content="${providerId}"/>
+
+    <!-- Early theme boot (no flash) -->
     <script>
-        (function () {
+        (function(){
             try {
                 var saved = localStorage.getItem('theme');
                 var prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var dark = saved ? (saved === 'dark') : prefers;
                 document.documentElement.classList.toggle('dark', !!dark);
-                document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-            } catch (e) {}
+            } catch(e){}
         })();
     </script>
 
-    <!-- CSRF (nếu bật Spring CSRF) -->
-    <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
-    <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
-    <!-- (tuỳ chọn) Nếu Controller render sẵn providerId -->
-    <meta th:if="${providerId != null}" name="provider-id" th:content="${providerId}">
-
-    <!-- DASHBOARD ASSETS -->
+    <!-- DASHBOARD ASSETS (re-use đúng path dự án của bạn) -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-    <!-- Page styles -->
+    <!-- Tối ưu hiển thị (không ảnh hưởng logic) -->
     <style>
-        :root{
-            --bg: #ffffff;
-            --text: #0f172a;
-            --muted: #64748b;
-            --surface: #ffffff;
-            --surface-2: #f8fafc;
-            --border: #e2e8f0;
-
-            --brand-1: #667eea; /* indigo */
-            --brand-2: #764ba2; /* purple */
-            --accent-1: #11998e; --accent-2: #38ef7d;
-            --danger-1: #ee0979; --danger-2: #ff6a00;
+        /* Sidebar overlays content; content never shifts */
+        .sidebar{
+            position:fixed; top:0; left:0; bottom:0; width:250px; z-index:1030;
+            transform:translateX(-100%); transition:transform .2s ease;
         }
-        .dark:root{
-            --bg: #0b1220;
-            --text: #e5e7eb;
-            --muted: #9aa4b2;
-            --surface: #0f172a;
-            --surface-2: #111827;
-            --border: #334155;
+        .sidebar.open{ transform:translateX(0); }
+        .content,.content.open{ margin-left:0!important; }
+        .dark .sidebar{ background-color:#0f172a!important; }
+
+        .sidebar .nav-link{
+            display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem;
+            border-radius:.6rem; color:var(--text-muted)!important; transition:background-color .15s,color .15s;
         }
-
-        html, body { background: var(--bg); color: var(--text); }
-
-        .app-card{
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.06);
+        .sidebar .nav-link .fa,.sidebar .nav-link .bi{ color:currentColor!important; opacity:.95; }
+        .dark .sidebar .nav-link:hover{ color:var(--text)!important; background:rgba(148,163,184,.14); }
+        .sidebar .nav-link.active{
+            color:#e5e7eb!important;
+            background:linear-gradient(90deg,rgba(59,130,246,.18) 0%,rgba(59,130,246,.12) 40%,rgba(59,130,246,.06) 100%);
+            box-shadow:inset 3px 0 0 #3b82f6;
         }
-
-        .page-header{
-            background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
-            color: #fff; border-radius: 18px; padding: 1.2rem 1.6rem;
+        #sidebar-backdrop{
+            position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter:blur(1px);
+            opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:1029;
         }
+        #sidebar-backdrop.show{ opacity:1; pointer-events:auto; }
 
-        .form-control, .form-select{
-            background: var(--surface);
-            border: 2px solid var(--border);
-            color: var(--text);
-            border-radius: 12px;
-            padding: .7rem .9rem;
-        }
-        .form-control::placeholder { color: var(--muted); opacity: .8; }
-        .form-control:focus, .form-select:focus{
-            border-color: var(--brand-1);
-            box-shadow: 0 0 0 4px rgba(102,126,234,.15);
-        }
-        .is-invalid{ border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.18) !important; }
-        .invalid-feedback{ display:block; font-size:.8rem; }
-
-        .toolbar{
-            background: linear-gradient(135deg, var(--surface-2), var(--surface));
-            border: 1px solid var(--border);
-            border-radius: 14px; padding: .8rem;
-        }
-
-        .table thead{
-            background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
-            color:#fff;
-        }
-        .table td, .table th{ border-color: var(--border) !important; }
-        .table-hover tbody tr:hover { background: rgba(102,126,234,.08); }
-
-        /* Sidebar overlay (không đẩy content) */
-        .sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;transform:translateX(-100%);transition:transform .25s;z-index:1030;background:var(--surface);border-right:1px solid var(--border)}
-        .sidebar.open{transform:translateX(0)}
-        .content,.content.open{margin-left:0!important}
-        #sidebar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:1029}
-        #sidebar-backdrop.show{opacity:1;pointer-events:auto}
-
-        .navbar.sticky-top{
-            backdrop-filter: blur(8px);
-            background: color-mix(in srgb, var(--surface) 92%, transparent);
-            border-bottom: 1px solid var(--border);
-        }
-
-        /* Add item block */
-        .add-item-section{
-            background: color-mix(in srgb, var(--accent-2) 12%, transparent);
-            border: 2px dashed color-mix(in srgb, var(--accent-2) 60%, #000);
-            border-radius: 14px; padding: .8rem;
-        }
-
-        /* Loading overlay */
-        .loading-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:2000;background:rgba(0,0,0,.25)}
-        .loading-overlay.show{display:flex}
-
-        /* Toast container */
-        .toast-wrap{position:fixed;top:12px;right:12px;z-index:1080}
+        /* Thẻ chung trang PV-002 */
+        body{ background:#0b1220; color:#e5e7eb; }
+        .card-dark{ background:#0f172a; border:1px solid #1f2937; border-radius:14px; }
+        .muted{ color:#94a3b8; }
+        .list-hover .list-group-item{ background:transparent; color:#e5e7eb; border-color:#1f2937; }
+        .list-hover .list-group-item:hover{ background:#111827; }
+        .list-hover .list-group-item.active{ background:#1e293b; border-color:#334155; }
+        .table thead th{ position:sticky; top:0; background:#0b1220; z-index:1; }
+        .badge-dim{ background:#1f2937; color:#cbd5e1; border:1px solid #334155; }
+        .toast-box{ position:fixed; right:16px; bottom:16px; z-index:1080; min-width:320px; }
     </style>
 </head>
+
 <body>
 <div class="container-fluid position-relative d-flex p-0">
 
     <!-- Sidebar -->
-    <div class="sidebar pe-3">
-        <nav class="navbar navbar-light">
-            <div class="px-3 py-3" style="background:linear-gradient(135deg,var(--brand-1),var(--brand-2));color:#fff">
-                <h3 class="m-0"><i class="bi bi-box-seam me-2"></i>ProviderOP</h3>
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a th:href="@{/provider/dashboard}" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>ProviderOP</h3>
+            </a>
+
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:40px;height:40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0" th:text="${#authentication?.name}">provider1</h6>
+                    <span>Provider</span>
+                </div>
             </div>
-            <div class="navbar-nav w-100 px-3 mt-3">
+
+            <div class="navbar-nav w-100">
                 <a th:href="@{/provider/dashboard}" class="nav-item nav-link"><i class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
-                <a th:href="@{/provider/services}" class="nav-item nav-link active"><i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ</a>
-                <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box me-2"></i>Đơn hàng</a>
+                <a th:href="@{/provider/services}" class="nav-item nav-link active">
+                    <i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ
+                </a>
+                <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box-seam me-2"></i>Đơn hàng</a>
                 <a th:href="@{/provider/analytics}" class="nav-item nav-link"><i class="bi bi-graph-up me-2"></i>Phân tích</a>
             </div>
         </nav>
@@ -146,146 +103,178 @@
     <!-- Content -->
     <div class="content">
         <!-- Top Navbar -->
-        <nav class="navbar navbar-expand navbar-light sticky-top px-3 py-2">
-            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar"><i class="bi bi-list fs-4"></i></a>
-            <div class="ms-auto d-flex align-items-center gap-2">
-                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" type="button">
-                    <i class="bi bi-moon-stars me-1"></i><span>Dark</span>
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a th:href="@{/provider/dashboard}" class="navbar-brand d-flex d-lg-none me-4">
+                <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2>
+            </a>
+            <a href="#" class="sidebar-toggler flex-shrink-0" aria-label="Toggle sidebar">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <form class="d-none d-md-flex ms-4" role="search">
+                <input class="form-control border-0" type="search" placeholder="Tìm kiếm nhanh…">
+            </form>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">
+                    🌙 Dark
                 </button>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa fa-bell me-lg-2"></i>
+                        <span class="d-none d-lg-inline-flex">Notification</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a href="#" class="dropdown-item"><h6 class="fw-normal mb-0">Không có thông báo</h6><small>—</small></a>
+                    </div>
+                </div>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt="" style="width:40px;height:40px;">
+                        <span class="d-none d-lg-inline-flex" th:text="${#authentication?.name}">provider1</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a class="dropdown-item" href="/provider/profile">Hồ sơ</a>
+                        <a class="dropdown-item" href="/provider/settings">Cài đặt</a>
+                        <div class="dropdown-divider"></div>
+                        <form th:action="@{/logout}" method="post" id="logoutForm"></form>
+                        <a href="#" class="dropdown-item" onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
+                    </div>
+                </div>
             </div>
         </nav>
 
-        <!-- Page -->
-        <div class="container-fluid pt-4 px-4" style="max-width:1200px">
-            <div class="page-header mb-3">
-                <h4 class="m-0">PV-002 • Thiết lập gói & bảng giá</h4>
-            </div>
-
-            <!-- Card: package + per-km -->
-            <div class="card app-card mb-3">
-                <div class="card-body p-4">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-lg-5">
-                            <label class="form-label"><i class="bi bi-box2-heart me-2"></i>Gói vận chuyển</label>
-                            <select id="packageSelect" class="form-select" aria-label="Chọn gói"></select>
-                            <div id="packageSelectFeedback" class="invalid-feedback d-none">Vui lòng chọn gói.</div>
-                        </div>
-                        <div class="col-lg-4">
-                            <label class="form-label"><i class="bi bi-signpost-2 me-2"></i>Giá / km (đ)</label>
-                            <input id="pricePerKm" type="number" min="0" step="1000" class="form-control" placeholder="vd: 100000">
-                            <div id="pricePerKmFeedback" class="invalid-feedback d-none">Giá/km phải là số ≥ 0.</div>
-                        </div>
-                        <div class="col-lg-3">
-                            <button id="saveAllBtn" class="btn btn-primary w-100" type="button">
-                                <i class="bi bi-check2-circle me-1"></i>Lưu cấu hình
-                            </button>
-                        </div>
-                    </div>
+        <!-- Page Body (PV-002) -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="m-0">PV-002 • Thiết lập gói & bảng giá</h3>
+                <div>
+                    <button class="btn btn-outline-light btn-sm me-2" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+                    <button class="btn btn-primary btn-sm" id="btnOpenAdd"><i class="bi bi-plus-lg"></i> Thêm gói</button>
                 </div>
             </div>
 
-            <!-- Card: furniture table -->
-            <div class="card app-card">
-                <div class="card-body p-4">
-                    <div class="toolbar mb-3 d-flex flex-wrap gap-2 align-items-center">
-                        <input id="filterInput" type="search" class="form-control" placeholder="🔍 Lọc theo tên..." style="max-width:240px">
-                        <input id="bulkValue" type="number" class="form-control" min="0" step="1000" placeholder="Áp 1 giá cho tất cả" style="max-width:200px">
-                        <button id="applyBulkBtn" class="btn btn-outline-secondary" type="button"><i class="bi bi-arrow-down-square me-1"></i>Áp dụng</button>
-                        <button id="clearAllBtn" class="btn btn-outline-danger" type="button"><i class="bi bi-eraser me-1"></i>Xoá tất cả giá</button>
-                    </div>
+            <div class="row g-3">
+                <!-- LEFT: Gói đã cấu hình -->
+                <div class="col-lg-4">
+                    <div class="card-dark p-3 h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <div class="fw-semibold">Gói đã cấu hình</div>
+                                <div class="small muted">Nhấp để mở & chỉnh sửa</div>
+                            </div>
+                            <span id="configuredCount" class="badge badge-dim"></span>
+                        </div>
 
-                    <!-- Add new item -->
-                    <div class="add-item-section mb-3">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-5">
-                                <label class="form-label mb-1">Tên nội thất</label>
-                                <input id="addItemName" type="text" class="form-control" placeholder="VD: Sofa, tủ quần áo...">
-                                <div id="addItemNameFeedback" class="invalid-feedback d-none">Tên nội thất không được trống và &le; 100 ký tự.</div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-transparent text-light border-secondary"><i class="bi bi-search"></i></span>
+                            <input id="searchConfigured" class="form-control bg-transparent text-light border-secondary" placeholder="Tìm theo tên gói...">
+                        </div>
+
+                        <div class="list-group list-hover" id="configuredList" style="max-height:66vh;overflow:auto;">
+                            <!-- render bằng JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Form chi tiết gói -->
+                <div class="col-lg-8">
+                    <div class="card-dark p-3 h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <div class="fw-semibold">Chi tiết gói</div>
+                                <div class="small muted">Giá mỗi km & bảng giá nội thất (snapshot theo gói)</div>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label mb-1">Giá (đ)</label>
-                                <input id="addItemPrice" type="number" min="0" step="1000" class="form-control" placeholder="VD: 1000000">
-                                <div id="addItemPriceFeedback" class="invalid-feedback d-none">Giá phải là số ≥ 0.</div>
+                            <div>
+                                <button class="btn btn-outline-warning btn-sm me-2" id="btnReset"><i class="bi bi-eraser"></i> Đặt lại giá</button>
+                                <button class="btn btn-success btn-sm" id="btnSave"><i class="bi bi-save2"></i> Lưu</button>
                             </div>
-                            <div class="col-md-3">
-                                <button id="addItemBtn" class="btn btn-outline-primary w-100" type="button">
-                                    <i class="bi bi-plus-lg me-1"></i>Thêm nội thất
+                        </div>
+
+                        <div id="emptyHint" class="alert alert-dark border-secondary small">
+                            Hãy chọn một gói ở cột bên trái hoặc bấm <b>Thêm gói</b> để khởi tạo cấu hình.
+                        </div>
+
+                        <form id="detailForm" class="d-none">
+                            <div class="row g-3 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tên gói (snapshot khi lưu)</label>
+                                    <input id="packageNameSnapshot" class="form-control" placeholder="VD: Vận chuyển văn phòng — HCM" />
+                                    <div class="form-text muted">Để trống sẽ dùng tên gốc từ <code>service_packages</code>.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Giá mỗi km</label>
+                                    <input id="pricePerKm" class="form-control" type="number" step="1000" min="0" placeholder="VD: 100000" />
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between mt-2 mb-2">
+                                <h6 class="m-0">Bảng giá nội thất</h6>
+                                <button type="button" class="btn btn-sm btn-outline-light" id="btnAddRow">
+                                    <i class="bi bi-plus"></i> Thêm dòng
                                 </button>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                            <tr>
-                                <th style="width:60%">Tên nội thất</th>
-                                <th style="width:40%">Giá (đ)</th>
-                            </tr>
-                            </thead>
-                            <tbody id="itemsBody"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="text-end mt-4">
-                        <button id="saveTableBtn" class="btn btn-success btn-lg" type="button">
-                            <i class="bi bi-save me-1"></i>Lưu bảng giá
-                        </button>
+                            <div class="table-responsive" style="max-height:50vh;overflow:auto;">
+                                <table class="table table-dark table-striped align-middle" id="itemsTable">
+                                    <thead>
+                                    <tr>
+                                        <th style="width:40%">Tên nội thất</th>
+                                        <th style="width:30%">Giá (VNĐ)</th>
+                                        <th style="width:30%">Thao tác</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody><!-- rows by JS --></tbody>
+                                </table>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div> <!-- /row -->
+        </div> <!-- /container-fluid -->
 
         <!-- Footer -->
         <div class="container-fluid pt-4 px-4">
             <div class="bg-light rounded-top p-4">
                 <div class="row">
-                    <div class="col-12 col-sm-6 text-center text-sm-start">&copy; Your Site</div>
-                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed by DuongTD</div>
+                    <div class="col-12 col-sm-6 text-center text-sm-start">
+                        &copy; <a href="#">Your Site Name</a>, All Right Reserved.
+                    </div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By
+                        <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </div> <!-- /content -->
+</div> <!-- /container-fluid -->
 
 <!-- Backdrop for overlay sidebar -->
 <div id="sidebar-backdrop" aria-hidden="true"></div>
 
-<!-- Loading overlay -->
-<div id="loadingOverlay" class="loading-overlay">
-    <div class="spinner-border text-light" role="status"></div>
-</div>
-
-<!-- JS: jQuery, Bootstrap, dashboard main, page script -->
+<!-- JS order: jQuery -> Bootstrap (CDN) -> main.js (dashboard) -> provider-services.js -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/dashbooard/js/main.js}"></script>
-<script th:src="@{/provider/js/provider-services.js}" defer></script>
+<script th:src="@{/provider/js/provider-services.js}"></script>
 
+<!-- Đồng bộ backdrop với toggle trong main.js, không ảnh hưởng logic PV-002 -->
 <script>
-    // Toggle sidebar + backdrop
     (function () {
-        var $s = $('.sidebar'), $b = $('#sidebar-backdrop');
-        function sync() { $b.toggleClass('show', $s.hasClass('open')); }
-        sync();
-        try { new MutationObserver(sync).observe($s.get(0), {attributes: true, attributeFilter: ['class']}); }
-        catch(e){ setInterval(sync, 250); }
-        $(document).on('click', '#sidebar-backdrop', function(){ $s.removeClass('open'); sync(); });
-    })();
-    // Theme toggle
-    (function () {
-        const btn = document.getElementById('theme-toggle');
-        function apply(dark){
-            document.documentElement.classList.toggle('dark', dark);
-            document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-            localStorage.setItem('theme', dark ? 'dark' : 'light');
-            btn.innerHTML = dark
-                ? '<i class="bi bi-sun me-1"></i><span>Light</span>'
-                : '<i class="bi bi-moon-stars me-1"></i><span>Dark</span>';
-        }
-        btn.addEventListener('click', ()=>apply(!(document.documentElement.dataset.theme==='dark')));
-        // initial label
-        apply(document.documentElement.dataset.theme==='dark');
+        var $sidebar = $('.sidebar');
+        var $backdrop = $('#sidebar-backdrop');
+        function syncBackdrop(){ $backdrop.toggleClass('show', $sidebar.hasClass('open')); }
+        syncBackdrop();
+        try {
+            var obs = new MutationObserver(syncBackdrop);
+            obs.observe($sidebar.get(0), {attributes: true, attributeFilter: ['class']});
+        } catch (e) { setInterval(syncBackdrop, 250); }
+        $(document).off('click.provider-backdrop')
+            .on('click.provider-backdrop', '#sidebar-backdrop', function () {
+                $sidebar.removeClass('open'); syncBackdrop();
+            });
     })();
 </script>
 </body>

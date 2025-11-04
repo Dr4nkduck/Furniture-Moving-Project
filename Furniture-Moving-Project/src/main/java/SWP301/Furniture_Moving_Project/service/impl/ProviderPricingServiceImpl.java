@@ -1,3 +1,4 @@
+// service/impl/ProviderPricingServiceImpl.java
 package SWP301.Furniture_Moving_Project.service.impl;
 
 import SWP301.Furniture_Moving_Project.dto.*;
@@ -31,72 +32,78 @@ public class ProviderPricingServiceImpl implements ProviderPricingService {
         this.furnitureTypeRepo = furnitureTypeRepo;
     }
 
-    @Override
     @Transactional(readOnly = true)
     public List<PackageOptionDTO> listPackages(Integer providerId) {
-        List<ServicePackage> all = packageRepo.findAll();
-        Map<Integer, BigDecimal> perKmByPackage = new HashMap<>();
-        for (var row : pspRepo.findByProvider_ProviderId(providerId)) {
-            if (row.getPerKm() != null) {
-                perKmByPackage.put(row.getServicePackage().getPackageId(), row.getPerKm());
-            }
+        var all = packageRepo.findAll();
+        var mine = pspRepo.findByProvider_ProviderId(providerId);
+        Map<Integer, BigDecimal> kmByPkg = new HashMap<>();
+        for (var r : mine) {
+            if (r.getPricePerKm() != null)
+                kmByPkg.put(r.getServicePackage().getPackageId(), r.getPricePerKm());
         }
 
         List<PackageOptionDTO> out = new ArrayList<>();
-        for (ServicePackage sp : all) {
-            PackageOptionDTO dto = new PackageOptionDTO();
+        for (var sp : all) {
+            var dto = new PackageOptionDTO();
             dto.packageId = sp.getPackageId();
             dto.packageName = sp.getName();
-            dto.pricePerKm = perKmByPackage.get(sp.getPackageId());
+            dto.pricePerKm = kmByPkg.get(sp.getPackageId());
             out.add(dto);
         }
         return out;
     }
 
-    @Override
     @Transactional(readOnly = true)
     public PackagePricingDetailDTO getPackageDetail(Integer providerId, Integer packageId) {
-        PackagePricingDetailDTO dto = new PackagePricingDetailDTO();
-        dto.pricePerKm = pspRepo.findByProvider_ProviderIdAndServicePackage_PackageId(providerId, packageId)
-                .map(ProviderServicePackage::getPerKm).orElse(null);
+        var dto = new PackagePricingDetailDTO();
+        var pspOpt = pspRepo.findByProvider_ProviderIdAndServicePackage_PackageId(providerId, packageId);
+
+        dto.pricePerKm = pspOpt.map(ProviderServicePackage::getPricePerKm).orElse(null);
+        dto.packageNameSnapshot = pspOpt.map(ProviderServicePackage::getPackageNameSnapshot)
+                .orElseGet(() -> packageRepo.findById(packageId).map(ServicePackage::getName).orElse(null));
 
         var rows = ppfpRepo.findByProvider_ProviderIdAndServicePackage_PackageId(providerId, packageId);
-        List<FurniturePriceDTO> prices = new ArrayList<>();
+        List<FurniturePriceDTO> items = new ArrayList<>();
         for (var r : rows) {
-            FurniturePriceDTO f = new FurniturePriceDTO();
-            f.furnitureItemId = r.getFurnitureType().getFurnitureTypeId();
-            f.furnitureItemName = r.getFurnitureType().getName();
-            f.price = r.getPrice();
-            prices.add(f);
+            var it = new FurniturePriceDTO();
+            it.furnitureItemId = r.getFurnitureType().getFurnitureTypeId();
+            it.furnitureItemName = r.getFurnitureType().getName();
+            it.price = r.getPrice();
+            items.add(it);
         }
-        dto.furniturePrices = prices;
+        dto.furniturePrices = items;
         return dto;
     }
 
-    @Override
     @Transactional
     public void savePackagePricing(PricingSaveRequestDTO req) {
-        Provider provider = providerRepo.findById(req.providerId)
+        var provider = providerRepo.findById(req.providerId)
                 .orElseThrow(() -> new NoSuchElementException("Provider not found"));
-        ServicePackage sp = packageRepo.findById(req.packageId)
+        var sp = packageRepo.findById(req.packageId)
                 .orElseThrow(() -> new NoSuchElementException("Package not found"));
 
-        // upsert per_km
-        ProviderServicePackage psp = pspRepo.findByProvider_ProviderIdAndServicePackage_PackageId(req.providerId, req.packageId)
+        // upsert PSP (snapshot)
+        var psp = pspRepo.findByProvider_ProviderIdAndServicePackage_PackageId(req.providerId, req.packageId)
                 .orElseGet(() -> {
-                    ProviderServicePackage n = new ProviderServicePackage();
+                    var n = new ProviderServicePackage();
                     n.setProvider(provider);
                     n.setServicePackage(sp);
                     return n;
                 });
-        psp.setPerKm(req.pricePerKm);
+
+        psp.setPricePerKm(req.pricePerKm);
+        // snapshot tên gói: ưu tiên req.packageName, nếu null lấy từ service_packages
+        String snap = (req.packageName != null && !req.packageName.isBlank())
+                ? req.packageName
+                : sp.getName();
+        psp.setPackageNameSnapshot(snap);
         pspRepo.save(psp);
 
         // upsert bảng giá nội thất theo gói
         if (req.furniturePrices != null) {
             for (var ip : req.furniturePrices) {
                 if (ip.price == null) {
-                    // xoá nếu có
+                    // nếu client gửi null -> xóa giá
                     if (ip.furnitureItemId != null) {
                         ppfpRepo.findByProvider_ProviderIdAndServicePackage_PackageIdAndFurnitureType_FurnitureTypeId(
                                 req.providerId, req.packageId, ip.furnitureItemId
@@ -105,25 +112,29 @@ public class ProviderPricingServiceImpl implements ProviderPricingService {
                     continue;
                 }
 
+                // xác định FurnitureType
                 FurnitureType ft;
                 if (ip.furnitureItemId != null) {
                     ft = furnitureTypeRepo.findById(ip.furnitureItemId)
                             .orElseThrow(() -> new NoSuchElementException("FurnitureType not found: " + ip.furnitureItemId));
                 } else {
-                    // cho phép thêm mới theo tên
-                    ft = furnitureTypeRepo.findByName(ip.furnitureItemName)
-                            .orElseGet(() -> {
-                                FurnitureType n = new FurnitureType();
-                                n.setName(ip.furnitureItemName);
-                                n.setCode(UUID.randomUUID().toString().substring(0,8).toUpperCase());
-                                return furnitureTypeRepo.save(n);
-                            });
+                    String name = Objects.requireNonNull(ip.furnitureItemName, "furnitureItemName required");
+                    ft = furnitureTypeRepo.findByName(name).orElseGet(() -> {
+                        var n = new FurnitureType();
+                        n.setName(name);
+                        // code tạo tạm từ tên
+                        var code = name.toUpperCase().replaceAll("[^A-Z0-9]", "");
+                        if (code.length() > 10) code = code.substring(0, 10);
+                        if (code.isBlank()) code = "ITEM" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+                        n.setCode(code);
+                        return furnitureTypeRepo.save(n);
+                    });
                 }
 
                 var row = ppfpRepo.findByProvider_ProviderIdAndServicePackage_PackageIdAndFurnitureType_FurnitureTypeId(
                         req.providerId, req.packageId, ft.getFurnitureTypeId()
                 ).orElseGet(() -> {
-                    ProviderPackageFurniturePrice n = new ProviderPackageFurniturePrice();
+                    var n = new ProviderPackageFurniturePrice();
                     n.setProvider(provider);
                     n.setServicePackage(sp);
                     n.setFurnitureType(ft);
