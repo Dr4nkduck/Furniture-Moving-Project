@@ -1,23 +1,25 @@
-// model/FurnitureType.java  (map tới furniture_types)
+// src/main/java/SWP301/Furniture_Moving_Project/model/FurnitureType.java
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
 
-@Entity
-@Table(name = "furniture_types")
+@Entity @Table(name="furniture_types")
 public class FurnitureType {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "furniture_type_id")
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="furniture_type_id")
     private Integer furnitureTypeId;
 
-    @Column(nullable = false, unique = true)
+    @Column(name="code", nullable=false, unique=true)
     private String code;
 
-    @Column(nullable = false)
+    @Column(name="name", nullable=false)
     private String name;
 
+    @Column(name="unit")
     private String unit;
+
+    // getters/setters
+
 
     public Integer getFurnitureTypeId() {
         return furnitureTypeId;

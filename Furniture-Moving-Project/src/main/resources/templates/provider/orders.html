@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PV-003 • Đơn vận chuyển của tôi</title>
+
+    <meta name="provider-id" th:content="${providerId}">
+    <meta name="provider-company" th:content="${providerCompanyName}">
+
+    <link rel="stylesheet" th:href="@{/provider/css/provider-orders.css}">
+</head>
+<body class="page-provider-orders">
+<header class="topbar">
+    <div class="brand">
+        <div class="logo">🚚</div>
+        <div class="title">
+            <h1>Đơn vận chuyển</h1>
+            <p th:text="${providerCompanyName}">Provider</p>
+        </div>
+    </div>
+    <div class="filters">
+        <input id="searchBox" placeholder="Tìm theo khách hàng hoặc địa chỉ…">
+        <select id="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">Chờ vận chuyển</option>
+            <option value="assigned">Đã phân công</option>
+            <option value="in_progress">Đang vận chuyển</option>
+            <option value="completed">Vận chuyển hoàn</option>
+            <option value="cancelled">Đã hủy</option>
+        </select>
+        <button id="btnSearch">Tìm</button>
+    </div>
+</header>
+
+<main class="layout">
+    <aside id="summaryList" class="panel list">
+        <!-- JS render danh sách -->
+    </aside>
+
+    <section id="detailPanel" class="panel detail">
+        <div class="empty">Chọn một đơn để xem chi tiết</div>
+        <!-- JS render chi tiết -->
+    </section>
+</main>
+
+<!-- Modal cập nhật trạng thái -->
+<div id="statusModal" class="modal hidden">
+    <div class="modal-card">
+        <h3>Cập nhật trạng thái</h3>
+        <select id="statusSelect">
+            <option value="in_progress">Bắt đầu vận chuyển</option>
+            <option value="completed">Đánh dấu hoàn thành</option>
+            <option value="cancelled">Hủy đơn</option>
+        </select>
+        <textarea id="cancelReason" placeholder="Lý do hủy (nếu chọn hủy)"></textarea>
+        <div class="actions">
+            <button id="modalCancel">Đóng</button>
+            <button id="modalSave">Cập nhật</button>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/provider/js/provider-orders.js}"></script>
+</body>
+</html>

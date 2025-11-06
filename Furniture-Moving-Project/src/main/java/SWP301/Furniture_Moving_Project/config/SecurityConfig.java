@@ -54,7 +54,8 @@ public class SecurityConfig {
                                  "/superadmin/**",
                                  "/dashbooard/**","/customer-trends/**",
                                  "/provider-stats/**",
-                                 "/services/**"
+                                 "/services/**",
+                                 "/orders/**"
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

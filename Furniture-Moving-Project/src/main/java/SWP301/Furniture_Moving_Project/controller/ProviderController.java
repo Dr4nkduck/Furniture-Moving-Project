@@ -20,5 +20,10 @@ public class ProviderController {
     public String services() {
         return "provider/services";
     }
+
+    @GetMapping("/provider/orders")
+    public String orders() {
+        return "provider/orders";
+    }
 }
 

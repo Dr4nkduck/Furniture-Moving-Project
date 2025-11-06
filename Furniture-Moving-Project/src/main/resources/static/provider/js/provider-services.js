@@ -1,76 +1,57 @@
 /* PV-002 Provider Services JS
- * Endpoints dùng:
- *  - GET  /api/providers/me -> { providerId }
- *  - GET  /api/providers/{pid}/service-packages
- *  - GET  /api/providers/{pid}/service-packages/{packageId}
- *  - PUT  /api/providers/{pid}/service-packages/{packageId}
+ * Endpoints giả định (không đổi backend):
+ *  - GET  /api/providers/{pid}/service-packages                 -> danh sách [ { packageId, packageName, basePackageName?, pricePerKm } ]
+ *  - GET  /api/providers/{pid}/service-packages/{packageId}      -> chi tiết { packageNameSnapshot, pricePerKm, furniturePrices: [{furnitureItemId,furnitureItemName,price}] }
+ *  - PUT  /api/providers/{pid}/service-packages/{packageId}      -> lưu snapshot (pricePerKm + furniturePrices). Nếu muốn "xóa", gửi pricePerKm=null và furniturePrices=[]
+ *  - (Tùy chọn) GET /api/providers/me để lấy providerId; ưu tiên <meta name="provider-id">
  */
 
 (() => {
     // ---------- DOM ----------
-    const $configuredList = document.getElementById('configuredList');
-    const $configuredCount = document.getElementById('configuredCount');
+    const $configuredList   = document.getElementById('configuredList');
+    const $configuredCount  = document.getElementById('configuredCount');
     const $searchConfigured = document.getElementById('searchConfigured');
+    const $filterByPackage  = document.getElementById('filterByPackage');
 
     const $btnRefresh = document.getElementById('btnRefresh');
     const $btnOpenAdd = document.getElementById('btnOpenAdd');
 
     const $detailForm = document.getElementById('detailForm');
-    const $emptyHint = document.getElementById('emptyHint');
+    const $emptyHint  = document.getElementById('emptyHint');
     const $packageNameSnapshot = document.getElementById('packageNameSnapshot');
     const $pricePerKm = document.getElementById('pricePerKm');
-    const $btnAddRow = document.getElementById('btnAddRow');
-    const $btnSave = document.getElementById('btnSave');
-    const $btnReset = document.getElementById('btnReset');
+    const $btnAddRow  = document.getElementById('btnAddRow');
+    const $btnSave    = document.getElementById('btnSave');
+    const $btnReset   = document.getElementById('btnReset');
+    const $btnDelete  = document.getElementById('btnDelete');
     const $itemsTableBody = document.querySelector('#itemsTable tbody');
 
-    // Optional modal (safe if not present)
+    // Modal thêm gói
     const addModalEl = document.getElementById('addPkgModal');
-    const addModal = (window.bootstrap && addModalEl) ? new window.bootstrap.Modal(addModalEl) : null;
+    const addModal = addModalEl ? new bootstrap.Modal(addModalEl) : null;
     const $modalPackageSelect = document.getElementById('modalPackageSelect');
     const $modalPerKm = document.getElementById('modalPerKm');
     const $btnCreatePkg = document.getElementById('btnCreatePkg');
 
-    // toasts
+    // Toasts
     const $toastBox = document.getElementById('toastBox');
 
     // ---------- STATE ----------
     const state = {
         providerId: getProviderIdFromMeta(),
-        allPackages: [],
-        configured: [],
-        unconfigured: [],
+        allPackages: [],   // tất cả snapshot (mỗi entry đại diện 1 snapshot hoặc cấu hình hiện tại của gói)
+        configured: [],    // lọc theo rule UI (pricePerKm != null)
         current: {
             packageId: null,
-            packageName: null,
+            basePackageName: null, // nếu API trả về, dùng cho filter; nếu không sẽ dùng packageName
+            packageName: null,     // hiển thị tại danh sách
             perKm: null,
-            items: [] // { furnitureItemId, furnitureItemName, price }
-        },
-        lastLoadedSnapshotName: null
+            items: [] // [{furnitureItemId,furnitureItemName,price}]
+        }
     };
 
-    // ---------- THEME ----------
-    initThemeToggle();
-
-    function initThemeToggle(){
-        const btn = document.getElementById('theme-toggle');
-        if (!btn) return;
-
-        function sync(){
-            const isDark = document.documentElement.classList.contains('dark');
-            btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-            btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
-        }
-        btn.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch(e){}
-            sync();
-        });
-        sync();
-    }
-
     // ---------- UTIL ----------
+    /** Lấy providerId từ <meta name="provider-id"> nếu controller đã gắn */
     function getProviderIdFromMeta() {
         const meta = document.querySelector('meta[name="provider-id"]');
         if (meta && meta.content) {
@@ -80,79 +61,117 @@
         return null;
     }
 
+    /** Hiển thị toast thông báo */
     function toast(msg, type = 'info', timeoutMs = 3000) {
-        if (!$toastBox) return alert(msg);
         const div = document.createElement('div');
         div.className = `alert alert-${type === 'error' ? 'danger' : type} border-0 shadow mb-2`;
         div.innerHTML = `<div class="d-flex align-items-center">
-      <i class="bi ${typeIcon(type)} me-2"></i>
-      <div>${msg}</div>
-    </div>`;
+      <i class="bi ${typeIcon(type)} me-2"></i><div>${msg}</div></div>`;
         $toastBox.appendChild(div);
-        setTimeout(() => { div.remove(); }, timeoutMs);
+        setTimeout(() => div.remove(), timeoutMs);
     }
-
     function typeIcon(type) {
         switch (type) {
             case 'success': return 'bi-check-circle';
             case 'warning': return 'bi-exclamation-triangle';
-            case 'error': return 'bi-x-circle';
-            default: return 'bi-info-circle';
+            case 'error':   return 'bi-x-circle';
+            default:        return 'bi-info-circle';
         }
     }
 
+    /** GET helper: throw nếu status != 200 */
     async function apiGet(url) {
         const r = await fetch(url);
-        if (!r.ok) throw new Error(`GET ${url} -> ${r.status}`);
+        if (!r.ok) throw new Error(await errorText(r, `GET ${url} -> ${r.status}`));
         return r.json();
     }
 
+    /** PUT helper: trả json|text; throw nếu !ok (bắt đc message 500) */
     async function apiPut(url, body) {
-        const r = await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        if (!r.ok) throw new Error(`PUT ${url} -> ${r.status}`);
-        return r.json();
+        const r = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!r.ok) throw new Error(await errorText(r, `PUT ${url} -> ${r.status}`));
+        // backend có thể trả body rỗng
+        const ct = r.headers.get('content-type') || '';
+        return ct.includes('application/json') ? r.json() : (await r.text());
     }
 
-    function moneyOrEmpty(v) {
-        if (v === null || v === undefined) return '';
-        const num = Number(v);
-        return Number.isNaN(num) ? '' : num.toLocaleString('vi-VN');
+    async function errorText(resp, fallback) {
+        try {
+            const ct = resp.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+                const j = await resp.json();
+                return j.message || j.error || fallback;
+            }
+            return await resp.text() || fallback;
+        } catch { return fallback; }
     }
 
     function escapeHtml(s) {
         return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
-    // ---------- LEFT LIST ----------
-    function renderConfiguredList(filterText = '') {
+    // ---------- RENDER (LEFT) ----------
+    /** Vẽ danh sách snapshot đã cấu hình, có filter theo text + gói gốc */
+    function renderConfiguredList() {
+        const text = ($searchConfigured.value || '').toLowerCase().trim();
+        const pkgFilter = $filterByPackage.value; // '' = all, else by base package name
+
         const rows = state.configured
-            .filter(p => p.packageName.toLowerCase().includes(filterText.toLowerCase()))
+            .filter(p => {
+                const base = (p.basePackageName || p.packageName || '').toLowerCase();
+                const snap = (p.packageName || '').toLowerCase();
+                const passText = !text || snap.includes(text);
+                const passPkg  = !pkgFilter || base === pkgFilter.toLowerCase();
+                return passText && passPkg;
+            })
             .map(p => {
                 const active = (state.current.packageId === p.packageId) ? ' active' : '';
-                const km = p.pricePerKm ? `${moneyOrEmpty(p.pricePerKm)} đ/km` : 'Chưa đặt giá/km';
+                const baseName = escapeHtml(p.basePackageName || p.packageName);
+                const km = (p.pricePerKm != null) ? `${Number(p.pricePerKm).toLocaleString('vi-VN')} đ/km` : '—';
                 return `<button type="button" class="list-group-item list-group-item-action${active}" data-id="${p.packageId}">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <div class="fw-semibold">${escapeHtml(p.packageName)}</div>
-              <div class="small muted">${km}</div>
+              <div class="small muted">Gói gốc: ${baseName} • ${km}</div>
             </div>
             <i class="bi bi-chevron-right"></i>
           </div>
         </button>`;
             }).join('');
 
-        $configuredList.innerHTML = rows || `<div class="small muted">Chưa có gói nào. Bấm <b>Thêm gói</b> để khởi tạo.</div>`;
+        $configuredList.innerHTML = rows || `<div class="small muted">Chưa có snapshot nào. Bấm <b>Thêm gói</b> để tạo.</div>`;
         $configuredCount.textContent = state.configured.length;
 
+        // bind click
         $configuredList.querySelectorAll('button[data-id]').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const pkgId = parseInt(btn.getAttribute('data-id'), 10);
-                await openPackage(pkgId);
-            });
+            btn.addEventListener('click', () => openPackage(parseInt(btn.getAttribute('data-id'),10)));
         });
     }
 
-    // ---------- DETAIL ----------
+    /** Tạo option filter theo gói gốc */
+    function buildPackageFilterOptions() {
+        const uniques = new Set();
+        state.allPackages.forEach(p => {
+            const base = (p.basePackageName || p.packageName || '').trim();
+            if (base) uniques.add(base);
+        });
+        const opts = ['<option value="">Lọc theo gói gốc (Tất cả)</option>']
+            .concat(Array.from(uniques).sort().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`));
+        $filterByPackage.innerHTML = opts.join('');
+    }
+
+    // ---------- RENDER (RIGHT) ----------
+    /** Hiện/ẩn form chi tiết */
+    function showDetailForm(on) {
+        $detailForm.classList.toggle('d-none', !on);
+        $emptyHint.classList.toggle('d-none', on);
+    }
+
+    /** Vẽ bảng item (nội thất) */
     function renderItemsTable() {
         const html = state.current.items.map((row, idx) => {
             const name = row.furnitureItemName ?? '';
@@ -160,27 +179,40 @@
             const idInfo = row.furnitureItemId ? `<div class="form-text muted">ID: ${row.furnitureItemId}</div>` : '';
             return `<tr data-idx="${idx}">
         <td>
-          <input class="form-control form-control-sm js-name" value="${escapeHtml(name)}" placeholder="Tên (VD: Sofa)">
+          <input class="form-control form-control-sm js-name" maxlength="120"
+                 value="${escapeHtml(name)}" placeholder="Tên (VD: Sofa)">
           ${idInfo}
         </td>
-        <td><input class="form-control form-control-sm js-price" type="number" min="0" step="1000" value="${price}"></td>
+        <td>
+          <input class="form-control form-control-sm js-price" type="number" min="0" step="1000"
+                 value="${price}" placeholder="VNĐ">
+        </td>
         <td class="text-nowrap">
-          <button class="btn btn-sm btn-outline-warning js-clear" title="Xoá giá (giữ item)"><i class="bi bi-eraser"></i></button>
-          <button class="btn btn-sm btn-outline-danger js-del" title="Xoá dòng"><i class="bi bi-x"></i></button>
+          <button class="btn btn-sm btn-outline-warning js-clear" title="Xoá giá (giữ item)">
+            <i class="bi bi-eraser"></i></button>
+          <button class="btn btn-sm btn-outline-danger js-del" title="Xoá dòng">
+            <i class="bi bi-x"></i></button>
         </td>
       </tr>`;
         }).join('');
         $itemsTableBody.innerHTML = html;
 
+        // bind events
         $itemsTableBody.querySelectorAll('tr').forEach(tr => {
             const idx = parseInt(tr.getAttribute('data-idx'), 10);
-            tr.querySelector('.js-name').addEventListener('input', e => {
+            const $name  = tr.querySelector('.js-name');
+            const $price = tr.querySelector('.js-price');
+
+            $name.addEventListener('input', e => {
                 state.current.items[idx].furnitureItemName = e.target.value;
+                toggleInvalid($name, !validNameOrEmpty(e.target.value, !!state.current.items[idx].furnitureItemId));
             });
-            tr.querySelector('.js-price').addEventListener('input', e => {
+            $price.addEventListener('input', e => {
                 const v = e.target.value;
                 state.current.items[idx].price = (v === '' ? null : Number(v));
+                toggleInvalid($price, !validPriceOrEmpty(v));
             });
+
             tr.querySelector('.js-clear').addEventListener('click', () => {
                 state.current.items[idx].price = null;
                 renderItemsTable();
@@ -192,75 +224,81 @@
         });
     }
 
-    function showDetailForm(on) {
-        $detailForm.classList.toggle('d-none', !on);
-        $emptyHint.classList.toggle('d-none', on);
+    function toggleInvalid(input, invalid) {
+        input.classList.toggle('is-invalid', invalid);
+        input.classList.toggle('is-valid', !invalid);
     }
 
-    // ---------- DATA LOADERS ----------
+    // ---------- DATA LOAD ----------
+    /** Ưu tiên providerId từ meta; nếu không có sẽ thử gọi /api/providers/me (nếu backend hỗ trợ) */
     async function ensureProviderId() {
         if (state.providerId) return;
         try {
             const me = await apiGet('/api/providers/me');
             state.providerId = me.providerId || null;
-        } catch (_) { /* ignore; you can inject provider-id via meta */ }
+        } catch (_) {/* ignore */}
     }
 
+    /** Load danh sách snapshot/gói, build filter, vẽ list */
     async function loadPackages() {
         await ensureProviderId();
         if (!state.providerId) {
-            toast('Không xác định được Provider. Hãy đăng nhập bằng tài khoản Provider.', 'error', 4000);
+            toast('Không xác định được Provider. Hãy truyền providerId vào meta hoặc bật API /api/providers/me.', 'error', 5000);
             return;
         }
         const all = await apiGet(`/api/providers/${state.providerId}/service-packages`);
-        state.allPackages = all;
+        state.allPackages = Array.isArray(all) ? all : [];
 
-        state.configured = all.filter(p => p.pricePerKm !== null && p.pricePerKm !== undefined);
-        const configuredIds = new Set(state.configured.map(p => p.packageId));
-        state.unconfigured = all.filter(p => !configuredIds.has(p.packageId));
+        // cấu hình coi như "đã dùng" nếu pricePerKm !== null
+        state.configured = state.allPackages.filter(p => p.pricePerKm !== null && p.pricePerKm !== undefined);
 
-        renderConfiguredList($searchConfigured.value || '');
-        await afterPackagesLoaded();
-    }
+        buildPackageFilterOptions();
+        renderConfiguredList();
 
-    async function afterPackagesLoaded() {
+        // nếu đang mở mà không còn → đóng form
         if (state.current.packageId !== null) {
-            const stillExists = state.allPackages.some(p => p.packageId === state.current.packageId);
-            if (!stillExists) clearCurrent();
+            const still = state.allPackages.some(p => p.packageId === state.current.packageId);
+            if (!still) clearCurrent();
         }
         if (state.current.packageId === null) showDetailForm(false);
     }
 
+    /** Mở một snapshot theo packageId */
     async function openPackage(packageId) {
         await ensureProviderId();
         const d = await apiGet(`/api/providers/${state.providerId}/service-packages/${packageId}`);
 
+        const meta = state.allPackages.find(p => p.packageId === packageId) || {};
         state.current.packageId = packageId;
-        const meta = state.allPackages.find(p => p.packageId === packageId);
-        state.current.packageName = meta ? meta.packageName : (d.packageNameSnapshot || '');
-        state.current.perKm = d.pricePerKm ?? null;
+        state.current.basePackageName = meta.basePackageName || meta.packageName || null;
+        state.current.packageName = meta.packageName || d.packageNameSnapshot || '';
+        state.current.perKm = (d.pricePerKm ?? null);
         state.current.items = (d.furniturePrices || []).map(x => ({
             furnitureItemId: x.furnitureItemId,
             furnitureItemName: x.furnitureItemName,
             price: x.price
         }));
 
+        // render UI
         $packageNameSnapshot.value = d.packageNameSnapshot || '';
         $pricePerKm.value = (state.current.perKm ?? '') === '' ? '' : state.current.perKm;
+        $packageNameSnapshot.classList.remove('is-invalid','is-valid');
+        $pricePerKm.classList.remove('is-invalid','is-valid');
+
         renderItemsTable();
         showDetailForm(true);
         highlightSelectedOnLeft(packageId);
-        state.lastLoadedSnapshotName = $packageNameSnapshot.value || '';
     }
 
     function highlightSelectedOnLeft(packageId) {
         $configuredList.querySelectorAll('button[data-id]').forEach(btn => {
-            btn.classList.toggle('active', parseInt(btn.getAttribute('data-id'), 10) === packageId);
+            btn.classList.toggle('active', parseInt(btn.getAttribute('data-id'),10) === packageId);
         });
     }
 
     function clearCurrent() {
         state.current.packageId = null;
+        state.current.basePackageName = null;
         state.current.packageName = null;
         state.current.perKm = null;
         state.current.items = [];
@@ -272,150 +310,194 @@
     }
 
     // ---------- VALIDATION ----------
+    /** Tên snapshot hợp lệ (cho phép rỗng để dùng tên gốc) */
+    function validSnapshotNameOrEmpty(v) {
+        if (!v) return true;
+        return typeof v === 'string' && v.trim().length <= 120;
+    }
+
+    /** Giá/km hợp lệ khi có giá trị (rỗng = null) */
+    function validPricePerKmOrEmpty(v) {
+        if (v === '' || v === null || v === undefined) return true;
+        const n = Number(v);
+        return !Number.isNaN(n) && n >= 0 && n <= 1e12;
+    }
+
+    /** Tên nội thất: nếu thêm mới (không có id) thì bắt buộc có tên */
+    function validNameOrEmpty(name, hasId) {
+        if (hasId) return true; // item đã tồn tại, cho phép để trống (không đổi tên)
+        const v = (name || '').trim();
+        return v.length > 0 && v.length <= 120;
+    }
+
+    /** Giá item hợp lệ khi có giá trị */
+    function validPriceOrEmpty(v) {
+        if (v === '' || v === null || v === undefined) return true;
+        const n = Number(v);
+        return !Number.isNaN(n) && n >= 0 && n <= 1e12;
+    }
+
+    /** Đánh dấu lỗi form tổng hợp & trả về mảng lỗi đầu tiên để toast */
     function validateBeforeSave() {
         const errs = [];
+
         if (!state.providerId) errs.push('Không xác định được Provider.');
         if (!state.current.packageId) errs.push('Chưa chọn gói để lưu.');
 
-        const vkm = $pricePerKm.value;
-        if (vkm !== '' && (isNaN(Number(vkm)) || Number(vkm) < 0)) {
+        // snapshot name
+        if (!validSnapshotNameOrEmpty($packageNameSnapshot.value)) {
+            errs.push('Tên snapshot quá dài (<= 120 ký tự).');
+            toggleInvalid($packageNameSnapshot, true);
+        } else {
+            toggleInvalid($packageNameSnapshot, false);
+        }
+
+        // perKm
+        if (!validPricePerKmOrEmpty($pricePerKm.value)) {
             errs.push('Giá mỗi km không hợp lệ.');
+            toggleInvalid($pricePerKm, true);
+        } else {
+            toggleInvalid($pricePerKm, false);
         }
 
-        const namesSeen = new Set();
-        for (let i = 0; i < state.current.items.length; i++) {
-            const it = state.current.items[i];
-            const name = (it.furnitureItemName || '').trim();
+        // items
+        $itemsTableBody.querySelectorAll('tr').forEach(tr => {
+            const idx = parseInt(tr.getAttribute('data-idx'),10);
+            const it = state.current.items[idx];
+            const $name = tr.querySelector('.js-name');
+            const $price = tr.querySelector('.js-price');
 
-            if (!it.furnitureItemId && !name) {
-                errs.push(`Dòng ${i + 1}: yêu cầu tên nội thất (khi thêm mới).`);
-            }
-            if (name) {
-                const key = name.toLowerCase();
-                if (namesSeen.has(key)) errs.push(`Dòng ${i + 1}: tên nội thất bị trùng.`);
-                namesSeen.add(key);
-            }
-            if (it.price !== null && (isNaN(Number(it.price)) || Number(it.price) < 0)) {
-                errs.push(`Dòng ${i + 1}: giá không hợp lệ.`);
-            }
-        }
+            const nameOk  = validNameOrEmpty(it.furnitureItemName, !!it.furnitureItemId);
+            const priceOk = validPriceOrEmpty(it.price);
+
+            toggleInvalid($name, !nameOk);
+            toggleInvalid($price, !priceOk);
+
+            if (!nameOk)  errs.push(`Dòng ${idx+1}: tên nội thất bắt buộc (khi thêm mới).`);
+            if (!priceOk) errs.push(`Dòng ${idx+1}: giá không hợp lệ.`);
+        });
+
         return errs;
     }
 
-    // ---------- SAVE / RESET ----------
+    // ---------- SAVE / RESET / DELETE ----------
+    /** Lưu snapshot hiện tại (PUT) */
     async function saveCurrent() {
         const errs = validateBeforeSave();
-        if (errs.length) return toast(errs[0], 'warning', 4000);
+        if (errs.length) { toast(errs[0], 'warning', 4500); return; }
 
         const body = {
             providerId: state.providerId,
             packageId: state.current.packageId,
-            packageName: ($packageNameSnapshot.value || null),
+            packageName: ($packageNameSnapshot.value || null), // null = dùng tên gốc
             pricePerKm: ($pricePerKm.value === '' ? null : Number($pricePerKm.value)),
             furniturePrices: state.current.items.map(x => ({
                 furnitureItemId: x.furnitureItemId || null,
-                furnitureItemName: x.furnitureItemId ? null : (x.furnitureItemName || null),
+                furnitureItemName: x.furnitureItemId ? null : ((x.furnitureItemName || '').trim() || null),
                 price: (x.price === '' || x.price === null || x.price === undefined) ? null : Number(x.price)
             }))
         };
 
-        await apiPut(`/api/providers/${state.providerId}/service-packages/${state.current.packageId}`, body);
-        toast('Đã lưu cấu hình gói.', 'success');
+        const url = `/api/providers/${state.providerId}/service-packages/${state.current.packageId}`;
+        await apiPut(url, body);
+        toast('Đã lưu snapshot.', 'success');
 
         await loadPackages();
         await openPackage(state.current.packageId);
     }
 
+    /** Đặt lại giá: xóa toàn bộ giá item + để trống giá/km (coi như clear) */
     async function resetCurrent() {
         if (!state.current.packageId) return;
-        const ok = confirm('Đặt lại giá: xoá toàn bộ giá nội thất & để trống giá/km?');
-        if (!ok) return;
+        if (!confirm('Đặt lại: xoá toàn bộ giá nội thất & để trống giá/km?')) return;
 
         $pricePerKm.value = '';
         state.current.items.forEach(it => it.price = null);
 
         await saveCurrent();
-        toast('Đã đặt lại cấu hình giá của gói.', 'success');
+        toast('Đã đặt lại cấu hình.', 'success');
     }
 
-    // ---------- ADD PACKAGE FLOW (optional modal present) ----------
+    /** XÓA snapshot: không cần DELETE; gửi PUT với giá/km=null và furniturePrices=[] */
+    async function deleteCurrent() {
+        if (!state.current.packageId) return;
+        if (!confirm('Xoá snapshot này? Dữ liệu giá sẽ bị xoá.')) return;
+
+        const url = `/api/providers/${state.providerId}/service-packages/${state.current.packageId}`;
+        await apiPut(url, {
+            providerId: state.providerId,
+            packageId: state.current.packageId,
+            packageName: null,
+            pricePerKm: null,
+            furniturePrices: []
+        });
+
+        toast('Đã xoá snapshot.', 'success');
+        clearCurrent();
+        await loadPackages();
+    }
+
+    // ---------- ADD SNAPSHOT ----------
+    /** Mở modal thêm (KHÔNG chặn nếu "không còn gói trống": cho phép tạo nhiều snapshot cho cùng gói) */
     function openAddModal() {
-        if (!addModal) {
-            toast('Chức năng thêm gói nhanh yêu cầu modal trên trang.', 'warning');
-            return;
-        }
-        const opts = state.unconfigured.map(p => `<option value="${p.packageId}">${escapeHtml(p.packageName)}</option>`).join('');
-        $modalPackageSelect.innerHTML = opts || `<option disabled>(Không còn gói trống)</option>`;
+        // build danh sách từ toàn bộ gói
+        const opts = state.allPackages
+            .map(p => `<option value="${p.packageId}">${escapeHtml(p.basePackageName || p.packageName)}</option>`)
+            .join('');
+        $modalPackageSelect.innerHTML = opts || `<option disabled>(Chưa có dữ liệu gói)</option>`;
         $modalPerKm.value = '';
-        addModal.show();
+        addModal && addModal.show();
     }
 
+    /** Tạo snapshot mới bằng PUT (ghi đè/cập nhật trên packageId) */
     async function createPackage() {
         const pkgId = parseInt($modalPackageSelect.value || '0', 10);
-        if (!pkgId) return toast('Chưa chọn gói.', 'warning');
+        if (!pkgId) { toast('Chưa chọn gói.', 'warning'); return; }
 
-        const perKmInit = $modalPerKm.value === '' ? 0 : Number($modalPerKm.value);
-        if (isNaN(perKmInit) || perKmInit < 0) return toast('Giá mỗi km ban đầu không hợp lệ.', 'warning');
+        const perKmInit = $modalPerKm.value === '' ? null : Number($modalPerKm.value);
+        if (!validPricePerKmOrEmpty($modalPerKm.value)) {
+            toast('Giá mỗi km ban đầu không hợp lệ.', 'warning'); return;
+        }
 
         const body = {
             providerId: state.providerId,
             packageId: pkgId,
             packageName: null,
             pricePerKm: perKmInit,
-            furniturePrices: []
+            furniturePrices: [] // bắt đầu rỗng
         };
         await apiPut(`/api/providers/${state.providerId}/service-packages/${pkgId}`, body);
-        toast('Đã tạo gói & đặt giá/km ban đầu.', 'success');
+        toast('Đã tạo snapshot.', 'success');
 
-        addModal.hide();
+        addModal && addModal.hide();
         await loadPackages();
         await openPackage(pkgId);
     }
 
     // ---------- EVENTS ----------
-    $btnRefresh && $btnRefresh.addEventListener('click', loadPackages);
-    $btnOpenAdd && $btnOpenAdd.addEventListener('click', openAddModal);
+    $btnRefresh.addEventListener('click', loadPackages);
+    $btnOpenAdd.addEventListener('click', openAddModal);
     $btnCreatePkg && $btnCreatePkg.addEventListener('click', createPackage);
 
-    $searchConfigured && $searchConfigured.addEventListener('input', e => {
-        renderConfiguredList(e.target.value || '');
-    });
+    $filterByPackage.addEventListener('change', renderConfiguredList);
+    $searchConfigured.addEventListener('input', renderConfiguredList);
 
-    $btnAddRow && $btnAddRow.addEventListener('click', () => {
+    $btnAddRow.addEventListener('click', () => {
         state.current.items.push({ furnitureItemId: null, furnitureItemName: '', price: null });
         renderItemsTable();
     });
 
-    $btnSave && $btnSave.addEventListener('click', saveCurrent);
-    $btnReset && $btnReset.addEventListener('click', resetCurrent);
+    $btnSave.addEventListener('click', saveCurrent);
+    $btnReset.addEventListener('click', resetCurrent);
+    $btnDelete.addEventListener('click', deleteCurrent);
 
     // ---------- INIT ----------
-    (async function init() {
+    (async function init(){
         try {
             await loadPackages();
             toast('Đã tải danh sách gói.', 'success', 1800);
         } catch (e) {
-            toast(e.message, 'error', 5000);
-        }
-
-        // Sidebar backdrop sync (matches dashboard behavior)
-        const $sidebar = document.querySelector('.sidebar');
-        const $backdrop = document.getElementById('sidebar-backdrop');
-        if ($sidebar && $backdrop) {
-            const syncBackdrop = () => $backdrop.classList.toggle('show', $sidebar.classList.contains('open'));
-            syncBackdrop();
-            try {
-                const obs = new MutationObserver(syncBackdrop);
-                obs.observe($sidebar, {attributes:true, attributeFilter:['class']});
-            } catch (e) {
-                setInterval(syncBackdrop, 300);
-            }
-            document.addEventListener('click', (ev) => {
-                if (ev.target.id === 'sidebar-backdrop') {
-                    $sidebar.classList.remove('open');
-                    syncBackdrop();
-                }
-            });
+            toast(e.message, 'error', 6000);
         }
     })();
 

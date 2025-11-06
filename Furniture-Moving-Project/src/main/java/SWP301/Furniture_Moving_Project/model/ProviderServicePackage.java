@@ -1,51 +1,68 @@
-// model/ProviderServicePackage.java  (map tới provider_service_packages)
+// src/main/java/SWP301/Furniture_Moving_Project/model/ProviderServicePackage.java
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "provider_service_packages",
-        uniqueConstraints = @UniqueConstraint(name = "uq_provider_package", columnNames = {"provider_id", "package_id"}))
+@Entity @Table(
+        name="provider_service_packages",
+        uniqueConstraints = @UniqueConstraint(columnNames={"provider_id","package_id"})
+)
 public class ProviderServicePackage {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "provider_id", nullable = false)
-    private Provider provider;
+    @Column(name="provider_id", nullable=false)
+    private Integer providerId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "package_id", nullable = false)
-    private ServicePackage servicePackage;
+    @Column(name="package_id", nullable=false)
+    private Integer packageId;
 
-    // Snapshot + giá chính
-    @Column(name = "package_name_snapshot")
-    private String packageNameSnapshot;
+    @Column(name="per_km")
+    private Double perKm; // có thể NULL (chưa cấu hình)
 
-    @Column(name = "per_km")
-    private BigDecimal pricePerKm;
+    @Column(name="package_name_snapshot")
+    private String packageNameSnapshot; // NULL => dùng tên gốc
+
+    // read-only join để lấy tên gói
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="package_id", insertable = false, updatable = false)
+    private ServicePackage basePackage;
+
+    // getters/setters
+
 
     public Integer getId() {
         return id;
     }
 
-    public Provider getProvider() {
-        return provider;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
-    public void setProvider(Provider provider) {
-        this.provider = provider;
+    public Integer getProviderId() {
+        return providerId;
     }
 
-    public ServicePackage getServicePackage() {
-        return servicePackage;
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
     }
 
-    public void setServicePackage(ServicePackage servicePackage) {
-        this.servicePackage = servicePackage;
+    public Integer getPackageId() {
+        return packageId;
+    }
+
+    public void setPackageId(Integer packageId) {
+        this.packageId = packageId;
+    }
+
+    public Double getPerKm() {
+        return perKm;
+    }
+
+    public void setPerKm(Double perKm) {
+        this.perKm = perKm;
     }
 
     public String getPackageNameSnapshot() {
@@ -56,11 +73,11 @@ public class ProviderServicePackage {
         this.packageNameSnapshot = packageNameSnapshot;
     }
 
-    public BigDecimal getPricePerKm() {
-        return pricePerKm;
+    public ServicePackage getBasePackage() {
+        return basePackage;
     }
 
-    public void setPricePerKm(BigDecimal pricePerKm) {
-        this.pricePerKm = pricePerKm;
+    public void setBasePackage(ServicePackage basePackage) {
+        this.basePackage = basePackage;
     }
 }

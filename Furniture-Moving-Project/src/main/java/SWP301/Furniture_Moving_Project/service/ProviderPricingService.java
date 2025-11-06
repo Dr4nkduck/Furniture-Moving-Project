@@ -1,14 +1,14 @@
-// service/ProviderPricingService.java (interface)
+// service/ProviderPricingService.java
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.dto.PackagePricingDetailDTO;
-import SWP301.Furniture_Moving_Project.dto.PackageOptionDTO;
-import SWP301.Furniture_Moving_Project.dto.PricingSaveRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.*;
 
 import java.util.List;
 
 public interface ProviderPricingService {
-    List<PackageOptionDTO> listPackages(Integer providerId);
-    PackagePricingDetailDTO getPackageDetail(Integer providerId, Integer packageId);
-    void savePackagePricing(PricingSaveRequestDTO req);
+    List<ServicePackageListItemDTO> listPackages(Integer providerId);
+    ProviderPackageSnapshotDTO getPackage(Integer providerId, Integer packageId);
+    void saveSnapshot(Integer providerId, Integer packageId, ProviderPackageSnapshotDTO body);
+    void clearSnapshot(Integer providerId, Integer packageId);
+    void deleteItem(Integer providerId, Integer packageId, Integer furnitureTypeId);
 }

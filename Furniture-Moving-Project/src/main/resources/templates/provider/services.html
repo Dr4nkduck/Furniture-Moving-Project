@@ -5,29 +5,28 @@
     <title>PV-002 • Bảng giá & Dịch vụ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Nếu backend đã đẩy sẵn providerId, gắn vào meta để JS dùng (không bắt buộc) -->
+    <!-- Inject từ controller nếu có -->
     <meta th:if="${providerId != null}" name="provider-id" th:content="${providerId}"/>
 
-    <!-- Early theme boot (no flash) -->
+    <!-- Early theme boot -->
     <script>
         (function(){
-            try {
-                var saved = localStorage.getItem('theme');
-                var prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var dark = saved ? (saved === 'dark') : prefers;
-                document.documentElement.classList.toggle('dark', !!dark);
-            } catch(e){}
+            try{
+                var s=localStorage.getItem('theme');
+                var prefers=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', s?s==='dark':prefers);
+            }catch(e){}
         })();
     </script>
 
-    <!-- Dashboard assets -->
+    <!-- Dashboard CSS -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-    <!-- PV-002 styles -->
+    <!-- PV-002 CSS -->
     <link rel="stylesheet" th:href="@{/provider/css/provider-services.css}">
 </head>
 
@@ -47,18 +46,20 @@
                     <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                 </div>
                 <div class="ms-3">
-                    <h6 class="mb-0" th:text="${#authentication?.name}">provider1</h6>
+                    <!-- Ưu tiên company_name nếu controller set model.addAttribute("companyName", ...) -->
+                    <h6 class="mb-0"
+                        th:text="${companyName != null && !#strings.isEmpty(companyName) ? companyName : #authentication?.name}">
+                        provider1
+                    </h6>
                     <span>Provider</span>
                 </div>
             </div>
 
             <div class="navbar-nav w-100">
                 <a th:href="@{/provider/dashboard}" class="nav-item nav-link">
-                    <i class="bi bi-speedometer2 me-2"></i>Tổng quan
-                </a>
+                    <i class="bi bi-speedometer2 me-2"></i>Tổng quan</a>
                 <a th:href="@{/provider/services}" class="nav-item nav-link active">
-                    <i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ
-                </a>
+                    <i class="bi bi-gear-wide-connected me-2"></i>Bảng giá & dịch vụ</a>
                 <a th:href="@{/provider/orders}" class="nav-item nav-link"><i class="bi bi-box-seam me-2"></i>Đơn hàng</a>
                 <a th:href="@{/provider/analytics}" class="nav-item nav-link"><i class="bi bi-graph-up me-2"></i>Phân tích</a>
             </div>
@@ -81,9 +82,7 @@
             </form>
 
             <div class="navbar-nav align-items-center ms-auto">
-                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false" aria-label="Toggle dark mode">
-                    🌙 Dark
-                </button>
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Dark</button>
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -98,7 +97,10 @@
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                         <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt="" style="width:40px;height:40px;">
-                        <span class="d-none d-lg-inline-flex" th:text="${#authentication?.name}">provider1</span>
+                        <span class="d-none d-lg-inline-flex"
+                              th:text="${companyName != null && !#strings.isEmpty(companyName) ? companyName : #authentication?.name}">
+              provider1
+            </span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
                         <a class="dropdown-item" href="/provider/profile">Hồ sơ</a>
@@ -111,48 +113,65 @@
             </div>
         </nav>
 
-        <!-- Page Body (PV-002) -->
+        <!-- Page Body -->
         <div class="container-fluid pt-4 px-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="m-0 text-shadow">PV-002 • Thiết lập gói & bảng giá</h3>
                 <div>
-                    <button class="btn btn-outline-light btn-sm me-2" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
-                    <button class="btn btn-primary btn-sm" id="btnOpenAdd"><i class="bi bi-plus-lg"></i> Thêm gói</button>
+                    <button class="btn btn-outline-light btn-sm me-2" id="btnRefresh">
+                        <i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+                    <button class="btn btn-primary btn-sm" id="btnOpenAdd">
+                        <i class="bi bi-plus-lg"></i> Thêm gói</button>
                 </div>
             </div>
 
             <div class="row g-3">
-                <!-- LEFT: Gói đã cấu hình -->
+                <!-- LEFT -->
                 <div class="col-lg-4">
                     <div class="card-dark p-3 h-100">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div>
                                 <div class="fw-semibold">Gói đã cấu hình</div>
-                                <div class="small muted">Nhấp để mở & chỉnh sửa</div>
+                                <div class="small muted">Chọn để mở & chỉnh sửa</div>
                             </div>
                             <span id="configuredCount" class="badge badge-dim"></span>
                         </div>
 
+                        <!-- Filter by base service package -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <select id="filterByPackage" class="form-select form-select-sm">
+                                    <option value="">Lọc theo gói gốc (Tất cả)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="input-group input-group-sm mb-2">
-                            <span class="input-group-text bg-transparent text-light border-secondary"><i class="bi bi-search"></i></span>
-                            <input id="searchConfigured" class="form-control bg-transparent text-light border-secondary" placeholder="Tìm theo tên gói...">
+              <span class="input-group-text bg-transparent text-light border-secondary">
+                <i class="bi bi-search"></i></span>
+                            <input id="searchConfigured" class="form-control bg-transparent text-light border-secondary"
+                                   placeholder="Tìm theo tên snapshot...">
                         </div>
 
                         <div class="list-group list-hover" id="configuredList" style="max-height:66vh;overflow:auto;"></div>
                     </div>
                 </div>
 
-                <!-- RIGHT: Form chi tiết gói -->
+                <!-- RIGHT -->
                 <div class="col-lg-8">
                     <div class="card-dark p-3 h-100">
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <div>
                                 <div class="fw-semibold">Chi tiết gói</div>
-                                <div class="small muted">Giá mỗi km & bảng giá nội thất (snapshot theo gói)</div>
+                                <div class="small muted">Giá/km & bảng giá nội thất (snapshot)</div>
                             </div>
                             <div>
-                                <button class="btn btn-outline-warning btn-sm me-2" id="btnReset"><i class="bi bi-eraser"></i> Đặt lại giá</button>
-                                <button class="btn btn-success btn-sm" id="btnSave"><i class="bi bi-save2"></i> Lưu</button>
+                                <button class="btn btn-outline-danger btn-sm me-2" id="btnDelete">
+                                    <i class="bi bi-trash"></i> Xóa gói</button>
+                                <button class="btn btn-outline-warning btn-sm me-2" id="btnReset">
+                                    <i class="bi bi-eraser"></i> Đặt lại giá</button>
+                                <button class="btn btn-success btn-sm" id="btnSave">
+                                    <i class="bi bi-save2"></i> Lưu</button>
                             </div>
                         </div>
 
@@ -160,11 +179,12 @@
                             Hãy chọn một gói ở cột bên trái hoặc bấm <b>Thêm gói</b> để khởi tạo cấu hình.
                         </div>
 
-                        <form id="detailForm" class="d-none">
+                        <form id="detailForm" class="d-none" novalidate>
                             <div class="row g-3 mb-2">
                                 <div class="col-md-6">
                                     <label class="form-label">Tên gói (snapshot khi lưu)</label>
-                                    <input id="packageNameSnapshot" class="form-control" placeholder="VD: Vận chuyển văn phòng — HCM" />
+                                    <input id="packageNameSnapshot" class="form-control" maxlength="120"
+                                           placeholder="VD: Vận chuyển văn phòng — HCM" />
                                     <div class="form-text muted">Để trống sẽ dùng tên gốc từ <code>service_packages</code>.</div>
                                 </div>
                                 <div class="col-md-6">
@@ -189,14 +209,14 @@
                                         <th style="width:30%">Thao tác</th>
                                     </tr>
                                     </thead>
-                                    <tbody><!-- rows by JS --></tbody>
+                                    <tbody></tbody>
                                 </table>
                             </div>
                         </form>
                     </div>
                 </div>
             </div> <!-- /row -->
-        </div> <!-- /container-fluid -->
+        </div> <!-- /container -->
 
         <!-- Footer -->
         <div class="container-fluid pt-4 px-4">
@@ -205,8 +225,8 @@
                     <div class="col-12 col-sm-6 text-center text-sm-start">
                         &copy; <a href="#">Your Site Name</a>, All Right Reserved.
                     </div>
-                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By
-                        <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">
+                        Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
                     </div>
                 </div>
             </div>
@@ -214,16 +234,59 @@
     </div> <!-- /content -->
 </div> <!-- /container-fluid -->
 
-<!-- Backdrop for overlay sidebar -->
+<!-- Backdrop -->
 <div id="sidebar-backdrop" aria-hidden="true"></div>
 
-<!-- Toast Container -->
+<!-- Toasts -->
 <div id="toastBox" class="toast-box"></div>
 
-<!-- JS order -->
+<!-- Modal: Thêm gói -->
+<div class="modal fade" id="addPkgModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm snapshot gói</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label">Chọn gói gốc</label>
+                    <select id="modalPackageSelect" class="form-select"></select>
+                    <div class="form-text muted">Có thể tạo nhiều snapshot cho cùng một gói.</div>
+                </div>
+                <div>
+                    <label class="form-label">Giá/km ban đầu (tuỳ chọn)</label>
+                    <input id="modalPerKm" class="form-control" type="number" step="1000" min="0" placeholder="VD: 100000">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-primary" id="btnCreatePkg">Tạo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS: jQuery -> Bootstrap -> dashboard main -> page JS -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/dashbooard/js/main.js}"></script>
 <script th:src="@{/provider/js/provider-services.js}"></script>
+
+<!-- Backdrop sync -->
+<script>
+    (function () {
+        var $sidebar = $('.sidebar');
+        var $backdrop = $('#sidebar-backdrop');
+        function sync(){ $backdrop.toggleClass('show', $sidebar.hasClass('open')); }
+        sync();
+        try {
+            new MutationObserver(sync).observe($sidebar.get(0), {attributes:true, attributeFilter:['class']});
+        } catch (e) { setInterval(sync, 250); }
+        $(document).off('click.provider-backdrop').on('click.provider-backdrop','#sidebar-backdrop',function(){
+            $sidebar.removeClass('open'); sync();
+        });
+    })();
+</script>
 </body>
 </html>
