@@ -1,9 +1,9 @@
 package SWP301.Furniture_Moving_Project.repository.projection;
 
-public interface ProviderOrderItemRow {
+public interface ProviderOrderItemProjection {
     Integer getItemId();
-    String  getItemType();
-    String  getSize();
+    String getItemType();
+    String getSize();
     Integer getQuantity();
     Boolean getIsFragile();
 }

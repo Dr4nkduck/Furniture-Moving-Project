@@ -8,7 +8,19 @@ import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderUpdateStatusDTO;
+import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 import java.util.*;
+
+
 
 /**
  * Provider API — đã bổ sung các endpoint PV-002 (Service Package Pricing Snapshot).
@@ -125,5 +137,38 @@ public class ProviderApiController {
         public String packageNameSnapshot;      // tên chuẩn trong BE
         public Double pricePerKm;
         public List<FurniturePriceDTO> furniturePrices;
+    }
+
+
+
+    // === THÊM FIELD (không phá constructor sẵn có) ===
+    @Autowired
+    private ProviderOrderService providerOrderService;
+
+    // === PV-003: List/Search/Filter orders của provider ===
+// Hỗ trợ cả 2 dạng: (a) class-level không có base path  (b) class-level có @RequestMapping("/api/providers")
+    @GetMapping(path = {"/api/providers/{providerId}/orders", "/{providerId}/orders"})
+    public List<ProviderOrderSummaryDTO> listOrders(
+            @PathVariable Integer providerId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, name = "q") String q) {
+        return providerOrderService.listOrders(providerId, status, q);
+    }
+
+    // === PV-003: Xem chi tiết đơn ===
+    @GetMapping(path = {"/api/providers/{providerId}/orders/{orderId}", "/{providerId}/orders/{orderId}"})
+    public ProviderOrderDetailDTO getOrderDetail(@PathVariable Integer providerId,
+                                                 @PathVariable Integer orderId) {
+        return providerOrderService.getOrderDetail(providerId, orderId);
+    }
+
+    // === PV-004: Cập nhật trạng thái đơn ===
+// status: pending/accepted/declined/in_progress/completed/cancelled
+    @PutMapping(path = {"/api/providers/{providerId}/orders/{orderId}/status", "/{providerId}/orders/{orderId}/status"})
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateOrderStatus(@PathVariable Integer providerId,
+                                  @PathVariable Integer orderId,
+                                  @RequestBody ProviderOrderUpdateStatusDTO body) {
+        providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
     }
 }

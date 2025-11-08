@@ -2,24 +2,28 @@ package SWP301.Furniture_Moving_Project.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class ProviderOrderSummaryDTO {
     private Integer requestId;
-    private String status;                  // pending / assigned / in_progress / completed / cancelled
+    private String status;
+    private LocalDateTime requestDate;
     private LocalDate preferredDate;
-    private String customerName;            // "First Last"
-    private String pickupAddress;           // "street, city"
-    private String deliveryAddress;         // "street, city"
-    private BigDecimal totalCost;           // may be null
+    private String customerName;
+    private String pickupAddress;
+    private String deliveryAddress;
+    private BigDecimal totalCost;
 
     public ProviderOrderSummaryDTO() {
     }
 
-    public ProviderOrderSummaryDTO(Integer requestId, String status, LocalDate preferredDate,
-                                   String customerName, String pickupAddress, String deliveryAddress,
+    public ProviderOrderSummaryDTO(Integer requestId, String status, LocalDateTime requestDate,
+                                   LocalDate preferredDate, String customerName,
+                                   String pickupAddress, String deliveryAddress,
                                    BigDecimal totalCost) {
         this.requestId = requestId;
         this.status = status;
+        this.requestDate = requestDate;
         this.preferredDate = preferredDate;
         this.customerName = customerName;
         this.pickupAddress = pickupAddress;
@@ -41,6 +45,14 @@ public class ProviderOrderSummaryDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getRequestDate() {
+        return requestDate;
+    }
+
+    public void setRequestDate(LocalDateTime requestDate) {
+        this.requestDate = requestDate;
     }
 
     public LocalDate getPreferredDate() {
@@ -75,11 +87,11 @@ public class ProviderOrderSummaryDTO {
         this.deliveryAddress = deliveryAddress;
     }
 
-    public java.math.BigDecimal getTotalCost() {
+    public BigDecimal getTotalCost() {
         return totalCost;
     }
 
-    public void setTotalCost(java.math.BigDecimal totalCost) {
+    public void setTotalCost(BigDecimal totalCost) {
         this.totalCost = totalCost;
     }
 }

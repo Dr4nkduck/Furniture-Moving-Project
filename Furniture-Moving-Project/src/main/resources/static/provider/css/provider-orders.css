@@ -1,289 +1,100 @@
-.page-provider-orders {
-    --bg: #0b0c0f;
-    --panel: #12141a;
-    --muted: #a8b0bd;
-    --ink: #e7ecf3;
-    --accent: #4da3ff;
-    --ok: #27c093;
-    --warn: #ffb200;
-    --bad: #ff5a6b;
-}
+/* ===== Provider Orders Page (PV-003 / PV-004) ===== */
 
-.page-provider-orders {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-}
-
-.topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 22px;
-    position: sticky;
-    top: 0;
-    background: #0b0c0f;
-    border-bottom: 1px solid rgba(255, 255, 255, .08);
-    z-index: 10;
-}
-
-.topbar .brand {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.topbar .logo {
-    width: 36px;
-    height: 36px;
+/* Grid layout for list + detail panel */
+.orders-layout {
     display: grid;
-    place-items: center;
-    background: #202532;
-    border-radius: 10px;
+    gap: 18px;
+    grid-template-columns: 1.25fr 1fr;
 }
 
-.topbar .title h1 {
-    margin: 0;
-    font-size: 18px;
+@media (max-width: 992px) {
+    .orders-layout {
+        grid-template-columns: 1fr;
+    }
 }
 
-.topbar .title p {
-    margin: 2px 0 0;
+.orders {
+    padding: 0;
+    overflow: hidden;
+}
+
+.detail {
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Table tweaks */
+.table thead th {
+    font-weight: 600;
     color: var(--muted);
-    font-size: 12px;
+    border-bottom: 1px solid var(--border) !important;
 }
 
-.topbar .filters {
-    display: flex;
-    gap: 10px;
+.table tbody td {
+    border-color: var(--border) !important;
 }
 
-.topbar input, .topbar select, .topbar button {
-    background: #1a1f2b;
-    border: 1px solid #2b3242;
-    color: var(--ink);
-    padding: 8px 10px;
-    border-radius: 10px;
+/* Timeline */
+.timeline {
+    border-left: 3px solid var(--border);
+    padding-left: 12px;
 }
 
-.topbar button {
-    background: var(--accent);
-    border: none;
-    color: #06101a;
+.timeline .t {
+    position: relative;
+    margin-bottom: 8px;
+    color: var(--muted);
+}
+
+.timeline .t::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #adb5bd;
+}
+
+.timeline .t.active {
+    color: var(--text);
+}
+
+.timeline .t.active::before {
+    background: var(--brand);
+}
+
+/* Detail panel spacing */
+#detailContent .small {
+    color: var(--muted);
+}
+
+#detailContent .fw-semibold {
     font-weight: 600;
 }
 
-.layout {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    gap: 16px;
-    padding: 16px;
-}
+/* Responsive helpers */
+@media (max-width: 576px) {
+    .orders-layout {
+        gap: 12px;
+    }
 
-.panel {
-    background: var(--panel);
-    border: 1px solid #202532;
-    border-radius: 16px;
-    padding: 12px;
-    min-height: 60vh;
-}
+    .table thead {
+        display: none;
+    }
 
-.panel .empty {
-    color: var(--muted);
-    padding: 24px;
-    text-align: center;
-}
+    .table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: .25rem .5rem;
+    }
 
-.order-card {
-    border-bottom: 1px dashed #2b3242;
-    padding: 12px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
+    .table tbody td:nth-child(1) {
+        grid-column: 1 / -1;
+    }
 
-.order-card .row1 {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.order-card .row1 .date {
-    margin-left: auto;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.badge {
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 12px;
-    background: #2b3242;
-}
-
-.badge.in_progress {
-    background: #173b2e;
-    color: #86f3d2;
-}
-
-.badge.pending, .badge.assigned {
-    background: #2a2a18;
-    color: #ffe68a;
-}
-
-.badge.completed {
-    background: #182c2a;
-    color: #7af2da;
-}
-
-.badge.cancelled {
-    background: #3a1a1e;
-    color: #ff9fb0;
-}
-
-.order-card .row2 {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 10px;
-}
-
-.order-card .row2 .name {
-    font-weight: 600;
-}
-
-.order-card .row2 .route {
-    color: var(--muted);
-}
-
-.order-card .row2 .arrow {
-    margin: 0 6px;
-}
-
-.order-card .row3 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.order-card .btn {
-    background: #1a1f2b;
-    border: 1px solid #2b3242;
-    color: var(--ink);
-    padding: 6px 10px;
-    border-radius: 10px;
-}
-
-.pager {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-}
-
-.detail .detail-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 1px dashed #2b3242;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-}
-
-.detail .actions .btn {
-    background: var(--accent);
-    border: none;
-    color: #06101a;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-weight: 700;
-}
-
-.detail .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.card {
-    border: 1px solid #2b3242;
-    border-radius: 14px;
-    padding: 12px;
-    background: #151821;
-}
-
-.card h3 {
-    margin: 0 0 8px;
-}
-
-.total {
-    font-size: 22px;
-    font-weight: 700;
-}
-
-.cancel {
-    color: #ff9fb0;
-}
-
-.items {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.items th, .items td {
-    border-bottom: 1px solid #2b3242;
-    padding: 8px;
-    text-align: left;
-}
-
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .5);
-    display: grid;
-    place-items: center;
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal-card {
-    width: min(520px, 95vw);
-    background: #151821;
-    border: 1px solid #2b3242;
-    border-radius: 16px;
-    padding: 16px;
-}
-
-.modal-card select, .modal-card textarea {
-    width: 100%;
-    background: #1a1f2b;
-    border: 1px solid #2b3242;
-    color: var(--ink);
-    border-radius: 10px;
-    padding: 8px;
-}
-
-.modal-card textarea {
-    min-height: 90px;
-}
-
-.modal-card .actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.modal-card .actions button {
-    padding: 8px 12px;
-    border-radius: 10px;
-}
-
-.modal-card #modalSave {
-    background: var(--accent);
-    border: none;
-    color: #06101a;
-    font-weight: 700;
+    .table tbody td:last-child {
+        text-align: right;
+    }
 }

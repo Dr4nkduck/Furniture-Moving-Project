@@ -1,19 +1,29 @@
 package SWP301.Furniture_Moving_Project.dto;
 
 public class ProviderOrderItemDTO {
-    private String itemType;     // furniture_items.item_type
-    private String size;         // optional
-    private Integer quantity;
+    private Integer itemId;
+    private String itemType;
+    private String size;
+    private int quantity;
     private boolean fragile;
 
     public ProviderOrderItemDTO() {
     }
 
-    public ProviderOrderItemDTO(String itemType, String size, Integer quantity, boolean fragile) {
+    public ProviderOrderItemDTO(Integer itemId, String itemType, String size, int quantity, boolean fragile) {
+        this.itemId = itemId;
         this.itemType = itemType;
         this.size = size;
         this.quantity = quantity;
         this.fragile = fragile;
+    }
+
+    public Integer getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Integer itemId) {
+        this.itemId = itemId;
     }
 
     public String getItemType() {
@@ -32,11 +42,11 @@ public class ProviderOrderItemDTO {
         this.size = size;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Integer quantity) {
+    public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
 
