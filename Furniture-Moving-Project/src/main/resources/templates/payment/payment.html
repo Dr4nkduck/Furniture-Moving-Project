@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thanh toán đơn</title>
+  <!-- Static assets dưới /static -->
+  <link rel="stylesheet" th:href="@{/payment/css/payment.css}" />
+</head>
+<body class="page-payment">
+  <main class="wrap">
+    <header class="head">
+      <div class="head__left">
+        <h1>Thanh toán đơn <span id="orderCode" class="code">SR000001</span></h1>
+        <p class="muted">Ngày mong muốn: <b id="preferredDate">-</b></p>
+        <p class="muted">Mã yêu cầu (rid): <b id="rid">-</b></p>
+      </div>
+      <div class="head__right">
+        <div class="countdown" title="Thời gian giữ QR">
+          <span class="muted">Hết hạn sau</span>
+          <strong id="countdown">15:00</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="summary">
+      <div class="sum-card">
+        <h2>Thông tin đơn</h2>
+        <div class="sum-grid">
+          <div>
+            <div class="label">Điểm lấy</div>
+            <div id="pickup" class="value">—</div>
+          </div>
+          <div>
+            <div class="label">Điểm giao</div>
+            <div id="delivery" class="value">—</div>
+          </div>
+          <div>
+            <div class="label">Số tiền</div>
+            <div id="amountVnd" class="value">0 VND</div>
+          </div>
+          <div>
+            <div class="label">Nội dung chuyển khoản</div>
+            <div id="transferNote" class="value">PAY-SR000001</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cards">
+      <!-- VNPay (demo placeholder) -->
+      <article class="card">
+        <header class="card__head">
+          <h3>VNPay QR (demo)</h3>
+        </header>
+        <div class="qr">
+          <img id="vnpayQr" th:src="@{/payment/images/vnpay-qr-sample.png}" alt="VNPay QR demo" />
+        </div>
+        <div class="amount-line">
+          Số tiền: <b id="amountVnd2">0 VND</b>
+        </div>
+        <div class="actions">
+          <button class="btn" disabled title="Sẽ thêm sau">Thanh toán qua VNPay</button>
+        </div>
+        <p class="muted tip">Đây là ảnh minh hoạ. Tích hợp thật sẽ sinh QR/link động từ VNPay.</p>
+      </article>
+
+      <!-- Chuyển khoản ngân hàng -->
+      <article class="card">
+        <header class="card__head">
+          <h3>Chuyển khoản ngân hàng (VietQR)</h3>
+        </header>
+
+        <div class="qr">
+          <img id="vietqrImg" alt="VietQR" />
+        </div>
+
+        <div class="grid">
+          <div>
+            <div class="label">Ngân hàng</div>
+            <div id="bankName" class="value">—</div>
+          </div>
+          <div>
+            <div class="label">Số tài khoản</div>
+            <div id="bankAcc" class="value">—</div>
+          </div>
+          <div>
+            <div class="label">Chủ tài khoản</div>
+            <div id="accName" class="value">—</div>
+          </div>
+          <div>
+            <div class="label">Số tiền</div>
+            <div id="amountVnd3" class="value">0 VND</div>
+          </div>
+          <div>
+            <div class="label">Nội dung CK</div>
+            <div id="transferNote2" class="value">PAY-SR000001</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn outline" data-copy="#bankAcc">Copy số TK</button>
+          <button class="btn outline" data-copy="#transferNote2">Copy nội dung</button>
+          <button class="btn outline" data-copy="#amountRaw" title="Copy số tiền dạng số">Copy số tiền</button>
+          <span id="amountRaw" class="sr-only" aria-hidden="true">0</span>
+        </div>
+
+        <p class="muted tip">
+          Vui lòng chuyển đúng <b>số tiền</b> và <b>không chỉnh sửa</b> nội dung chuyển khoản.
+        </p>
+      </article>
+    </section>
+
+    <footer class="foot">
+      <div class="muted">*Trang demo Frontend — bạn có thể truyền dữ liệu qua query string.</div>
+    </footer>
+  </main>
+
+  <script th:src="@{/payment/js/payment.js}"></script>
+</body>
+</html>
