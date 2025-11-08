@@ -656,3 +656,112 @@ BEGIN CATCH
     THROW;
 END CATCH
 GO
+
+/* ========== 1) provider_service_packages: dọn cột + thêm snapshot ========== */
+-- Bỏ cột không dùng (nếu có)
+IF COL_LENGTH('provider_service_packages','base_fee') IS NOT NULL
+    ALTER TABLE provider_service_packages DROP COLUMN base_fee;
+IF COL_LENGTH('provider_service_packages','per_minute') IS NOT NULL
+    ALTER TABLE provider_service_packages DROP COLUMN per_minute;
+IF COL_LENGTH('provider_service_packages','surcharge_stairs') IS NOT NULL
+    ALTER TABLE provider_service_packages DROP COLUMN surcharge_stairs;
+IF COL_LENGTH('provider_service_packages','surcharge_no_elevator') IS NOT NULL
+    ALTER TABLE provider_service_packages DROP COLUMN surcharge_no_elevator;
+IF COL_LENGTH('provider_service_packages','surcharge_narrow_alley') IS NOT NULL
+    ALTER TABLE provider_service_packages DROP COLUMN surcharge_narrow_alley;
+IF COL_LENGTH('provider_service_packages','surcharge_weekend') IS NOT NULL
+    ALTER TABLE provider_service_packages DROP COLUMN surcharge_weekend;
+
+-- Đảm bảo các cột tối thiểu
+IF COL_LENGTH('provider_service_packages','per_km') IS NULL
+    ALTER TABLE provider_service_packages ADD per_km DECIMAL(12,2) NULL;
+
+-- Thêm snapshot tên gói (lưu theo thời điểm provider setting)
+IF COL_LENGTH('provider_service_packages','package_name_snapshot') IS NULL
+    ALTER TABLE provider_service_packages ADD package_name_snapshot NVARCHAR(150) NULL;
+
+-- Khoá & chỉ mục
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_psp_provider')
+    CREATE INDEX IX_psp_provider ON provider_service_packages(provider_id);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_psp_package')
+    CREATE INDEX IX_psp_package ON provider_service_packages(package_id);
+
+-- Thêm FK mềm (nếu chưa có)
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_psp_provider')
+    ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_provider
+        FOREIGN KEY (provider_id) REFERENCES service_providers(provider_id);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_psp_package')
+    ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_package
+        FOREIGN KEY (package_id) REFERENCES service_packages(package_id);
+
+/* ========== 2) Bảng giá nội thất theo GÓI (snapshot per package) ========== */
+IF OBJECT_ID('provider_package_furniture_prices','U') IS NULL
+BEGIN
+  CREATE TABLE provider_package_furniture_prices(
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    provider_id INT NOT NULL,
+    package_id  INT NOT NULL,
+    furniture_type_id INT NOT NULL,
+    price DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT FK_ppfp_provider  FOREIGN KEY (provider_id) REFERENCES service_providers(provider_id),
+    CONSTRAINT FK_ppfp_package   FOREIGN KEY (package_id)  REFERENCES service_packages(package_id),
+    CONSTRAINT FK_ppfp_furniture FOREIGN KEY (furniture_type_id) REFERENCES furniture_types(furniture_type_id),
+    CONSTRAINT UQ_ppfp UNIQUE(provider_id, package_id, furniture_type_id)
+  );
+
+  CREATE INDEX IX_ppfp_provider_package ON provider_package_furniture_prices(provider_id, package_id);
+END;
+
+/* ========== 3) Seed nhẹ (chỉ khi thiếu) ========== */
+-- Seed furniture_types cơ bản (để test)
+IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Sofa')
+  INSERT INTO furniture_types(code,name,unit) VALUES (N'SOFA',N'Sofa',N'chiếc');
+IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Giường')
+  INSERT INTO furniture_types(code,name,unit) VALUES (N'BED',N'Giường',N'chiếc');
+IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Ghế')
+  INSERT INTO furniture_types(code,name,unit) VALUES (N'CHAIR',N'Ghế',N'chiếc');
+
+-- Giả sử đã có service_packages (OFFICE / HOME...), dùng code 'OFFICE' để demo
+DECLARE @packageId INT = (SELECT TOP 1 package_id FROM service_packages WHERE code=N'OFFICE');
+-- Chọn 1 provider_id có sẵn (ví dụ 1), bạn đổi sau nếu khác
+DECLARE @providerId INT = (SELECT TOP 1 provider_id FROM service_providers ORDER BY provider_id);
+
+IF @packageId IS NOT NULL AND @providerId IS NOT NULL
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM provider_service_packages
+        WHERE provider_id=@providerId AND package_id=@packageId
+    )
+    BEGIN
+        INSERT INTO provider_service_packages(provider_id, package_id, per_km, package_name_snapshot)
+        SELECT @providerId, @packageId, 100000,
+               (SELECT name FROM service_packages WHERE package_id=@packageId);
+    END
+
+    -- Giá nội thất mẫu theo gói
+    DECLARE @ft_sofa INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Sofa');
+    DECLARE @ft_bed  INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Giường');
+    DECLARE @ft_chair INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Ghế');
+
+    IF @ft_sofa IS NOT NULL AND NOT EXISTS (
+       SELECT 1 FROM provider_package_furniture_prices
+       WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_sofa
+    )
+      INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
+      VALUES(@providerId,@packageId,@ft_sofa,1500000);
+
+    IF @ft_bed IS NOT NULL AND NOT EXISTS (
+       SELECT 1 FROM provider_package_furniture_prices
+       WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_bed
+    )
+      INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
+      VALUES(@providerId,@packageId,@ft_bed,2000000);
+
+    IF @ft_chair IS NOT NULL AND NOT EXISTS (
+       SELECT 1 FROM provider_package_furniture_prices
+       WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_chair
+    )
+      INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
+      VALUES(@providerId,@packageId,@ft_chair,800000);
+END

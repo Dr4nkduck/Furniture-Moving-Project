@@ -53,7 +53,9 @@ public class SecurityConfig {
                                  "/accountmanage/**", "/homepage/**", "/chatbot/**",
                                  "/superadmin/**",
                                  "/dashbooard/**","/customer-trends/**",
-                                 "/provider-stats/**" //✅ static của superadmin (css/js)
+                                 "/provider-stats/**",
+                                 "/services/**",
+                                 "/orders/**"
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

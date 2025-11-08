@@ -13,8 +13,9 @@ public class Provider {
     @Column(name = "provider_id")
     private Integer providerId;
 
-    @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)  // users(user_id)
+    private User user;
 
     @Column(name = "company_name", nullable = false, length = 255)
     private String companyName;
@@ -34,16 +35,9 @@ public class Provider {
     private BigDecimal baseFee;
     @Column(name = "per_km")
     private BigDecimal perKm;
-    @Column(name = "per_minute")
-    private BigDecimal perMinute;
-    @Column(name = "surcharge_stairs")
-    private BigDecimal surchargeStairs;
-    @Column(name = "surcharge_no_elevator")
-    private BigDecimal surchargeNoElevator;
-    @Column(name = "surcharge_narrow_alley")
-    private BigDecimal surchargeNarrowAlley;
-    @Column(name = "surcharge_weekend")
-    private BigDecimal surchargeWeekend;
+
+
+
 
 
     public Provider() {
@@ -71,13 +65,6 @@ public class Provider {
         this.providerId = providerId;
     }
 
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
 
     public String getCompanyName() {
         return companyName;
@@ -127,43 +114,12 @@ public class Provider {
         this.perKm = perKm;
     }
 
-    public BigDecimal getPerMinute() {
-        return perMinute;
+
+    public User getUser() {
+        return user;
     }
 
-    public void setPerMinute(BigDecimal perMinute) {
-        this.perMinute = perMinute;
-    }
-
-    public BigDecimal getSurchargeNoElevator() {
-        return surchargeNoElevator;
-    }
-
-    public void setSurchargeNoElevator(BigDecimal surchargeNoElevator) {
-        this.surchargeNoElevator = surchargeNoElevator;
-    }
-
-    public BigDecimal getSurchargeStairs() {
-        return surchargeStairs;
-    }
-
-    public void setSurchargeStairs(BigDecimal surchargeStairs) {
-        this.surchargeStairs = surchargeStairs;
-    }
-
-    public BigDecimal getSurchargeNarrowAlley() {
-        return surchargeNarrowAlley;
-    }
-
-    public void setSurchargeNarrowAlley(BigDecimal surchargeNarrowAlley) {
-        this.surchargeNarrowAlley = surchargeNarrowAlley;
-    }
-
-    public BigDecimal getSurchargeWeekend() {
-        return surchargeWeekend;
-    }
-
-    public void setSurchargeWeekend(BigDecimal surchargeWeekend) {
-        this.surchargeWeekend = surchargeWeekend;
+    public void setUser(User user) {
+        this.user = user;
     }
 }
