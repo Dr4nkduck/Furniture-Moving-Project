@@ -21,7 +21,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final AuthCredentialRepository authCredentialRepository;
     private final PasswordEncoder passwordEncoder;
-    
+
     public UserController(UserRepository userRepository,
                           AuthCredentialRepository authCredentialRepository,
                           PasswordEncoder passwordEncoder) {
