@@ -76,7 +76,7 @@
                             >
                         </a>
                         <div class="dropdown-menu">
-                            <a href="#" class="dropdown-item">Thông tin cá nhân</a>
+                            <a th:href="@{/user/profile}" class="dropdown-item">Thông tin cá nhân</a>
                             <a href="#" class="dropdown-item">Cài đặt</a>
                             <div class="dropdown-divider"></div>
                             <!-- Form POST để logout -->
@@ -95,9 +95,9 @@
                         </div>
                     </div>
                     <!-- Hiển thị nút đăng nhập nếu chưa đăng nhập -->
-                    <div th:unless="${isLoggedIn}">
-                        <a class="btn" href="/login">Đăng nhập/Đăng ký</a>
-                    </div>
+                       <div th:unless="${isLoggedIn}">
+                            <a class="btn" href="/login">Đăng nhập/Đăng ký</a>
+                        </div>
                 </div>
             </div>
         </nav>

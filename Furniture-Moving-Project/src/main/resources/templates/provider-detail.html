@@ -39,7 +39,19 @@
                     <span class="text-muted" th:text="${provider.rating} + ' / 5 • ' + ${provider.totalReviews} + ' đánh giá'">4.8 / 5 • 120 đánh giá</span>
                 </div>
 
-                <a class="btn btn-primary" th:href="@{/homepage/request(providerId=${provider.providerId})}">Đặt dịch vụ</a>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Chọn dịch vụ
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" th:href="@{/service/chuyen-nha(providerId=${provider.providerId})}">Chuyển nhà trọn gói</a>
+                        <a class="dropdown-item" th:href="@{/service/chuyen-van-phong(providerId=${provider.providerId})}">Chuyển văn phòng</a>
+                        <a class="dropdown-item" th:href="@{/service/cho-thue-xe-tai(providerId=${provider.providerId})}">Cho thuê xe tải</a>
+                        <a class="dropdown-item" th:href="@{/service/thao-lap-dong-goi(providerId=${provider.providerId})}">Tháo lắp &amp; đóng gói</a>
+                        <a class="dropdown-item" th:href="@{/service/van-chuyen-lien-tinh(providerId=${provider.providerId})}">Vận chuyển liên tỉnh</a>
+                        <a class="dropdown-item" th:href="@{/service/boc-xep-kho-bai(providerId=${provider.providerId})}">Bốc xếp &amp; kho bãi</a>
+                    </div>
+                </div>
             </div>
 
             <div class="col-lg-4">

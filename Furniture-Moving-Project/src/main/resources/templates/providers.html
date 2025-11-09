@@ -142,7 +142,7 @@
             <h2>Danh sách đơn vị vận chuyển</h2>
           </div>
 
-          <!-- Search and Date Filter -->
+          <!-- Search and Date Filter (removed time as requested) -->
           <div class="row mb-4">
             <div class="col-md-6 mb-2">
               <input
@@ -171,11 +171,6 @@
                     alt="Đơn vị vận chuyển"
                     class="img-fluid"
                   />
-                  <div class="service-overlay">
-                    <p th:text="'Đánh giá: ' + ${provider.rating} + '/5.0'">
-                      Đánh giá
-                    </p>
-                  </div>
                 </div>
                 <div class="service-text">
                   <h3>
@@ -371,7 +366,9 @@
           }
         }
 
-        function applyAvailability(availMap) {
+        function applyAvailability(availMap, hasTime) {
+          const labelAvail = hasTime ? 'Rảnh thời điểm này' : 'Rảnh ngày này';
+          const labelBusy = hasTime ? 'Bận thời điểm này' : 'Bận ngày này';
           document.querySelectorAll(".provider-card").forEach((card) => {
             const id = parseInt(card.getAttribute("data-provider-id"));
             const m = availMap.get(id);
@@ -381,9 +378,11 @@
               avail.classList.add("d-none");
               busy.classList.add("d-none");
             } else if (m.available) {
+              avail.textContent = labelAvail;
               avail.classList.remove("d-none");
               busy.classList.add("d-none");
             } else {
+              busy.textContent = labelBusy;
               avail.classList.add("d-none");
               busy.classList.remove("d-none");
             }
@@ -391,20 +390,23 @@
         }
 
         async function checkAvailability() {
-          const d = $date.value;
+          const d = $date && $date.value;
+          const t = $time && $time.value;
           if (!d) {
             // clear badges
-            applyAvailability(new Map());
+            applyAvailability(new Map(), false);
             return;
           }
           try {
-            const resp = await fetch(
-              `/api/providers/availability?date=${encodeURIComponent(d)}`
-            );
+            let url = `/api/providers/availability?date=${encodeURIComponent(d)}`;
+            if (t) {
+              url += `&time=${encodeURIComponent(t)}`;
+            }
+            const resp = await fetch(url);
             const json = await resp.json();
             const map = new Map();
             (json.data || []).forEach((p) => map.set(p.providerId, p));
-            applyAvailability(map);
+            applyAvailability(map, Boolean(t));
           } catch (e) {
             /* noop */
           }
@@ -418,6 +420,7 @@
           });
 
         $date && $date.addEventListener("change", checkAvailability);
+        $time && $time.addEventListener("change", checkAvailability);
 
         // click handler for view reviews buttons
         document.addEventListener('click', function(e) {
@@ -430,15 +433,20 @@
           }
         });
 
-        // default date = today
+        // default date/time = now
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, "0");
         const dd = String(today.getDate()).padStart(2, "0");
+        const hh = String(today.getHours()).padStart(2, "0");
+        const mi = String(today.getMinutes()).padStart(2, "0");
         if ($date) {
           $date.value = `${yyyy}-${mm}-${dd}`;
-          checkAvailability();
         }
+        if ($time) {
+          $time.value = `${hh}:${mi}`;
+        }
+        checkAvailability();
       })();
     </script>
   </body>
