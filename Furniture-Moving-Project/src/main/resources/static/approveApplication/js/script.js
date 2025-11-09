@@ -1,117 +1,278 @@
-const items = []
-let editingIndex = -1
-let isPending = true
+(function () {
+    "use strict";
 
-// Initialize
-document.getElementById("itemForm").addEventListener("submit", saveItem)
-document.getElementById("toggleStatusBtn").addEventListener("click", toggleStatus)
-updateUI()
+    const root = document.getElementById("invoiceRoot");
+    const statusBadge = document.getElementById("statusBadge");
+    const providerNameEl = document.getElementById("providerName");
+    const itemsTableBody = document.getElementById("itemsTable");
+    const totalAmountEl = document.getElementById("totalAmount");
 
-function openAddModal() {
-    if (!isPending) return
-    editingIndex = -1
-    document.getElementById("modalTitle").textContent = "Thêm hàng hóa"
-    document.getElementById("itemForm").reset()
-    document.getElementById("itemModal").style.display = "block"
-}
+    // Lưu ý: CSS chỉ định nghĩa .status-pending và .status-completed
+    const STATUS_META = {
+        pending:   { label: "Chờ xử lý",    className: "status-badge status-pending" },
+        completed: { label: "Đã hoàn thành", className: "status-badge status-completed" }
+    };
 
-function openEditModal(index) {
-    if (!isPending) return
-    editingIndex = index
-    const item = items[index]
-    document.getElementById("modalTitle").textContent = "Chỉnh sửa hàng hóa"
-    document.getElementById("itemName").value = item.name
-    document.getElementById("itemQuantity").value = item.quantity
-    document.getElementById("itemPrice").value = item.price
-    document.getElementById("itemModal").style.display = "block"
-}
-
-function closeModal() {
-    document.getElementById("itemModal").style.display = "none"
-}
-
-function saveItem(e) {
-    e.preventDefault()
-    const name = document.getElementById("itemName").value
-    const quantity = Number.parseInt(document.getElementById("itemQuantity").value)
-    const price = Number.parseFloat(document.getElementById("itemPrice").value)
-
-    if (editingIndex === -1) {
-        items.push({ name, quantity, price })
-    } else {
-        items[editingIndex] = { name, quantity, price }
+    function resolveStatus() {
+        return (root.getAttribute("data-status") || "pending").trim();
     }
 
-    closeModal()
-    updateUI()
-}
-
-function deleteItem(index) {
-    if (!isPending) return
-    if (confirm("Bạn có chắc chắn muốn xóa hàng hóa này?")) {
-        items.splice(index, 1)
-        updateUI()
-    }
-}
-
-function toggleStatus() {
-    isPending = !isPending
-    updateUI()
-}
-
-function updateUI() {
-    // Update status badge
-    const badge = document.getElementById("statusBadge")
-    const btn = document.getElementById("toggleStatusBtn")
-    const addBtn = document.getElementById("addItemBtn")
-
-    if (isPending) {
-        badge.textContent = "Chờ xử lý"
-        badge.className = "status-badge status-pending"
-        btn.textContent = "Đánh dấu hoàn thành"
-        addBtn.style.display = "block"
-    } else {
-        badge.textContent = "Đã hoàn thành"
-        badge.className = "status-badge status-completed"
-        btn.textContent = "Đánh dấu chờ xử lý"
-        addBtn.style.display = "none"
+    function resolveProviderName() {
+        const s = (root.getAttribute("data-provider-name") || "").trim();
+        return s || null;
     }
 
-    // Update table
-    const tbody = document.getElementById("itemsTable")
-    if (items.length === 0) {
-        tbody.innerHTML =
-            '<tr><td colspan="5" class="empty-row">Chưa có hàng hóa nào. Nhấn "Thêm hàng hóa" để bắt đầu.</td></tr>'
-    } else {
-        tbody.innerHTML = items
+    function initStatusAndProvider() {
+        const st = resolveStatus();
+        const meta = STATUS_META[st] || STATUS_META.pending;
+        statusBadge.textContent = meta.label;
+        statusBadge.className = meta.className;
+
+        const provider = resolveProviderName();
+        providerNameEl.textContent = provider ?? "null";
+    }
+
+    function readItemsFromSeed() {
+        try {
+            const raw = document.getElementById("itemsSeed")?.textContent || "[]";
+            const arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function formatMoney(n) {
+        return Number(n || 0).toLocaleString("vi-VN");
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function renderItems() {
+        const items = readItemsFromSeed();
+
+        if (!items.length) {
+            itemsTableBody.innerHTML =
+                '<tr><td colspan="5" class="empty-row">Chưa có hàng hóa nào.</td></tr>';
+            totalAmountEl.textContent = "0";
+            return;
+        }
+
+        // Map DB record -> row hiển thị (đơn giá tạm = 0, vì DB chưa có)
+        const rows = items.map((r) => {
+            let name = r.item_name || r.item_type || "Unknown";
+            if (r.size) name += ` (${r.size})`;
+            if (r.is_fragile) name += " • Dễ vỡ";
+            const quantity = parseInt(r.quantity, 10) || 1;
+            const price = 0;
+            return { name, quantity, price };
+        });
+
+        itemsTableBody.innerHTML = rows
             .map(
-                (item, index) => `
-            <tr>
-                <td>${item.name}</td>
-                <td>${item.quantity}</td>
-                <td>${item.price.toLocaleString("vi-VN")}</td>
-                <td>${(item.quantity * item.price).toLocaleString("vi-VN")}</td>
-                <td>
-                    <div class="action-buttons" ${!isPending ? 'style="opacity: 0.5; pointer-events: none;"' : ""}>
-                        <button class="btn-edit" onclick="openEditModal(${index})" ${!isPending ? "disabled" : ""}>Sửa</button>
-                        <button class="btn-delete" onclick="deleteItem(${index})" ${!isPending ? "disabled" : ""}>Xóa</button>
-                    </div>
-                </td>
-            </tr>
-        `,
+                (it) => `
+        <tr>
+          <td>${escapeHtml(it.name)}</td>
+          <td>${it.quantity}</td>
+          <td>${formatMoney(it.price)}</td>
+          <td>${formatMoney(it.quantity * it.price)}</td>
+          <td><!-- không hành động --></td>
+        </tr>`
             )
-            .join("")
+            .join("");
+
+        const total = rows.reduce((sum, it) => sum + it.quantity * it.price, 0);
+        totalAmountEl.textContent = formatMoney(total);
     }
 
-    // Calculate total
-    const total = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
-    document.getElementById("totalAmount").textContent = total.toLocaleString("vi-VN")
-}
-
-// Close modal when clicking outside
-window.onclick = (event) => {
-    const modal = document.getElementById("itemModal")
-    if (event.target === modal) {
-        closeModal()
-    }
-}
+    // Khởi chạy
+    initStatusAndProvider();
+    renderItems();
+})();
+// (function () {
+//     "use strict";
+//
+//     const root = document.getElementById("invoiceRoot");
+//     const statusBadge = document.getElementById("statusBadge");
+//     const providerNameEl = document.getElementById("providerName");
+//     const itemsTableBody = document.getElementById("itemsTable");
+//     const totalAmountEl = document.getElementById("totalAmount");
+//
+//     // Provider-only controls (rendered server-side bằng sec:authorize)
+//     const providerActions = document.getElementById("providerActions");
+//     const acceptBtn = document.getElementById("acceptBtn");
+//     const rejectBtn = document.getElementById("rejectBtn");
+//
+//     // CSS hiện có: .status-pending, .status-completed
+//     // Bổ sung thêm class để bạn style nếu muốn: .status-accepted, .status-rejected
+//     const STATUS_META = {
+//         pending:   { label: "Chờ xử lý",     className: "status-badge status-pending" },
+//         accepted:  { label: "Đã chấp nhận",  className: "status-badge status-accepted" },
+//         rejected:  { label: "Đã từ chối",    className: "status-badge status-rejected" },
+//         completed: { label: "Đã hoàn thành", className: "status-badge status-completed" }
+//     };
+//
+//     const normalize = (s) => (s ? s.toString().trim().toLowerCase() : "pending");
+//
+//     function currentStatus() {
+//         return normalize(root.getAttribute("data-status"));
+//     }
+//
+//     function setStatus(newStatus) {
+//         const key = normalize(newStatus);
+//         const meta = STATUS_META[key] || STATUS_META.pending;
+//         statusBadge.textContent = meta.label;
+//         statusBadge.className = meta.className;
+//         root.setAttribute("data-status", key);
+//
+//         // Provider controls chỉ hiện khi đang pending
+//         if (providerActions) {
+//             providerActions.style.display = key === "pending" ? "" : "none";
+//         }
+//     }
+//
+//     function resolveProviderName() {
+//         const s = (root.getAttribute("data-provider-name") || "").trim();
+//         return s || null;
+//     }
+//
+//     function readItemsFromSeed() {
+//         try {
+//             const raw = document.getElementById("itemsSeed")?.textContent || "[]";
+//             const arr = JSON.parse(raw);
+//             return Array.isArray(arr) ? arr : [];
+//         } catch {
+//             return [];
+//         }
+//     }
+//
+//     function formatMoney(n) {
+//         return Number(n || 0).toLocaleString("vi-VN");
+//     }
+//
+//     function escapeHtml(str) {
+//         return String(str)
+//             .replaceAll("&", "&amp;")
+//             .replaceAll("<", "&lt;")
+//             .replaceAll(">", "&gt;")
+//             .replaceAll('"', "&quot;")
+//             .replaceAll("'", "&#039;");
+//     }
+//
+//     function renderItems() {
+//         const items = readItemsFromSeed();
+//
+//         if (!items.length) {
+//             itemsTableBody.innerHTML =
+//                 '<tr><td colspan="5" class="empty-row">Chưa có hàng hóa nào.</td></tr>';
+//             totalAmountEl.textContent = "0";
+//             return;
+//         }
+//
+//         // Map DB record -> row hiển thị (đơn giá tạm = 0 nếu DB chưa có)
+//         const rows = items.map((r) => {
+//             let name = r.item_name || r.item_type || "Unknown";
+//             if (r.size) name += ` (${r.size})`;
+//             if (r.is_fragile) name += " • Dễ vỡ";
+//             const quantity = parseInt(r.quantity, 10) || 1;
+//             const price = Number(r.price ?? 0); // nếu DB có price thì dùng
+//             return { name, quantity, price };
+//         });
+//
+//         itemsTableBody.innerHTML = rows
+//             .map(
+//                 (it) => `
+//         <tr>
+//           <td>${escapeHtml(it.name)}</td>
+//           <td>${it.quantity}</td>
+//           <td>${formatMoney(it.price)}</td>
+//           <td>${formatMoney(it.quantity * it.price)}</td>
+//           <td><!-- không hành động --></td>
+//         </tr>`
+//             )
+//             .join("");
+//
+//         const total = rows.reduce((sum, it) => sum + it.quantity * it.price, 0);
+//         totalAmountEl.textContent = formatMoney(total);
+//     }
+//
+//     // ====== Provider: Cập nhật trạng thái ======
+//     function resolveUpdateUrl() {
+//         // Ưu tiên data-update-url (bind sẵn bằng Thymeleaf)
+//         const bound = root.getAttribute("data-update-url");
+//         if (bound && bound !== "null") return bound;
+//
+//         // Fallback: tự build theo data-invoice-id hoặc invoiceNo text
+//         const id =
+//             root.getAttribute("data-invoice-id") ||
+//             document.getElementById("invoiceNo")?.textContent?.trim();
+//         if (!id) return null;
+//         return `/api/invoices/${encodeURIComponent(id)}/status`;
+//     }
+//
+//     function getCsrfHeader() {
+//         const token = document.querySelector('meta[name="_csrf"]')?.content;
+//         const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+//         if (token && header) return { header, token };
+//         return null;
+//     }
+//
+//     async function updateStatusRemote(newStatus) {
+//         const url = resolveUpdateUrl();
+//         if (!url) throw new Error("Thiếu endpoint cập nhật trạng thái (data-update-url hoặc data-invoice-id).");
+//
+//         const headers = { "Content-Type": "application/json" };
+//         const csrf = getCsrfHeader();
+//         if (csrf) headers[csrf.header] = csrf.token;
+//
+//         const resp = await fetch(url, {
+//             method: "PUT",
+//             headers,
+//             body: JSON.stringify({ status: newStatus.toUpperCase() }) // ví dụ: ACCEPTED / REJECTED
+//         });
+//
+//         if (!resp.ok) {
+//             const text = await resp.text().catch(() => "");
+//             throw new Error(text || `HTTP ${resp.status}`);
+//         }
+//     }
+//
+//     async function confirmAndUpdate(newKey) {
+//         const labels = { accepted: "Chấp nhận", rejected: "Từ chối" };
+//         if (!confirm(`Xác nhận ${labels[newKey] || newKey}?`)) return;
+//
+//         try {
+//             await updateStatusRemote(newKey);
+//             setStatus(newKey);
+//             alert(`Đã ${labels[newKey] || newKey.toUpperCase()} đơn.`);
+//         } catch (err) {
+//             console.error(err);
+//             alert("Cập nhật trạng thái thất bại: " + err.message);
+//         }
+//     }
+//
+//     function initStatusAndProvider() {
+//         setStatus(currentStatus());
+//
+//         const provider = resolveProviderName();
+//         if (providerNameEl) providerNameEl.textContent = provider ?? "null";
+//
+//         // Bind sự kiện cho Provider nếu block tồn tại (tức là có role)
+//         if (providerActions) {
+//             providerActions.style.display = currentStatus() === "pending" ? "" : "none";
+//             acceptBtn?.addEventListener("click", () => confirmAndUpdate("accepted"));
+//             rejectBtn?.addEventListener("click", () => confirmAndUpdate("rejected"));
+//         }
+//     }
+//
+//     // Khởi chạy
+//     initStatusAndProvider();
+//     renderItems();
+// })();

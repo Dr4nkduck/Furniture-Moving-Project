@@ -1,15 +1,19 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Quản Lý Hóa Đơn</title>
-    <link rel="stylesheet" href="/static/approveApplication/css/approveApplication.css">
+
+    <!-- CSS của bạn -->
+    <link rel="stylesheet" th:href="@{/approveApplication/css/approveApplication.css}">
 
 
 </head>
 <body>
-<div class="container">
+<div class="container" id="invoiceRoot"
+     th:attr="data-status=${status}, data-provider-name=${providerCompanyName}">
+
     <!-- Header -->
     <div class="header">
         <div class="logo">LOGO</div>
@@ -20,52 +24,50 @@
         </div>
     </div>
 
-    <!-- Status Badge -->
-    <div>
-        <span class="status-badge" id="statusBadge">Chờ xử lý</span>
-        <button class="btn-primary" id="toggleStatusBtn" style="margin-left: 10px;">Đánh dấu hoàn thành</button>
-    </div>
+    <!-- Trạng thái (chỉ hiển thị) -->
+    <span id="statusBadge" class="status-badge status-pending">Chờ xử lý</span>
 
-    <!-- Invoice Details -->
+    <!-- Thông tin đơn -->
     <div class="invoice-details">
         <div>
             <div class="detail-section">
                 <h3>Nơi gửi:</h3>
-                <p>456 Đường XYZ, Quận 5, T.HCM</p>
+                <p th:text="${pickupAddress} ?: '---'">---</p>
             </div>
             <div class="detail-section">
                 <h3>Nơi nhận:</h3>
-                <p>789 Đường MNO, TP.Hà Nội</p>
+                <p th:text="${deliveryAddress} ?: '---'">---</p>
             </div>
         </div>
         <div>
             <div class="detail-section">
                 <h3>Số hóa đơn:</h3>
-                <p>001</p>
+                <p id="invoiceNo" th:text="${invoiceNo} ?: '---'">---</p>
             </div>
             <div class="detail-section">
                 <h3>Ngày:</h3>
-                <p id="invoiceDate">24/04/2024</p>
+                <p id="invoiceDate" th:text="${invoiceDate} ?: '---'">---</p>
             </div>
         </div>
     </div>
 
-    <!-- Invoice Meta -->
+    <!-- Meta -->
     <div class="invoice-meta">
         <div class="meta-item">
             <strong>Số hóa đơn:</strong>
-            <span>001</span>
+            <span th:text="${invoiceNo} ?: '---'">---</span>
         </div>
         <div class="meta-item">
             <strong>Ngày:</strong>
-            <span id="metaDate">24/04/2024</span>
+            <span th:text="${invoiceDate} ?: '---'">---</span>
+        </div>
+        <div class="meta-item">
+            <strong>Công ty vận chuyển:</strong>
+            <span id="providerName" th:text="${providerCompanyName} ?: 'null'">null</span>
         </div>
     </div>
 
-    <!-- Add Item Button -->
-    <button class="btn-add" id="addItemBtn" onclick="openAddModal()">+ Thêm hàng hóa</button>
-
-    <!-- Items Table -->
+    <!-- Bảng hàng hóa (chỉ hiển thị) -->
     <table>
         <thead>
         <tr>
@@ -78,57 +80,38 @@
         </thead>
         <tbody id="itemsTable">
         <tr>
-            <td colspan="5" class="empty-row">Chưa có hàng hóa nào. Nhấn "Thêm hàng hóa" để bắt đầu.</td>
+            <td colspan="5" class="empty-row">Chưa có hàng hóa nào.</td>
         </tr>
         </tbody>
     </table>
 
-    <!-- Summary -->
+    <!-- Tổng kết -->
     <div class="summary">
-        <div class="summary-item">
-            <strong>Phí quãng Đường:</strong>
-            <span id="advertisingFee">5.000.000</span>
-        </div>
-        <div class="summary-item">
-            <strong>Phí bốc xếp (tăng 3%):</strong>
-            <span id="packingFee">300.000</span>
-        </div>
+        <!-- TOTAL từ DB -->
+        <table>
+            <tr class="total-row">
+                <td style="border:1px solid #ddd;">Cộng tiền hàng:</td>
+                <td id="totalAmount"
+                    class="text-right"
+                    style="border:1px solid #ddd; text-align:right;"
+                    th:text="${totalCost} ?: '0'">0</td>
+            </tr>
+        </table>
     </div>
 
-    <!-- Total -->
-    <table style="margin-bottom: 30px;">
+    <table>
         <tr class="total-row">
-            <td style="border: 1px solid #555;">Cộng tiền hàng:</td>
-            <td style="border: 1px solid #555; text-align: right;" id="totalAmount">0</td>
+            <td style="border:1px solid #ddd;">Cộng tiền hàng:</td>
+            <td id="totalAmount" class="text-right" style="border:1px solid #ddd; text-align:right;">0</td>
         </tr>
     </table>
 </div>
 
-<!-- Modal for Add/Edit Item -->
-<div id="itemModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header" id="modalTitle">Thêm hàng hóa</div>
-        <form id="itemForm">
-            <div class="form-group">
-                <label for="itemName">Tên hàng:</label>
-                <input type="text" id="itemName" required>
-            </div>
-            <div class="form-group">
-                <label for="itemQuantity">Số lượng:</label>
-                <input type="number" id="itemQuantity" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="itemPrice">Đơn giá:</label>
-                <input type="number" id="itemPrice" min="0" required>
-            </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Hủy</button>
-                <button type="submit" class="btn-primary">Lưu</button>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- JSON items từ DB (mảng) -->
+<script id="itemsSeed" type="application/json" th:utext="${furnitureItemsJson}">[]</script>
 
-<script src="/static/approveApplication/js/script.js"></script>
+
+<!-- JS -->
+<script th:src="@{/approveApplication/js/script.js}"></script>
 </body>
 </html>

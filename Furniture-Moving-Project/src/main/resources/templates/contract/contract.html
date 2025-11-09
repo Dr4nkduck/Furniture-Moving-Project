@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hợp Đồng Vận Chuyển</title>
+    <link rel="stylesheet" href="../../static/contract/contract.css">
+
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <!-- Logo -->
+        <div class="logo-section">
+            <div class="logo-icon"></div>
+        </div>
+
+        <!-- Title -->
+        <h1 class="title">HỢP ĐỒNG VẬN CHUYỂN ĐỐI ĐẠC</h1>
+
+        <!-- Company Info -->
+        <div class="company-info">
+            <h3>CÔNG TY VẬN CHUYỂN</h3>
+            <p>Công Ty TNHH Vận Chuyển Nhanh 24h</p>
+            <p>123 Đường ABC, Thành phố Hà Nội</p>
+            <p>Hotline: 0123 455 789</p>
+        </div>
+
+        <!-- Two Column Section -->
+        <div class="two-column">
+            <div class="column">
+                <h4>NGƯỜI YÊU CẦU VẬN CHUYỂN</h4>
+                <p>Nguyễn Văn A</p>
+                <p>308-389 654 31</p>
+                <h4 class="mt-20">ĐỊA CHỈ LẤY HÀNG</h4>
+                <p>455 Đường DEF, Thành phố Hà Nội</p>
+            </div>
+            <div class="column">
+                <h4>NGƯỜI YÊU CẦU VẬN CHUYỂN</h4>
+                <p>Nguyễn Văn A</p>
+                <p>nguyenvana@email.com</p>
+                <h4 class="mt-20">ĐỊA CHỈ GIAO HÀNG</h4>
+                <p>799 Đường GH, Thành phố Chi Minh</p>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <table class="items-table">
+            <thead>
+            <tr>
+                <th>HÀNG HÓA</th>
+                <th>SỐ LƯỢNG</th>
+                <th>ĐƠN GIÁ</th>
+                <th>TỔNG</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Sofa</td>
+                <td>1</td>
+                <td>$200.0</td>
+                <td>$200.00</td>
+            </tr>
+            <tr>
+                <td>Table</td>
+                <td>2</td>
+                <td>$150.00</td>
+                <td>$150.00</td>
+            </tr>
+            <tr>
+                <td>Chair</td>
+                <td>4</td>
+                <td>$75.00</td>
+                <td>$75.00</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="3">Tổng</td>
+                <td>$700.00</td>
+            </tr>
+            <tr>
+                <td colspan="3">PHIU Chuyên</td>
+                <td>$50.00</td>
+            </tr>
+            <tr class="grand-total-row">
+                <td colspan="3">TỔNG CỘNG</td>
+                <td>$750.00</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Date and Status -->
+        <div class="info-section">
+            <p><strong>NGÀY VẬN CHUYỂN:</strong> April 25, 2024</p>
+            <p><strong>TRẠNG THÁI:</strong> Đã zác nhân</p>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-line">
+                <p>ĐẠI DIỆN CÔNG TY VẬN CHUYỂN</p>
+                <p class="note">(ky, ghi rõ họ tên)</p>
+            </div>
+            <div class="signature-line">
+                <p>NGƯỜI YÊU CẦU VẬN CHUYỂN</p>
+                <p class="note">(ky, ghi rõ họ tên)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Button -->
+    <button class="print-btn" onclick="printContract()">In hợp đồng</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

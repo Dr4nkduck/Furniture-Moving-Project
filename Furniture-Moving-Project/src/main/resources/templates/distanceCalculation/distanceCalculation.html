@@ -1,8 +1,83 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="vi">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Furniture Moving – Quãng đường & Báo giá</title>-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+
+<!--    &lt;!&ndash; Leaflet &ndash;&gt;-->
+<!--    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>-->
+<!--    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>-->
+
+<!--    &lt;!&ndash; Routing Machine &ndash;&gt;-->
+<!--    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>-->
+<!--    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>-->
+
+<!--    &lt;!&ndash; CSS riêng &ndash;&gt;-->
+<!--    <link rel="stylesheet" href="/distanceCalculation/style.css">-->
+
+
+<!--</head>-->
+<!--<body>-->
+<!--&lt;!&ndash; 🔑 Auth &ndash;&gt;-->
+<!--<div class="topbar" id="authArea">-->
+<!--    <a href="/login" class="login-btn">Đăng nhập</a>-->
+<!--</div>-->
+
+<!--<div class="container">-->
+<!--    <h2>Furniture Moving</h2>-->
+
+<!--    &lt;!&ndash; Form nhỏ để người dùng chỉnh tay nếu muốn (không submit về server) &ndash;&gt;-->
+<!--    <form id="addressForm">-->
+<!--        <label>Địa chỉ lấy hàng:</label>-->
+<!--        <input type="text" id="pickup" name="pickup" placeholder="Nhập địa chỉ lấy hàng" required>-->
+
+<!--        <label>Địa chỉ giao hàng:</label>-->
+<!--        <input type="text" id="destination" name="destination" placeholder="Nhập địa chỉ giao hàng" required>-->
+
+<!--        <button type="submit">🔍 Tìm đường & Báo giá</button>-->
+<!--    </form>-->
+
+<!--    <label>Dịch vụ vận chuyển:</label>-->
+<!--    <select id="serviceSelect">-->
+<!--        <option value="">&#45;&#45; Chọn dịch vụ &#45;&#45;</option>-->
+<!--        <option value="Xe bán tải nhỏ">Xe bán tải nhỏ</option>-->
+<!--        <option value="Xe 3.5 tấn">Xe 3.5 tấn</option>-->
+<!--        <option value="Xe 5 tấn">Xe 5 tấn</option>-->
+<!--    </select>-->
+
+<!--    <label>-->
+<!--        <input type="checkbox" id="hasElevator">-->
+<!--        🏢 Chung cư có thang máy (giảm 20% chi phí bốc vác)-->
+<!--    </label>-->
+
+<!--    <label>Ngày và giờ vận chuyển:</label>-->
+<!--    <input type="datetime-local" id="pickupTime">-->
+
+<!--    <label>Chụp ảnh hàng hóa (AI ước lượng):</label>-->
+<!--    <input type="file" id="uploadImage" accept="image/*">-->
+<!--    <div id="aiNote"></div>-->
+
+<!--    <div id="map"></div>-->
+
+<!--    <div id="result">Kết quả sẽ hiển thị ở đây...</div>-->
+
+<!--    <div id="payment">Tổng thanh toán: 0 đ</div>-->
+<!--    <button class="pay-btn" id="btnConfirm" disabled>✅ Xác nhận thanh toán</button>-->
+
+<!--    <div id="alert" class="alert" style="display:none;"></div>-->
+<!--</div>-->
+
+<!--&lt;!&ndash; JS riêng (tất cả logic nằm ở đây) &ndash;&gt;-->
+<!--<script src="/distanceCalculation/script.js"></script>-->
+<!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Furniture Moving – Quãng đường & Báo giá</title>
+    <title>Báo giá & Lưu yêu cầu</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Leaflet -->
@@ -13,62 +88,302 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
-    <!-- CSS riêng -->
-    <link rel="stylesheet" href="/distanceCalculation/style.css">
-
-
+    <style>
+        :root{--bd:#e5e7eb;--txt:#0f172a;--muted:#64748b;--bg:#fafafa;}
+        *{box-sizing:border-box}
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:var(--txt);background:var(--bg)}
+        .container{max-width:1000px;margin:24px auto;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:20px}
+        h1{margin:0 0 6px}
+        .muted{color:var(--muted);font-size:.95rem}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .card{display:flex;flex-direction:column;gap:6px;border:1px solid var(--bd);border-radius:12px;padding:12px;background:#fff}
+        input,select{padding:10px;border:1px solid var(--bd);border-radius:10px;font:inherit;background:#fff}
+        #map{height:420px;margin-top:12px;border-radius:12px;border:1px solid var(--bd)}
+        .alert{display:none;margin-top:10px;padding:10px 12px;border-radius:10px}
+        .btn-row{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+        .btn{padding:10px 14px;border:1px solid var(--bd);border-radius:10px;background:#f8fafc;cursor:pointer}
+        .btn-primary{background:#2563eb;color:#fff;border-color:#2563eb}
+        .payment{margin-top:6px;font-weight:700}
+    </style>
 </head>
 <body>
-<!-- 🔑 Auth -->
-<div class="topbar" id="authArea">
-    <a href="/login" class="login-btn">Đăng nhập</a>
-</div>
-
 <div class="container">
-    <h2>Furniture Moving</h2>
+    <h1>🧮 Báo giá & Lưu yêu cầu</h1>
+    <p class="muted">Trang này đọc dữ liệu từ trang trước, tự vẽ route & tính chi phí. Bấm “Xác nhận & Lưu” để ghi vào DB.</p>
 
-    <!-- Form nhỏ để người dùng chỉnh tay nếu muốn (không submit về server) -->
-    <form id="addressForm">
-        <label>Địa chỉ lấy hàng:</label>
-        <input type="text" id="pickup" name="pickup" placeholder="Nhập địa chỉ lấy hàng" required>
+    <div id="alert" class="alert"></div>
 
-        <label>Địa chỉ giao hàng:</label>
-        <input type="text" id="destination" name="destination" placeholder="Nhập địa chỉ giao hàng" required>
+    <div class="grid2">
+        <div class="card">
+            <label>📦 Lấy hàng</label>
+            <input id="pickup" readonly>
+        </div>
+        <div class="card">
+            <label>🏠 Giao hàng</label>
+            <input id="destination" readonly>
+        </div>
+    </div>
 
-        <button type="submit">🔍 Tìm đường & Báo giá</button>
-    </form>
-
-    <label>Dịch vụ vận chuyển:</label>
-    <select id="serviceSelect">
-        <option value="">-- Chọn dịch vụ --</option>
-        <option value="Xe bán tải nhỏ">Xe bán tải nhỏ</option>
-        <option value="Xe 3.5 tấn">Xe 3.5 tấn</option>
-        <option value="Xe 5 tấn">Xe 5 tấn</option>
-    </select>
-
-    <label>
-        <input type="checkbox" id="hasElevator">
-        🏢 Chung cư có thang máy (giảm 20% chi phí bốc vác)
-    </label>
-
-    <label>Ngày và giờ vận chuyển:</label>
-    <input type="datetime-local" id="pickupTime">
-
-    <label>Chụp ảnh hàng hóa (AI ước lượng):</label>
-    <input type="file" id="uploadImage" accept="image/*">
-    <div id="aiNote"></div>
+    <div class="grid2" style="margin-top:12px">
+        <div class="card">
+            <label>Dịch vụ / Loại xe</label>
+            <select id="serviceSelect">
+                <option value="">-- Chọn --</option>
+                <option value="Xe bán tải nhỏ">Xe bán tải nhỏ</option>
+                <option value="Xe 3.5 tấn">Xe 3.5 tấn</option>
+                <option value="Xe 5 tấn">Xe 5 tấn</option>
+            </select>
+        </div>
+        <div class="card">
+            <label>Ngày & giờ vận chuyển</label>
+            <input type="datetime-local" id="pickupTime">
+            <label style="color:#64748b"><input type="checkbox" id="hasElevator"> 🏢 Chung cư có thang máy</label>
+        </div>
+    </div>
 
     <div id="map"></div>
 
-    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
+    <div id="result" style="margin-top:12px">Kết quả sẽ hiển thị ở đây…</div>
+    <div id="payment" class="payment">Tổng thanh toán: 0 đ</div>
 
-    <div id="payment">Tổng thanh toán: 0 đ</div>
-    <button class="pay-btn" id="btnConfirm" disabled>✅ Xác nhận thanh toán</button>
-
-    <div id="alert" class="alert" style="display:none;"></div>
+    <div class="btn-row">
+        <button class="btn" onclick="history.back()">⬅️ Quay lại chỉnh</button>
+        <button class="btn btn-primary" id="btnConfirm" disabled>✅ Xác nhận & Lưu</button>
+    </div>
 </div>
 
-<!-- JS riêng (tất cả logic nằm ở đây) -->
-<script src="/distanceCalculation/script.js"></script>
+<script>
+    /* ====== CONFIG ====== */
+    const OSRM_URL = 'https://router.project-osrm.org/route/v1';
+    const DRAFT_KEY = 'FT_REQUEST_DRAFT';
+    const API_BASE = 'http://localhost:8080'; // giống file của bạn
+    const basePrices = {"Xe bán tải nhỏ":200000,"Xe 3.5 tấn":300000,"Xe 5 tấn":350000};
+
+    /* ====== STATE ====== */
+    let map, routingControl;
+    let selectedService = "";
+    let lastDistance = 0, lastTime = 0, totalCost = 0;
+    let pickupAlley = 0, deliveryAlley = 0;
+    let draft = null;
+
+    /* ====== UI helpers ====== */
+    function showAlert(msg, ok=false){
+        const box = document.getElementById('alert');
+        box.style.display='block';
+        box.style.background = ok ? '#dcfce7' : '#fee2e2';
+        box.style.color = ok ? '#166534' : '#991b1b';
+        box.textContent = msg;
+    }
+    function toVND(n){ return Number(n).toLocaleString('vi-VN') + ' đ'; }
+    function fmtLine(a){ return [a.houseNumber,a.road,a.district,a.province,a.zip].filter(Boolean).join(', '); }
+
+    /* ====== Map & route ====== */
+    function initMap(){
+        map = L.map('map').setView([21.0285,105.8542], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+            maxZoom:19, attribution:'&copy; OpenStreetMap'
+        }).addTo(map);
+    }
+    async function estimateAlleyLengthOSRM(lat, lon){
+        try{
+            const url = `${OSRM_URL}/driving/${lon},${lat};${lon+0.001},${lat}?overview=full&steps=true`;
+            const r = await fetch(url); const data = await r.json();
+            if(!data.routes?.length) return 0;
+            let km = 0;
+            for(const leg of data.routes[0].legs){
+                for(const step of leg.steps){
+                    const n = (step.name||'').toLowerCase(); const d = step.distance/1000;
+                    if(n.includes('ngõ')||n.includes('ngách')||n.includes('hẻm')||n.includes('hem')||step.mode!=='driving'||d<0.1) km+=d;
+                }
+            }
+            return Math.min(km,1.5);
+        }catch{ return 0; }
+    }
+    async function routeAndQuote(from, to){
+        pickupAlley   = await estimateAlleyLengthOSRM(from.lat, from.lng);
+        deliveryAlley = await estimateAlleyLengthOSRM(to.lat,   to.lng);
+
+        if (routingControl) map.removeControl(routingControl);
+        document.getElementById('result').innerHTML = "🔄 Đang tính toán...";
+        document.getElementById('payment').innerHTML = "Tổng thanh toán: 0 đ";
+
+        routingControl = L.Routing.control({
+            waypoints:[ L.latLng(from.lat,from.lng), L.latLng(to.lat,to.lng) ],
+            routeWhileDragging:false, addWaypoints:false, show:false
+        }).addTo(map);
+
+        const url = `${OSRM_URL}/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=false`;
+        const res = await fetch(url); const data = await res.json();
+        if(!data.routes?.length){ showAlert('Không tính được tuyến đường'); return; }
+
+        const r = data.routes[0];
+        lastDistance = r.distance/1000; // km
+        lastTime = r.duration/60;       // phút
+
+        updateResult();
+        showAlert('Đã tính toán lộ trình.', true);
+    }
+
+    /* ====== Pricing ====== */
+    function calculatePrice(distance, service){
+        if(!service || !basePrices[service]) return 0;
+        if (distance <= 10){
+            if (distance <= 4) return basePrices[service];
+            return basePrices[service] + (distance - 4) * 50000;
+        }
+        switch(service){
+            case "Xe bán tải nhỏ": return 800000 + (distance - 10) * 35000;
+            case "Xe 3.5 tấn":     return 1000000 + (distance - 10) * 50000;
+            case "Xe 5 tấn":       return 1200000 + (distance - 10) * 60000;
+            default:               return 1000000 + (distance - 10) * 50000;
+        }
+    }
+    function calcSmallTruckFee(km){
+        if(km<=0) return 0;
+        if(km<1) return 100000;
+        return 100000 + (km-1)*20000;
+    }
+    function updateResult(){
+        if(lastDistance===0 || lastTime===0) return;
+
+        const baseCost = calculatePrice(lastDistance, selectedService);
+        const pickupFee = calcSmallTruckFee(pickupAlley);
+        const deliveryFee = calcSmallTruckFee(deliveryAlley);
+        const totalSmallTruck = pickupFee + deliveryFee;
+        totalCost = baseCost + totalSmallTruck;
+
+        let note = "";
+        if (selectedService){
+            note = (lastDistance<=10)
+                ? `🚕 Nội thành: ${toVND(basePrices[selectedService]||0)} (4km đầu) + 50.000đ/km sau`
+                : `🚛 Ngoại thành: ${toVND(calculatePrice(10,selectedService))} (10km đầu) + đơn giá/km sau`;
+        } else {
+            note = `⚠️ Hãy chọn loại xe để hiện giá chính xác.`;
+        }
+
+        document.getElementById('result').innerHTML = `
+  📍 Quãng đường: ${lastDistance.toFixed(2)} km<br>
+  ⏱️ Thời gian ước tính: ${lastTime.toFixed(1)} phút<br>
+  🚚 Dịch vụ: ${selectedService||'Chưa chọn'}<br>
+  🚧 Ngõ hẹp: Lấy ${pickupAlley.toFixed(2)} km • Giao ${deliveryAlley.toFixed(2)} km<br>
+  💰 Cước chính: ${toVND(baseCost)} • Phí xe nhỏ: ${toVND(totalSmallTruck)}<br>
+  <hr>${note}
+  <hr><b>Tổng tạm tính: ${toVND(totalCost)}</b>`;
+        document.getElementById('payment').textContent = `Tổng thanh toán: ${toVND(totalCost)}`;
+
+        const ok = !!(selectedService && document.getElementById('pickupTime').value);
+        document.getElementById('btnConfirm').disabled = !ok;
+    }
+
+    /* ====== Confirm → POST backend /api/requests/checkout ====== */
+    async function postCheckout(payload){
+        const res = await fetch(`${API_BASE}/api/requests/checkout`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            credentials:'include',
+            body: JSON.stringify(payload)
+        });
+        const text = await res.text();
+        let json=null; try{ json=JSON.parse(text);}catch{}
+        if(!res.ok) throw new Error((json && (json.message||json.error)) || text || 'Checkout failed');
+        return json;
+    }
+
+    /* ====== Boot ====== */
+    (async function(){
+        initMap();
+
+        try { draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null'); } catch { draft = null; }
+        if(!draft){ showAlert('Không có dữ liệu từ trang trước.'); return; }
+
+        // điền tóm tắt
+        document.getElementById('pickup').value      = fmtLine(draft.pickup);
+        document.getElementById('destination').value = fmtLine(draft.delivery);
+
+        // service + time
+        const sel = document.getElementById('serviceSelect');
+        sel.value = draft.vehicleType && ["Xe bán tải nhỏ","Xe 3.5 tấn","Xe 5 tấn"].includes(draft.vehicleType) ? draft.vehicleType : "";
+        selectedService = sel.value;
+        document.getElementById('pickupTime').value = (draft.preferredDate ? `${draft.preferredDate}T08:00` : '');
+        document.getElementById('hasElevator').checked = !!draft.hasElevator;
+
+        // vẽ route
+        if (draft?.pickup?.lat && draft?.delivery?.lat){
+            await routeAndQuote(
+                {lat:draft.pickup.lat, lng:draft.pickup.lng},
+                {lat:draft.delivery.lat, lng:draft.delivery.lng}
+            );
+        } else {
+            showAlert('Thiếu toạ độ. Quay lại trang trước để đặt marker.', false);
+        }
+
+        // events
+        document.getElementById('serviceSelect').addEventListener('change', e=>{ selectedService=e.target.value; updateResult(); });
+        document.getElementById('hasElevator').addEventListener('change', updateResult);
+        document.getElementById('pickupTime').addEventListener('change', updateResult);
+
+        // Confirm & Lưu (GHI DB bằng customerId đăng nhập)
+        document.getElementById('btnConfirm').addEventListener('click', async ()=>{
+            try{
+                const currentUser = JSON.parse(localStorage.getItem('currentUser')||'{}'); // { userId, customerId, ... }
+                const customerId = currentUser?.customerId ?? 1;
+
+                const pickupTime = document.getElementById('pickupTime').value; // yyyy-MM-ddTHH:mm
+                if(!selectedService || !pickupTime){ showAlert('Chọn loại xe và thời gian trước khi xác nhận.', false); return; }
+
+                const payload = {
+                    customerId,
+                    providerId: draft.providerId ?? null,
+                    preferredDate: (draft.preferredDate || (pickupTime.substring(0,10))), // DB bạn dùng DATE
+                    pickupTime: pickupTime, // nếu backend cần giờ chi tiết
+                    serviceType: selectedService,
+                    hasElevator: !!document.getElementById('hasElevator').checked,
+
+                    // Address (từ 2 trang)
+                    pickupAddress: {
+                        streetAddress: [draft.pickup.houseNumber, draft.pickup.road].filter(Boolean).join(' ').trim() || (draft.pickup.district || draft.pickup.province || 'N/A'),
+                        city:  draft.pickup.province || 'N/A',
+                        state: draft.pickup.district || draft.pickup.province || 'N/A',
+                        zipCode: draft.pickup.zip || '00000',
+                        latitude: draft.pickup.lat ?? null,
+                        longitude: draft.pickup.lng ?? null,
+                        addressType: 'Pickup'
+                    },
+                    deliveryAddress: {
+                        streetAddress: [draft.delivery.houseNumber, draft.delivery.road].filter(Boolean).join(' ').trim() || (draft.delivery.district || draft.delivery.province || 'N/A'),
+                        city:  draft.delivery.province || 'N/A',
+                        state: draft.delivery.district || draft.delivery.province || 'N/A',
+                        zipCode: draft.delivery.zip || '00000',
+                        latitude: draft.delivery.lat ?? null,
+                        longitude: draft.delivery.lng ?? null,
+                        addressType: 'Delivery'
+                    },
+
+                    // Items (từ trang trước)
+                    furnitureItems: (draft.items||[]).map(x => ({
+                        itemType: x.itemType,
+                        size: x.size || null,
+                        quantity: x.quantity || 1,
+                        isFragile: !!x.isFragile,
+                        specialHandling: x.specialHandling || null
+                    })),
+
+                    // Route & giá (từ trang này)
+                    distanceKm: Number(lastDistance.toFixed(2)),
+                    durationSec: Math.round(lastTime * 60),
+                    totalCost: Math.round(totalCost)
+                };
+
+                const resp = await postCheckout(payload);
+                showAlert(`✅ Đã lưu yêu cầu #${resp.requestId || resp.data?.requestId || '???'} (status: ${resp.status || resp.data?.status || 'pending'})`, true);
+                sessionStorage.removeItem(DRAFT_KEY);
+            }catch(err){
+                console.error(err);
+                showAlert('❌ Lưu thất bại: ' + (err.message || 'Unknown'), false);
+            }
+        });
+    })();
+</script>
 </body>
 </html>
+

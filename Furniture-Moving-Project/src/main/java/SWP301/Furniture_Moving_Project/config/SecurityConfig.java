@@ -10,7 +10,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
 
+
+
+@EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
 
@@ -47,14 +52,26 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/provider/invoices/**").hasAnyRole("PROVIDER","ADMIN")
+                    .requestMatchers(HttpMethod.PUT, "/api/service-requests/**").hasAnyRole("PROVIDER","ADMIN")
                 .requestMatchers("/", "/homepage", "/login", "/register", "/distanceCalculation",
+                        "/requestservice",                    // ✅ NEW: trang tạo yêu cầu (view Thymeleaf)
+                        "/distanceCalculation",              // ✅ NEW: trang tính quãng đường (view Thymeleaf)
+                        "/requestService/**",                // ✅ NEW: static CSS/JS của trang request
+                        "/distanceCalculation/**",           // ✅ NEW: static (nếu có) của trang distance
                                  "/forgot/**",
                                  "/css/**", "/js/**", "/images/**",
                                  "/accountmanage/**", "/homepage/**", "/chatbot/**",
                                  "/superadmin/**",
-                                 "/dashbooard/**"                 // ✅ static của superadmin (css/js)
+                                 "/dashbooard/**" ,
+                        "/approval/**"
+
                 ).permitAll()
-                .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
+
+                    .requestMatchers("/approveApplication/css/**", "/approveApplication/js/**").permitAll()
+                    .requestMatchers("/approveApplication").authenticated()
+
+                    .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")

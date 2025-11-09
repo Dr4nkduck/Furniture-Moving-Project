@@ -1,0 +1,126 @@
+    <!DOCTYPE html>
+    <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Quản Lý Hóa Đơn</title>
+
+        <!-- CSS tĩnh dưới /static/approval/approval.css -->
+        <link rel="stylesheet" th:href="@{/approval/approval.css}">
+    </head>
+    <body>
+    <div class="container" id="invoiceRoot"
+         th:attr="
+            data-status=${status},
+            data-request-id=${requestId},
+            data-total-cost=${totalCost},
+            data-provider-name=${providerCompanyName}">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">LOGO</div>
+            <div class="company-info">
+                <h1>CÔNG TY VẬN CHUYỂN</h1>
+            </div>
+        </div>
+
+        <!-- Trạng thái + Hành động -->
+        <div class="status-row">
+            <!-- Badge trạng thái: không hiện "Chờ duyệt" nếu đã duyệt -->
+            <span id="statusBadge"
+                  class="status-badge"
+                  th:classappend="
+                ${status}=='pending'    ? ' status-pending'   :
+                (${status}=='completed' ? ' status-completed' : ' status-other')"
+                  th:text="
+                ${status}=='completed' ? 'Đã duyệt' :
+                (${status}=='pending'  ? 'Chờ duyệt' : ${status})">
+          <!-- sẽ bị thay bởi Thymeleaf -->
+        </span>
+
+            <!-- Nút duyệt chỉ hiển thị khi đang pending -->
+            <button id="approveBtn" type="button" class="btn-approve"
+                    th:if="${status}=='pending'">
+                Duyệt
+            </button>
+        </div>
+
+        <!-- Thông tin đơn -->
+        <div class="invoice-details">
+            <div>
+                <div class="detail-section">
+                    <h3>Nơi gửi:</h3>
+                    <p th:text="${pickupAddress} ?: '---'">---</p>
+                </div>
+                <div class="detail-section">
+                    <h3>Nơi nhận:</h3>
+                    <p th:text="${deliveryAddress} ?: '---'">---</p>
+                </div>
+            </div>
+            <div>
+                <div class="detail-section">
+                    <h3>Số hóa đơn:</h3>
+                    <p id="invoiceNo" th:text="${invoiceNo} ?: '---'">---</p>
+                </div>
+                <div class="detail-section">
+                    <h3>Ngày:</h3>
+                    <p id="invoiceDate" th:text="${invoiceDate} ?: '---'">---</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta -->
+        <div class="invoice-meta">
+            <div class="meta-item">
+                <strong>Số hóa đơn:</strong>
+                <span th:text="${invoiceNo} ?: '---'">---</span>
+            </div>
+            <div class="meta-item">
+                <strong>Ngày:</strong>
+                <span th:text="${invoiceDate} ?: '---'">---</span>
+            </div>
+            <div class="meta-item">
+                <strong>Công ty vận chuyển:</strong>
+                <span id="providerName" th:text="${providerCompanyName} ?: '---'">---</span>
+            </div>
+        </div>
+
+        <!-- Bảng hàng hóa -->
+        <table>
+            <thead>
+            <tr>
+                <th>TÊN HÀNG</th>
+                <th>SỐ LƯỢNG</th>
+                <th>ĐƠN GIÁ</th>
+                <th>THÀNH TIỀN</th>
+                <th>HÀNH ĐỘNG</th>
+            </tr>
+            </thead>
+            <tbody id="itemsTable">
+            <tr>
+                <td colspan="5" class="empty-row">Chưa có hàng hóa nào.</td>
+            </tr>
+            </tbody>
+        </table>
+
+
+
+        <!-- TOTAL từ DB -->
+        <table>
+            <tr class="total-row">
+                <td style="border:1px solid #ddd;">Cộng tiền hàng:</td>
+                <td id="totalAmount"
+                    class="text-right"
+                    style="border:1px solid #ddd; text-align:right;"
+                    th:text="${totalCost} ?: '0'">0</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- JSON items từ DB (mảng) -->
+    <script id="itemsSeed" type="application/json" th:utext="${furnitureItemsJson}">[]</script>
+
+    <!-- JS tĩnh dưới /static/approval/approval.js -->
+    <script th:src="@{/approval/approval.js}"></script>
+    </body>
+    </html>
