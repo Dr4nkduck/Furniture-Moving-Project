@@ -63,6 +63,10 @@ public class SecurityConfig {
                                  "/css/**", "/js/**", "/images/**",
                                  "/accountmanage/**", "/homepage/**", "/chatbot/**",
                                  "/superadmin/**",
+                                 "/dashbooard/**","/customer-trends/**",
+                                 "/provider-stats/**",
+                                 "/services/**",
+                                 "/orders/**",
                                  "/dashbooard/**" ,
                         "/approval/**"
 
