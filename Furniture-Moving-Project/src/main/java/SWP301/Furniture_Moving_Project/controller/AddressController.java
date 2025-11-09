@@ -1,6 +1,6 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.DTO.AddressDTO;
+import SWP301.Furniture_Moving_Project.dto.AddressDTO;
 import SWP301.Furniture_Moving_Project.service.AddressService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
