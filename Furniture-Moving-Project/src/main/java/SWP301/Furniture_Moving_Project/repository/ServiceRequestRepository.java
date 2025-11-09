@@ -2,6 +2,9 @@ package SWP301.Furniture_Moving_Project.repository;
 
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
 import SWP301.Furniture_Moving_Project.repository.projection.InvoicePageView;
+import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderDetailProjection;
+import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderItemProjection;
+import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderSummaryProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
