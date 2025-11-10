@@ -16,12 +16,16 @@ import java.util.Optional;
 
 @Repository
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Integer> {
-    
+
     List<ServiceRequest> findByCustomerId(Integer customerId);
-    
+
     List<ServiceRequest> findByStatus(String status);
-    
+
     List<ServiceRequest> findByCustomerIdAndStatus(Integer customerId, String status);
+
+    List<ServiceRequest> findTop5ByCustomerIdOrderByCreatedAtDesc(Integer customerId);
+    // Nếu entity không có 'createdAt', đổi sang:
+    // List<ServiceRequest> findTop5ByCustomerIdOrderByRequestDateDesc(Integer customerId);
 
     long countByProviderId(Integer providerId);
 

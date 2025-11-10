@@ -15,90 +15,61 @@
   <name>Furniture_Moving_Project</name>
 
   <properties>
-    <java.version>21</java.version>
+    <!-- ↓↓ Chuyển về Java 17 -->
+    <java.version>17</java.version>
   </properties>
 
   <dependencies>
-    <!-- Web + MVC -->
+    <!-- (giữ nguyên như của bạn) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
-
-    <!-- Thymeleaf view -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-thymeleaf</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-envers</artifactId>
     </dependency>
-
-
-    <!-- Security -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
-
-
-    <!-- JPA (jakarta.persistence) + Spring Data -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
-
-    <!-- SQL Server JDBC driver -->
     <dependency>
       <groupId>com.microsoft.sqlserver</groupId>
       <artifactId>mssql-jdbc</artifactId>
       <version>12.6.1.jre11</version>
     </dependency>
-
-    <!-- (Tuỳ chọn) Validation -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
-
-    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.thymeleaf.extras</groupId>
+      <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+      <version>3.1.2.RELEASE</version>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!-- Gửi email -->
-  <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-mail</artifactId>
-  </dependency>
-
-  <!--Ctrl s reload web-->
-  <dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-devtools</artifactId>
-  <scope>runtime</scope>
-  <optional>true</optional>
-</dependency>
-
-<!-- Thymeleaf Security dialect (để sec:authorize)-->
-<dependency>
-  <groupId>org.thymeleaf.extras</groupId>
-  <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-</dependency>
-
-<dependency>
-  <groupId>org.thymeleaf.extras</groupId>
-  <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-  <version>3.1.2.RELEASE</version>
-</dependency>
-
-
-
-  
   </dependencies>
 
   <build>
@@ -107,13 +78,36 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
+
+      <!-- ↓↓ Ép compiler sinh bytecode Java 17 -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
         <configuration>
-          <source>8</source>
-          <target>8</target>
+          <release>17</release>
         </configuration>
+      </plugin>
+
+      <!-- (khuyến nghị) Enforcer để chắc chắn build bằng JDK 17 trở lên -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>enforce-java</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[17,)</version>
+                </requireJavaVersion>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

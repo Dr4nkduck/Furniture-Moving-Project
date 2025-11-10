@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Đăng nhập</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 4rem auto; padding: 0 1rem; }
+    form { display:flex; flex-direction:column; gap:.75rem; }
+    input { padding:.5rem .75rem; border:1px solid #ccc; border-radius:8px; }
+    button { padding:.5rem .75rem; border:1px solid #333; border-radius:8px; background:#111; color:#fff; cursor:pointer; }
+    .error { background:#ffe8e8; color:#b40000; border:1px solid #f5b5b5; padding:.5rem .75rem; border-radius:8px; margin-bottom: .75rem; }
+    a { color:#0b5fff; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <h2>Đăng nhập</h2>
+
+  <div th:if="${param.error}" class="error">Sai tài khoản hoặc mật khẩu.</div>
+
+  <form method="post" action="/perform_login">
+    <label>
+      Tên đăng nhập
+      <input name="username" type="text" required />
+    </label>
+    <label>
+      Mật khẩu
+      <input name="password" type="password" required />
+    </label>
+    <button type="submit">Đăng nhập</button>
+  </form>
+
+  <p><a href="/">← Về trang chủ</a></p>
+</body> 
+</html>
