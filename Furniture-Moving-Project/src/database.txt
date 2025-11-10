@@ -244,30 +244,37 @@
 	);
 	CREATE INDEX IX_pq_request ON price_quotations(request_id);
 	CREATE INDEX IX_pq_service ON price_quotations(service_id);
-	-- Payments (VNPay transactions for each ServiceRequest)
+	-- Payments (VietQR sessions for each ServiceRequest)
 	IF OBJECT_ID('payments','U') IS NOT NULL DROP TABLE payments;
 	CREATE TABLE payments (
 	  payment_id         INT IDENTITY(1,1) PRIMARY KEY,
 	  service_request_id INT NOT NULL,
-	  vnp_txn_ref        VARCHAR(64) NOT NULL UNIQUE,   -- map với vnp_TxnRef
-	  amount             DECIMAL(18,2) NOT NULL,        -- số tiền (VND)
+	  amount             DECIMAL(18,2) NOT NULL,              -- số tiền (VND)
 	  status             VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-	  created_at         DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-	  expire_at          DATETIME2 NOT NULL,            -- thời điểm hết hạn phiên
-	  paid_at            DATETIME2 NULL,                -- thanh toán thành công lúc nào
+	  created_at         DATETIME2   NOT NULL DEFAULT SYSUTCDATETIME(),
+	  expire_at          DATETIME2   NOT NULL,                -- hết hạn phiên
+	  paid_at            DATETIME2   NULL,                    -- thời điểm xác nhận đã trả
 
-	  bank_code          VARCHAR(50) NULL,
-	  vnp_order_info     NVARCHAR(255) NULL,
-	  vnp_response_code  VARCHAR(10) NULL,
-	  vnp_transaction_no VARCHAR(50) NULL,
+	  -- VietQR audit (tài khoản nhận + nội dung CK)
+	  bank_code          VARCHAR(20)   NULL,                  -- vcb, mb, tcb...
+	  account_number     VARCHAR(64)   NULL,
+	  account_name       NVARCHAR(120) NULL,
+	  add_info           NVARCHAR(140) NULL,                  -- ví dụ: REQ5
 
 	  CONSTRAINT FK_payments_request FOREIGN KEY (service_request_id)
 		REFERENCES service_requests(request_id),
-	  CONSTRAINT CK_payments_status CHECK (status IN ('PENDING','PAID','FAILED','EXPIRED'))
+	  CONSTRAINT CK_payments_status CHECK (status IN ('PENDING','PAID','FAILED','EXPIRED')),
+	  CONSTRAINT CK_payments_time   CHECK (expire_at > created_at)
 	);
 
 	CREATE INDEX IX_payments_request        ON payments(service_request_id);
 	CREATE INDEX IX_payments_status_created ON payments(status, created_at DESC);
+	CREATE INDEX IX_payments_add_info       ON payments(add_info);
+
+	-- (Tuỳ chọn) đảm bảo mỗi request chỉ có 1 bản ghi đã PAID
+	CREATE UNIQUE INDEX UX_payments_paid_once ON payments(service_request_id)
+	WHERE status = 'PAID';
+
 
 	-- REVIEWS
 	IF OBJECT_ID('reviews','U') IS NOT NULL DROP TABLE reviews;
@@ -594,7 +601,7 @@ FROM service_requests sr
 JOIN request_addresses ra ON ra.request_id = sr.request_id
 ORDER BY sr.request_id, ra.address_type;
 
-DECLARE @rid INT = 4;  -- ← đổi sang request_id bạn cần
+DECLARE @rid INT = 5;  -- ← đổi sang request_id bạn cần
 
 SELECT
   sr.request_id,
@@ -661,6 +668,3 @@ LEFT JOIN request_images ri
   ON ri.request_id = sr.request_id
 WHERE sr.request_id = @rid
 ORDER BY fi.item_id, ri.image_id;
-
-
-
