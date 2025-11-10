@@ -30,7 +30,6 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ... (Hàm userHome() và aiQuote() giữ nguyên) ...
     @GetMapping("/user")
     @PreAuthorize("hasRole('CUSTOMER')")
     public String userHome() {
