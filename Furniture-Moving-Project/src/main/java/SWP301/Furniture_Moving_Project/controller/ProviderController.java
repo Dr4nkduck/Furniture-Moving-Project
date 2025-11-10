@@ -19,13 +19,15 @@ public class ProviderController {
         this.providerRepository = providerRepository;
     }
 
-    @GetMapping("/available")
-    public Map<String, Object> getAvailableProviders() {
-        List<ProviderDTO> list = providerRepository.findAvailableProviders();
-        Map<String, Object> body = new HashMap<>();
-        body.put("success", true);
-        body.put("data", list);
-        return body;
+
+    @GetMapping("/provider/services")
+    public String services() {
+        return "provider/services";
+    }
+
+    @GetMapping("/provider/orders")
+    public String orders() {
+        return "provider/orders";
     }
 }
 

@@ -1,26 +1,35 @@
+// src/main/java/SWP301/Furniture_Moving_Project/model/ProviderServicePackage.java
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 
-@Entity @Table(name="provider_service_packages",
-        uniqueConstraints=@UniqueConstraint(columnNames={"provider_id","package_id"}))
+@Entity @Table(
+        name="provider_service_packages",
+        uniqueConstraints = @UniqueConstraint(columnNames={"provider_id","package_id"})
+)
 public class ProviderServicePackage {
-    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name="provider_id", nullable=false) private Integer providerId;
+    @Column(name="provider_id", nullable=false)
+    private Integer providerId;
 
-    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="package_id", nullable=false)
-    private ServicePackage servicePackage;
+    @Column(name="package_id", nullable=false)
+    private Integer packageId;
 
-    private BigDecimal baseFee;
-    private BigDecimal perKm;
-    private BigDecimal perMinute;
-    private BigDecimal surchargeStairs;
-    private BigDecimal surchargeNoElevator;
-    private BigDecimal surchargeNarrowAlley;
-    private BigDecimal surchargeWeekend;
+    @Column(name="per_km")
+    private Double perKm; // có thể NULL (chưa cấu hình)
+
+    @Column(name="package_name_snapshot")
+    private String packageNameSnapshot; // NULL => dùng tên gốc
+
+    // read-only join để lấy tên gói
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="package_id", insertable = false, updatable = false)
+    private ServicePackage basePackage;
+
     // getters/setters
 
 
@@ -40,67 +49,35 @@ public class ProviderServicePackage {
         this.providerId = providerId;
     }
 
-    public ServicePackage getServicePackage() {
-        return servicePackage;
+    public Integer getPackageId() {
+        return packageId;
     }
 
-    public void setServicePackage(ServicePackage servicePackage) {
-        this.servicePackage = servicePackage;
+    public void setPackageId(Integer packageId) {
+        this.packageId = packageId;
     }
 
-    public BigDecimal getBaseFee() {
-        return baseFee;
-    }
-
-    public void setBaseFee(BigDecimal baseFee) {
-        this.baseFee = baseFee;
-    }
-
-    public BigDecimal getPerKm() {
+    public Double getPerKm() {
         return perKm;
     }
 
-    public void setPerKm(BigDecimal perKm) {
+    public void setPerKm(Double perKm) {
         this.perKm = perKm;
     }
 
-    public BigDecimal getPerMinute() {
-        return perMinute;
+    public String getPackageNameSnapshot() {
+        return packageNameSnapshot;
     }
 
-    public void setPerMinute(BigDecimal perMinute) {
-        this.perMinute = perMinute;
+    public void setPackageNameSnapshot(String packageNameSnapshot) {
+        this.packageNameSnapshot = packageNameSnapshot;
     }
 
-    public BigDecimal getSurchargeStairs() {
-        return surchargeStairs;
+    public ServicePackage getBasePackage() {
+        return basePackage;
     }
 
-    public void setSurchargeStairs(BigDecimal surchargeStairs) {
-        this.surchargeStairs = surchargeStairs;
-    }
-
-    public BigDecimal getSurchargeNoElevator() {
-        return surchargeNoElevator;
-    }
-
-    public void setSurchargeNoElevator(BigDecimal surchargeNoElevator) {
-        this.surchargeNoElevator = surchargeNoElevator;
-    }
-
-    public BigDecimal getSurchargeNarrowAlley() {
-        return surchargeNarrowAlley;
-    }
-
-    public void setSurchargeNarrowAlley(BigDecimal surchargeNarrowAlley) {
-        this.surchargeNarrowAlley = surchargeNarrowAlley;
-    }
-
-    public BigDecimal getSurchargeWeekend() {
-        return surchargeWeekend;
-    }
-
-    public void setSurchargeWeekend(BigDecimal surchargeWeekend) {
-        this.surchargeWeekend = surchargeWeekend;
+    public void setBasePackage(ServicePackage basePackage) {
+        this.basePackage = basePackage;
     }
 }

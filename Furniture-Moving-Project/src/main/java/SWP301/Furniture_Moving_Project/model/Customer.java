@@ -1,10 +1,11 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "customers", schema = "dbo")
+@Table(name = "customers")
 public class Customer {
 
     @Id
@@ -12,29 +13,47 @@ public class Customer {
     @Column(name = "customer_id")
     private Integer customerId;
 
-    // Giữ kiểu int thẳng, không cần @ManyToOne sang User để đỡ ràng buộc
-    @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    // DB side là 1-1 với users; dùng OneToOne để rõ ràng (UNIQUE KEY ở DB đã bảo đảm)
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
     @Column(name = "loyalty_points", nullable = false)
     private Integer loyaltyPoints = 0;
 
-    @Column(name = "customer_since", columnDefinition = "datetime2")
-    private LocalDateTime customerSince;
+    @Column(name = "customer_since", nullable = false)
+    private OffsetDateTime customerSince = OffsetDateTime.now();
 
-    @PrePersist
-    public void prePersist() {
-        if (customerSince == null) customerSince = LocalDateTime.now();
-        if (loyaltyPoints == null) loyaltyPoints = 0;
+    // getters/setters
+    public Integer getCustomerId() {
+        return customerId;
     }
 
-    // Getters & setters
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
-    public Integer getUserId() { return userId; }
-    public void setUserId(Integer userId) { this.userId = userId; }
-    public Integer getLoyaltyPoints() { return loyaltyPoints; }
-    public void setLoyaltyPoints(Integer loyaltyPoints) { this.loyaltyPoints = loyaltyPoints; }
-    public LocalDateTime getCustomerSince() { return customerSince; }
-    public void setCustomerSince(LocalDateTime customerSince) { this.customerSince = customerSince; }
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Integer getLoyaltyPoints() {
+        return loyaltyPoints;
+    }
+
+    public void setLoyaltyPoints(Integer loyaltyPoints) {
+        this.loyaltyPoints = loyaltyPoints;
+    }
+
+    public OffsetDateTime getCustomerSince() {
+        return customerSince;
+    }
+
+    public void setCustomerSince(OffsetDateTime customerSince) {
+        this.customerSince = customerSince;
+    }
 }
