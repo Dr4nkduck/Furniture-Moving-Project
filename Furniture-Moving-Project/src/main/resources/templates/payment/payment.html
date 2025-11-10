@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>Thanh toán đơn hàng</title>
+
+  <!-- Metadata cho JS -->
+  <meta name="request-id" th:content="${requestId}"/>
+  <!-- Không bắt buộc, nhưng để JS/FE tham khảo nếu cần -->
+  <meta name="total-cost" th:content="${amount}"/>
+
+  <!-- CSRF: chỉ render nếu đang bật -->
+  <th:block th:if="${_csrf != null}">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  </th:block>
+
+  <!-- CSS riêng của payment -->
+  <link rel="stylesheet" th:href="@{/payment/css/payment.css}"/>
+
+  <!-- JS payment (không dùng qrcode.js vì đang render ảnh VietQR) -->
+  <script th:src="@{/payment/js/payment.js}" defer></script>
+</head>
+
+<body class="payment-body">
+
+<div class="payment-page">
+  <!-- Header -->
+  <header class="payment-header">
+    <div class="brand">
+      <div class="logo-circle">FM</div>
+      <div class="brand-text">
+        <h1>Furniture Transport</h1>
+        <p>Thanh toán đơn vận chuyển</p>
+      </div>
+    </div>
+
+    <div class="order-mini">
+      <div class="order-id">
+        Mã đơn: <span th:text="${requestId}">123</span>
+      </div>
+      <div class="order-status" th:text="${status}">PENDING</div>
+    </div>
+  </header>
+
+  <!-- Layout chính -->
+  <main class="payment-layout">
+    <!-- Trái: thông tin đơn -->
+    <section class="order-summary-card">
+      <h2>Thông tin đơn vận chuyển</h2>
+
+      <div class="summary-row">
+        <span>Nhà cung cấp:</span>
+        <strong th:text="${providerCompanyName} ?: 'Đang xử lý'">Tên nhà cung cấp</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Giá cần thanh toán:</span>
+        <strong id="amountValue"
+                th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Ngày tạo đơn:</span>
+        <span th:text="${#temporals.format(createdAt, 'dd/MM/yyyy HH:mm')}">2025-11-09 10:00</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Ngày vận chuyển dự kiến:</span>
+        <span th:text="${#temporals.format(expectedDate, 'dd/MM/yyyy')} ?: '-'">-</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Số lượng đồ:</span>
+        <span th:text="${itemCount} ?: 0">0</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Số ảnh minh họa:</span>
+        <span th:text="${imageCount} ?: 0">0</span>
+      </div>
+
+      <div class="address-block">
+        <h3>Điểm nhận hàng</h3>
+        <p th:text="${pickupText} ?: '—'">Địa chỉ nhận…</p>
+      </div>
+
+      <div class="address-block">
+        <h3>Điểm giao hàng</h3>
+        <p th:text="${deliveryText} ?: '—'">Địa chỉ giao…</p>
+      </div>
+
+      <div class="summary-note">
+        Sau khi thanh toán thành công, đơn của bạn sẽ được chuyển sang bước xử lý tiếp theo.
+      </div>
+    </section>
+
+    <!-- Phải: VietQR + trạng thái -->
+    <section class="payment-panel-card">
+      <h2>Thanh toán qua VietQR</h2>
+
+      <div class="qr-wrapper">
+        <div id="qrBox" class="qr-box">
+          <!-- Ảnh QR sẽ được JS gán src -->
+          <img id="qrImg" class="qr-img" alt="VietQR" style="display:none"/>
+          <div class="qr-placeholder" id="qrPlaceholder">Đang khởi tạo phiên thanh toán...</div>
+        </div>
+
+        <div class="status-area">
+          <div id="statusText" class="status-text">
+            Đang tạo phiên thanh toán, vui lòng chờ...
+          </div>
+          <div id="countdown" class="countdown-text"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="retryButton" type="button" class="btn-outline">Tạo lại QR</button>
+      </div>
+
+      <div class="tips">
+        <h3>Hướng dẫn nhanh</h3>
+        <ol>
+          <li>Mở ứng dụng ngân hàng có hỗ trợ VietQR.</li>
+          <li>Chọn chức năng quét mã QR.</li>
+          <li>Quét mã bên cạnh và xác nhận thanh toán.</li>
+          <li>Giữ nguyên trang đến khi trạng thái chuyển sang <b>“Thanh toán thành công”</b>.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+</div>
+
+</body>
+</html>

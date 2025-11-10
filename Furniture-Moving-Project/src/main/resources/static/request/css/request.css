@@ -1,7 +1,7 @@
 /* =====================
-   THEME TOKENS
+   THEME TOKENS — scoped theo TRANG
    ===================== */
-:root {
+.page-request {
   --brand: #f5b301;
   --ink: #101114;
   --bg: #ffffff;
@@ -16,155 +16,268 @@
   --h2: clamp(20px, 2.8vw, 28px);
   --h3: clamp(16px, 2.2vw, 20px);
   --space: clamp(16px, 3vw, 24px);
-
-  /* ✅ Khai báo hỗ trợ light/dark cho form controls (giúp trình duyệt render dropdown đúng tương phản) */
+  /* bề mặt cho card & input */
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  .page-request {
     --bg:#0f1115;
     --ink:#f2f3f5;
     --muted:#b9c0c7;
     --border:#23262d;
+    --surface:#141824;
+    --surface-2:#1a2030;
     --shadow:0 10px 30px rgba(0,0,0,.32);
     --shadow-sm:0 6px 16px rgba(0,0,0,.28);
   }
 }
 
-/* RESET */
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body { margin:0; font-family: var(--font); color: var(--ink); background: var(--bg); }
-img { max-width: 100%; display:block; }
-a { color: inherit; text-decoration: none; }
-button { font: inherit; }
-.container { width: min(100% - 32px, var(--maxw)); margin-inline: auto; }
+/* ========== RESET (scoped) ========== */
+.page-request{margin:0;min-height:100vh;font-family:var(--font);color:var(--ink);background:var(--bg);}
+.page-request *{box-sizing:border-box;}
+.page-request img{max-width:100%;display:block;}
+.page-request__scope a{color:inherit;text-decoration:none;}
+.page-request__scope button{font:inherit;}
 
-/* TOPBAR + HEADER */
-.topbar{ background: var(--brand); color:#111; font-weight:700; font-size:14px; }
-.topbar .container{ display:flex; justify-content:space-between; padding:8px 0 }
-header { position: sticky; top:0; z-index:50; background: var(--bg); border-bottom:1px solid var(--border); box-shadow: none; }
-.nav { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
-.brand { display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.2px }
-.logo { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background: var(--brand); box-shadow: var(--shadow-sm); }
-.actions { display:flex; gap:10px; }
-.btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--border); cursor:pointer; background:transparent; }
-.btn.primary { background: var(--brand); color:#111; border-color: transparent; font-weight:800; }
+/* Container riêng cho trang */
+.page-request__scope{width:min(100% - 32px, var(--maxw));margin-inline:auto;}
 
-/* LAYOUT */
-.grid { display:grid; gap: var(--space); grid-template-columns: 1.35fr .65fr; align-items:start; }
-@media (max-width: 980px){ .grid { grid-template-columns: 1fr; } }
+/* ========== LAYOUT ========== */
+.page-request__scope .grid{display:grid;gap:var(--space);grid-template-columns:1.35fr .65fr;align-items:start;}
+@media (max-width:980px){.page-request__scope .grid{grid-template-columns:1fr;}}
 
-/* CARDS */
-.card { background: var(--bg); border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
-.card .hd { padding: 16px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
-.card .hd .eyebrow { text-transform:uppercase; letter-spacing:.18em; color: var(--brand); font-weight:900; font-size:12px; }
-.card .bd { padding: 16px 18px; display:grid; gap: 14px; }
+/* ========== CARDS ========== */
+.page-request__scope .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+.page-request__scope .card .hd{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.page-request__scope .card .hd .eyebrow{text-transform:uppercase;letter-spacing:.18em;color:var(--brand);font-weight:900;font-size:12px;}
+.page-request__scope .card .bd{padding:16px 18px;display:grid;gap:14px;}
 
-/* FORM */
-.row { display:grid; gap: 12px; grid-template-columns: repeat(12, 1fr); }
-.col-6 { grid-column: span 6; }
-.col-4 { grid-column: span 4; }
-.col-8 { grid-column: span 8; }
-.col-12{ grid-column: span 12; }
-@media (max-width: 720px){ .col-6, .col-4, .col-8 { grid-column: span 12; } }
+/* ========== GRID FORM 12 CỘT ========== */
+.page-request__scope .row{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  column-gap:16px;
+  row-gap:14px;
+  align-items:start;
+  width:100%;
+}
+.page-request__scope .col-12{grid-column:span 12;}
+.page-request__scope .col-8{grid-column:span 8;}
+.page-request__scope .col-6{grid-column:span 6;}
+.page-request__scope .col-4{grid-column:span 4;}
+@media (max-width:720px){
+  .page-request__scope .col-8,
+  .page-request__scope .col-6,
+  .page-request__scope .col-4{grid-column:span 12;}
+}
 
-label { font-size:13px; color: var(--muted); font-weight:700; letter-spacing:.2px }
-input[type="text"], input[type="tel"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
-  width: 100%;
-  padding: 12px 12px;
-  border-radius: 12px;
+/* ========== FORM CONTROLS ========== */
+.page-request__scope label{font-size:13px;color:var(--ink);font-weight:700;letter-spacing:.2px;margin-bottom:6px;display:block;}
+.page-request__scope input[type="text"],
+.page-request__scope input[type="tel"],
+.page-request__scope input[type="date"],
+.page-request__scope input[type="time"],
+.page-request__scope input[type="number"],
+.page-request__scope input[type="file"],
+.page-request__scope select,
+.page-request__scope textarea{
+  display:block;
+  width:100%;
+  background:var(--surface-2);
+  color:var(--ink);
   border:1px solid var(--border);
-  background: transparent;
-  color: inherit;
+  border-radius:11px;
+  min-height:48px;
+  padding:12px 14px;
+  font-size:16px;
+  line-height:1.4;
 }
-textarea { resize: vertical; min-height: 90px; }
-.inline { display:flex; align-items:center; gap:10px; }
-.hint { font-size:12px; color: var(--muted); }
-.switch { display:inline-flex; align-items:center; gap:8px; }
-
-/* ITEMS TABLE */
-.items { width:100%; border-collapse: collapse; }
-.items th, .items td { border-bottom:1px dashed var(--border); padding: 8px 6px; text-align:left; }
-.items thead th { font-size:12px; color: var(--muted); font-weight:800; }
-.item-actions { display:flex; gap:8px; }
-
-/* UPLOAD PREVIEW */
-.thumbs { display:flex; flex-wrap:wrap; gap:8px; }
-.thumb { width:80px; height:80px; border-radius:10px; overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-sm); background:#f7f7f7; display:grid; place-items:center }
-
-/* SUMMARY */
-.summary { position: sticky; top: 82px; display:grid; gap: 12px; }
-.kv { display:flex; justify-content:space-between; font-size:14px; }
-.kv strong { font-weight:900; }
-.sep { border-top:1px solid var(--border); margin:6px 0; }
-
-/* STEP TABS */
-.steps { display:flex; gap:10px; flex-wrap:wrap; }
-.chip { font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); color: var(--muted); }
-.chip.active { background: var(--brand); color:#111; border-color: transparent; font-weight:900; }
-
-/* ===== Toast Notification ===== */
-.toast-container{
-  position:fixed; top:16px; right:16px; z-index:9999;
-  display:flex; flex-direction:column; gap:8px;
+.page-request__scope textarea{min-height:96px;resize:vertical;}
+.page-request__scope .inline{display:flex;align-items:center;gap:10px;}
+.page-request__scope .switch{display:flex;align-items:center;gap:8px;min-height:32px;margin-top:4px;}
+.page-request__scope ::placeholder{color:color-mix(in oklab, var(--muted) 88%, transparent);opacity:1;}
+.page-request__scope input:focus,
+.page-request__scope select:focus,
+.page-request__scope textarea:focus{
+  outline:none;border-color:var(--brand);
+  box-shadow:0 0 0 3px color-mix(in oklab, var(--brand) 35%, transparent);
 }
-.toast{
-  background:#0ea5e9; color:#fff; padding:10px 14px; border-radius:10px;
-  box-shadow:0 6px 20px rgba(0,0,0,.2);
-  opacity:0; transform:translateY(-6px);
-  transition:opacity .25s, transform .25s;
-  font-size:14px;
+
+/* ========== BUTTONS ========== */
+.page-request__scope .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);cursor:pointer;background:transparent;}
+.page-request__scope .btn.primary{background:var(--brand);color:#111;border-color:transparent;font-weight:800;}
+
+/* ========== ITEMS TABLE ========== */
+.page-request__scope .items{width:100%;border-collapse:collapse;}
+.page-request__scope .items th,
+.page-request__scope .items td{border-bottom:1px dashed var(--border);padding:8px 6px;text-align:left;}
+.page-request__scope .items thead th{font-size:12px;color:var(--muted);font-weight:800;}
+.page-request__scope .item-actions{display:flex;gap:8px;}
+@media (prefers-color-scheme:dark){
+  .page-request__scope .items th,
+  .page-request__scope .items td{border-bottom-color:color-mix(in oklab, var(--border) 70%, transparent);}
 }
-.toast.success{ background:#16a34a; }
-.toast.error{ background:#dc2626; }
-.toast.show{ opacity:1; transform:translateY(0); }
+
+/* ========== UPLOAD PREVIEW ========== */
+.page-request__scope .thumbs{display:flex;flex-wrap:wrap;gap:8px;}
+.page-request__scope .thumb{width:80px;height:80px;border-radius:10px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-sm);background:#f7f7f7;display:grid;place-items:center;position:relative;}
+.page-request__scope .thumb .rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-weight:900;background:rgba(0,0,0,.55);display:grid;place-items:center;}
+.page-request__scope .thumb .rm:hover{background:rgba(220,38,38,.9);}
+
+/* ========== SUMMARY ========== */
+.page-request__scope .summary{position:sticky;top:82px;display:grid;gap:12px;}
+.page-request__scope .kv{display:flex;justify-content:space-between;font-size:14px;}
+.page-request__scope .kv strong{font-weight:900;}
+.page-request__scope .sep{border-top:1px solid var(--border);margin:6px 0;}
+
+/* ========== STEPS ========== */
+.page-request__scope .steps{display:flex;gap:10px;flex-wrap:wrap;}
+.page-request__scope .chip{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted);}
+.page-request__scope .chip.active{background:var(--brand);color:#111;border-color:transparent;font-weight:900;}
+@media (prefers-color-scheme:dark){
+  .page-request__scope .chip{color:var(--muted);border-color:var(--border);}
+}
+
+/* ========== Toast ========== */
+.page-request .toast-container{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.page-request .toast{background:#0ea5e9;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.2);opacity:0;transform:translateY(-6px);transition:opacity .25s, transform .25s;font-size:14px;}
+.page-request .toast.success{background:#16a34a;}
+.page-request .toast.error{background:#dc2626;}
+.page-request .toast.show{opacity:1;transform:translateY(0);}
 
 /* =====================
-   FIX SELECT / OPTION MỜ Ở DARK MODE
+   FIX SELECT / OPTION ở dark mode
    ===================== */
+.page-request__scope select{color:var(--ink);background-color:var(--surface-2);}
+.page-request__scope select option{color:#111;background:#fff;}
+@media (prefers-color-scheme:dark){
+  .page-request__scope select option{color:#e8eaef;background:#0f1115;}
+}
+.page-request__scope select option[disabled]{color:var(--muted);}
+.page-request__scope select:disabled{opacity:1;}
 
-/* Ép màu chữ/nền của chính <select> để tương phản tốt trong cả 2 theme */
-select {
+/* ========== Patch navbar (phòng trường hợp) ========== */
+.page-request .nav-bar{margin-top:0!important;position:relative!important;top:0!important;}
+/* ===== HOT-FIX: tránh đụng Bootstrap grid trong phạm vi trang ===== */
+.page-request__scope .row{
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0,1fr));
+  column-gap: 16px;
+  row-gap: 14px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  min-width: 0;
+}
+.page-request__scope .row > [class^="col-"],
+.page-request__scope .row > [class*=" col-"]{
+  /* loại flex của Bootstrap để dùng grid span */
+  flex: unset !important;
+  max-width: unset !important;
+  width: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  min-width: 0;
+}
+
+/* các span cột trong phạm vi trang (không ảnh hưởng Bootstrap global) */
+.page-request__scope .col-12{ grid-column: span 12; }
+.page-request__scope .col-8 { grid-column: span 8;  }
+.page-request__scope .col-6 { grid-column: span 6;  }
+.page-request__scope .col-4 { grid-column: span 4;  }
+
+@media (max-width: 720px){
+  .page-request__scope .col-8,
+  .page-request__scope .col-6,
+  .page-request__scope .col-4{ grid-column: span 12; }
+}
+
+/* input/label không bị co hẹp gây vỡ chữ */
+.page-request__scope label,
+.page-request__scope input,
+.page-request__scope select,
+.page-request__scope textarea{ min-width: 0; }
+
+/* checkbox + label nằm ngang gọn gàng */
+.page-request__scope .switch{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 0;
+}
+/* === Minor polish for Address section === */
+
+/* Tiêu đề cột rõ hơn trong dark mode */
+#step-addresses h3{
+  color: color-mix(in oklab, var(--ink) 90%, transparent);
+  font-weight: 800;
+  letter-spacing: .2px;
+  margin: 0 0 8px !important;
+}
+
+/* Các hàng trong address thở hơn một chút */
+#step-addresses .row{ row-gap: 16px; }
+
+/* Hàng "Tầng": label cố định, input co giãn; không bẻ từ "Tầng" */
+.page-request__scope .inline{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-request__scope .inline > label{
+  flex: 0 0 56px;      /* cùng bề rộng ở 2 cột */
+  margin: 0;
+  white-space: nowrap; /* không tách 'Tầng' */
+}
+.page-request__scope .inline > input{
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Checkbox + nhãn cùng hàng, căn giữa theo trục dọc */
+.page-request__scope .switch{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 0;
+}
+.page-request__scope .switch input[type="checkbox"]{
+  width: 18px; height: 18px;
+}
+.page-request__scope .switch label{
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap; /* tránh nhảy dòng trông lộn xộn */
+}
+
+/* Nhẹ phần chữ label form để đỡ nặng */
+.page-request__scope label{
+  letter-spacing: .15px;
+  font-weight: 700;
+}
+/* Ẩn text "No file chosen" và làm input file gọn gàng hơn */
+.page-request__scope input[type="file"] {
+  color: transparent;          /* Ẩn dòng "No file chosen" */
+  cursor: pointer;
+}
+.page-request__scope input[type="file"]::-webkit-file-upload-button {
   color: var(--ink);
-  background-color: var(--bg);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.page-request__scope input[type="file"]::-webkit-file-upload-button:hover {
+  background: color-mix(in oklab, var(--brand) 25%, var(--surface-2));
 }
 
-/* Mặc định danh sách option trên nhiều trình duyệt lấy màu hệ điều hành.
-   Ta đặt lại để đảm bảo tương phản */
-select option {
-  color: #111;
-  background: #fff;
+/* Giữ chữ hiện khi hover */
+.page-request__scope input[type="file"]:hover {
+  color: transparent;
 }
-
-/* Dark mode: option cũng phải nền tối + chữ sáng */
-@media (prefers-color-scheme: dark) {
-  select option {
-    color: #e8eaef;        /* gần với --ink dark */
-    background: #0f1115;   /* gần với --bg dark */
-  }
-}
-
-/* Placeholder option (— Chọn gói —) nhạt nhẹ thôi */
-select option[disabled] {
-  color: var(--muted);
-}
-
-/* Trường hợp một số UI lib làm mờ select bằng opacity -> bỏ */
-select:disabled { opacity: 1; }
-
-/* Tránh một số stylesheet bên ngoài làm blur toàn bộ field */
-select, input, textarea {
-  filter: none !important;
-  opacity: 1 !important;
-}
-/* Thumbnail có nút xoá */
-.thumb { position: relative; }
-.thumb .rm{
-  position:absolute; top:6px; right:6px;
-  width:24px; height:24px; border-radius:50%;
-  border:none; cursor:pointer; color:#fff; font-weight:900;
-  background:rgba(0,0,0,.55);
-  display:grid; place-items:center;
-}
-.thumb .rm:hover{ background: rgba(220,38,38,.9); }

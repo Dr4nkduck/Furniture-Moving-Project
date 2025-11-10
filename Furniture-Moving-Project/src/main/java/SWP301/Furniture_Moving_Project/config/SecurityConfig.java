@@ -53,7 +53,9 @@ public class SecurityConfig {
                                  "/accountmanage/**", "/homepage/**", "/chatbot/**",
                                  "/superadmin/**",
                                  "/dashbooard/**","/customer-trends/**",
-                                 "/provider-stats/**" //✅ static của superadmin (css/js)
+                                 "/provider-stats/**",
+                                    // ⬇⬇⬇ CHỈ THÊM 2 DÒNG NÀY CHO PAYMENT
+                                 "/payment/css/**", "/payment/js/**", "/payment/images/**"
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
@@ -76,4 +78,5 @@ public class SecurityConfig {
                 .permitAll());
         return http.build();
     }
+
 }
