@@ -25,5 +25,11 @@ public class ProviderController {
     public String orders() {
         return "provider/orders";
     }
+
+    @GetMapping("/provider/orders/{id}")
+    public String orderDetail(@PathVariable Integer id, Model model) { // PV-004/005
+        model.addAttribute("orderId", id);
+        return "provider/order-detail";
+    }
 }
 
