@@ -49,12 +49,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/", "/homepage", "/login", "/register", "/forgot/**",
-                    "/homepage/**", "/chatbot/**", "/providers", "/service/**",
-                    // static
-                    "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico",
-                    "/accountmanage/**", "/dashbooard/**", "/uploads/**"
+                .requestMatchers("/", "/homepage", "/login", "/register",
+                                 "/forgot/**",
+                                 "/css/**", "/js/**", "/images/**",
+                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
+                                 "/superadmin/**",
+                                 "/dashbooard/**","/customer-trends/**",
+                                 "/provider-stats/**",
+                                 "/services/**",
+                                 "/orders/**"
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

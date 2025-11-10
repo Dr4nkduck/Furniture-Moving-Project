@@ -1,0 +1,100 @@
+/* ===== Provider Orders Page (PV-003 / PV-004) ===== */
+
+/* Grid layout for list + detail panel */
+.orders-layout {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: 1.25fr 1fr;
+}
+
+@media (max-width: 992px) {
+    .orders-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.orders {
+    padding: 0;
+    overflow: hidden;
+}
+
+.detail {
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Table tweaks */
+.table thead th {
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border) !important;
+}
+
+.table tbody td {
+    border-color: var(--border) !important;
+}
+
+/* Timeline */
+.timeline {
+    border-left: 3px solid var(--border);
+    padding-left: 12px;
+}
+
+.timeline .t {
+    position: relative;
+    margin-bottom: 8px;
+    color: var(--muted);
+}
+
+.timeline .t::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #adb5bd;
+}
+
+.timeline .t.active {
+    color: var(--text);
+}
+
+.timeline .t.active::before {
+    background: var(--brand);
+}
+
+/* Detail panel spacing */
+#detailContent .small {
+    color: var(--muted);
+}
+
+#detailContent .fw-semibold {
+    font-weight: 600;
+}
+
+/* Responsive helpers */
+@media (max-width: 576px) {
+    .orders-layout {
+        gap: 12px;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: .25rem .5rem;
+    }
+
+    .table tbody td:nth-child(1) {
+        grid-column: 1 / -1;
+    }
+
+    .table tbody td:last-child {
+        text-align: right;
+    }
+}
