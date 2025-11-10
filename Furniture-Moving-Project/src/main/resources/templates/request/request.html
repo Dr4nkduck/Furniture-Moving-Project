@@ -22,33 +22,26 @@
     <!-- Style tổng của homepage -->
     <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
 
-    <!-- Style riêng của trang request (giữ nguyên của bạn) -->
+    <!-- Style riêng của trang request -->
     <link rel="stylesheet" th:href="@{/request/css/request.css}" />
 
-    <!-- ==== Patch nhỏ, chỉ áp dụng TRANG NÀY ==== -->
+    <!-- Patch tránh navbar chồng topbar (chỉ trang này) -->
     <style>
-      /* 1) Không cho navbar chồng lên topbar ở trang request */
-      .page-request .nav-bar{
-        margin-top: 0 !important;
-        position: relative !important;
-        top: 0 !important;
-      }
-      /* 2) (Tuỳ chọn) cung cấp scope lớp gốc để bạn prefix CSS & JS */
-      .page-request { --space: 24px; }
+      .page-request .nav-bar{margin-top:0!important;position:relative!important;top:0!important;}
     </style>
   </head>
 
   <body class="page-request">
     <div class="wrapper">
-      <!-- ====== Header / Topbar ====== -->
+      <!-- Header / Topbar -->
       <div th:replace="fragments/header :: topbar"></div>
 
-      <!-- ====== Navbar ====== -->
+      <!-- Navbar -->
       <div th:replace="fragments/navbar :: navbar"></div>
 
-      <!-- ====== NỘI DUNG TRANG REQUEST ====== -->
+      <!-- ====== CONTENT ====== -->
       <main class="container page-request__scope" style="padding: var(--space, 24px) 0;">
-        <!-- Steps indicator -->
+        <!-- Steps -->
         <div class="card" style="margin-bottom:var(--space, 24px)">
           <div class="bd steps">
             <span class="chip active">1. Thông tin dịch vụ</span>
@@ -263,7 +256,7 @@
         </div>
       </main>
 
-      <!-- ====== Footer ====== -->
+      <!-- Footer -->
       <div th:replace="fragments/footer :: footer"></div>
     </div>
 
