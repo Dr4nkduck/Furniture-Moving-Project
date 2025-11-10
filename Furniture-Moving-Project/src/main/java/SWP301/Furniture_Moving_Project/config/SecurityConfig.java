@@ -55,7 +55,9 @@ public class SecurityConfig {
                                  "/dashbooard/**","/customer-trends/**",
                                  "/provider-stats/**",
                                     // ⬇⬇⬇ CHỈ THÊM 2 DÒNG NÀY CHO PAYMENT
-                                 "/payment/css/**", "/payment/js/**", "/payment/images/**"
+                                 "/payment/css/**", "/payment/js/**", "/payment/images/**",
+                                 "/services/**",
+                                 "/orders/**"
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

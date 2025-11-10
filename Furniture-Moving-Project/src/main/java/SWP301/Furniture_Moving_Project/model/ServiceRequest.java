@@ -1,6 +1,7 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,6 +47,9 @@ public class ServiceRequest {
     @Column(name = "created_at", columnDefinition = "datetime2")
     private LocalDateTime createdAt;
 
+    @Column(name = "cancel_reason")
+    private String cancelReason;
+
     @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FurnitureItem> furnitureItems = new ArrayList<>();
 
@@ -58,50 +62,100 @@ public class ServiceRequest {
         if (status == null) status = "pending";
     }
 
-    // Các trường chưa có trong DB -> không map vào cột
-    @Transient
-    private LocalDateTime eta;
+    // getters & setters
+    public Integer getRequestId() {
+        return requestId;
+    }
 
-    @Transient
-    private String providerNote;
+    public void setRequestId(Integer requestId) {
+        this.requestId = requestId;
+    }
 
-    // ===== getters & setters =====
-    public Integer getRequestId() { return requestId; }
-    public void setRequestId(Integer requestId) { this.requestId = requestId; }
+    public Integer getCustomerId() {
+        return customerId;
+    }
 
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
 
-    public Integer getProviderId() { return providerId; }
-    public void setProviderId(Integer providerId) { this.providerId = providerId; }
+    public Integer getProviderId() {
+        return providerId;
+    }
 
-    public Address getPickupAddress() { return pickupAddress; }
-    public void setPickupAddress(Address pickupAddress) { this.pickupAddress = pickupAddress; }
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
+    }
 
-    public Address getDeliveryAddress() { return deliveryAddress; }
-    public void setDeliveryAddress(Address deliveryAddress) { this.deliveryAddress = deliveryAddress; }
+    public Address getPickupAddress() {
+        return pickupAddress;
+    }
 
-    public LocalDateTime getRequestDate() { return requestDate; }
-    public void setRequestDate(LocalDateTime requestDate) { this.requestDate = requestDate; }
+    public void setPickupAddress(Address pickupAddress) {
+        this.pickupAddress = pickupAddress;
+    }
 
-    public LocalDate getPreferredDate() { return preferredDate; }
-    public void setPreferredDate(LocalDate preferredDate) { this.preferredDate = preferredDate; }
+    public Address getDeliveryAddress() {
+        return deliveryAddress;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setDeliveryAddress(Address deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
+    }
 
-    public BigDecimal getTotalCost() { return totalCost; }
-    public void setTotalCost(BigDecimal totalCost) { this.totalCost = totalCost; }
+    public LocalDateTime getRequestDate() {
+        return requestDate;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setRequestDate(LocalDateTime requestDate) {
+        this.requestDate = requestDate;
+    }
 
-    public List<FurnitureItem> getFurnitureItems() { return furnitureItems; }
-    public void setFurnitureItems(List<FurnitureItem> furnitureItems) { this.furnitureItems = furnitureItems; }
+    public LocalDate getPreferredDate() {
+        return preferredDate;
+    }
 
-    public LocalDateTime getEta() { return eta; }
-    public void setEta(LocalDateTime eta) { this.eta = eta; }
+    public void setPreferredDate(LocalDate preferredDate) {
+        this.preferredDate = preferredDate;
+    }
 
-    public String getProviderNote() { return providerNote; }
-    public void setProviderNote(String providerNote) { this.providerNote = providerNote; }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public BigDecimal getTotalCost() {
+        return totalCost;
+    }
+
+    public void setTotalCost(BigDecimal totalCost) {
+        this.totalCost = totalCost;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
+    public List<FurnitureItem> getFurnitureItems() {
+        return furnitureItems;
+    }
+
+    public void setFurnitureItems(List<FurnitureItem> furnitureItems) {
+        this.furnitureItems = furnitureItems;
+    }
 }
