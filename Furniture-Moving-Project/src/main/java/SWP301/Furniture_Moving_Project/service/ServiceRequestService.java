@@ -46,7 +46,7 @@ public class ServiceRequestService {
         // 2) Lấy customer -> userId để kiểm tra sở hữu địa chỉ
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: id=" + dto.getCustomerId()));
-        Integer expectedUserId = customer.getUserId();
+        Integer expectedUserId = customer.getUser().getUserId();
 
         // 3) Tìm địa chỉ
         Address pickup = addressRepository.findById(dto.getPickupAddressId())

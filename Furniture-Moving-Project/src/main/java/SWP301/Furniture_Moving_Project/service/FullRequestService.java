@@ -81,7 +81,7 @@ public class FullRequestService {
         // 2) Resolve userId từ customerId để tạo Address
         Customer cus = customerRepo.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid customerId: " + customerId));
-        Integer userId = cus.getUserId();
+        Integer userId = cus.getUser().getUserId();
 
         // 3) Tạo 2 bản ghi Address (tối thiểu)
         Address pickupAddr = toAddress(

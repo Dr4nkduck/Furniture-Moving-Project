@@ -47,7 +47,7 @@ public class ServiceRequest {
     @Column(name = "created_at", columnDefinition = "datetime2")
     private LocalDateTime createdAt;
 
-    @Column(name = "cancel_reason")
+    @Transient
     private String cancelReason;
 
     @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)

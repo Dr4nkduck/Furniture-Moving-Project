@@ -19,7 +19,7 @@ public class ProviderController {
         this.providerRepository = providerRepository;
     }
 
-
+        
     @GetMapping("/provider/services")
     public String services() {
         return "provider/services";
