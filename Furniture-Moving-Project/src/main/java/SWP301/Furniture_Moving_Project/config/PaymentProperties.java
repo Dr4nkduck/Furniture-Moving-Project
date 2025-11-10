@@ -6,20 +6,22 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "payment")
 public class PaymentProperties {
+    private String addInfoPrefix = "REQ";
+    private int expireMinutes = 15;
 
-    private final Bank bank = new Bank();
-    public Bank getBank() { return bank; }
+    public String getAddInfoPrefix() {
+        return addInfoPrefix;
+    }
 
-    public static class Bank {
-        private String name;
-        private String accountNumber;
-        private String accountName;
+    public void setAddInfoPrefix(String addInfoPrefix) {
+        this.addInfoPrefix = addInfoPrefix;
+    }
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getAccountNumber() { return accountNumber; }
-        public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
-        public String getAccountName() { return accountName; }
-        public void setAccountName(String accountName) { this.accountName = accountName; }
+    public int getExpireMinutes() {
+        return expireMinutes;
+    }
+
+    public void setExpireMinutes(int expireMinutes) {
+        this.expireMinutes = expireMinutes;
     }
 }
