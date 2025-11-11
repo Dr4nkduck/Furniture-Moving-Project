@@ -131,13 +131,12 @@ public class UserController {
             return "redirect:/user/profile";
         }
 
-        if (newPassword.length() < 5) {
+        if (newPassword.length() < 6) {
             redirectAttributes.addFlashAttribute("errorMessagePass", "Mật khẩu mới phải có ít nhất 6 ký tự!");
             return "redirect:/user/profile";
         }
 
         auth.setPasswordHash(passwordEncoder.encode(newPassword));
-
         authCredentialRepository.save(auth);
 
         redirectAttributes.addFlashAttribute("successMessagePass", "Đổi mật khẩu thành công!");
