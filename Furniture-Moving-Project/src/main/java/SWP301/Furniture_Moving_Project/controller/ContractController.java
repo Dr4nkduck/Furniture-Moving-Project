@@ -28,6 +28,9 @@ public class ContractController {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
 
+        // ✅ Thêm để navbar hiển thị đúng
+        addLoginInfo(model, userId);
+
         if (contracts.hasAccepted(userId)) {
             return "redirect:/request";
         }
@@ -85,5 +88,19 @@ public class ContractController {
         if (u.getUsername() != null && !u.getUsername().isEmpty()) return u.getUsername();
         if (u.getEmail() != null && !u.getEmail().isEmpty()) return u.getEmail();
         return "Khách hàng";
+    }
+
+    /** ============================================================
+     *  HÀM DÙNG CHUNG CHO NAVBAR (thêm biến isLoggedIn, currentUser)
+     *  ============================================================ */
+    private void addLoginInfo(Model model, Integer userId) {
+        if (userId != null) {
+            users.findById(userId).ifPresent(u -> {
+                model.addAttribute("isLoggedIn", true);
+                model.addAttribute("currentUser", u);
+            });
+        } else {
+            model.addAttribute("isLoggedIn", false);
+        }
     }
 }
