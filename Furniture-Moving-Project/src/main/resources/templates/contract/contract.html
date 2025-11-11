@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Hợp đồng dịch vụ</title>
+
+  <!-- CSRF (nếu bật) -->
+  <th:block th:if="${_csrf != null}">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  </th:block>
+
+  <!-- Meta dữ liệu -->
+  <meta name="customer-name" th:content="${customerName}"/>
+
+  <!-- Styles -->
+  <link rel="stylesheet" th:href="@{/contract/css/contract.css}"/>
+</head>
+<body class="page-contract">
+  <div class="container">
+    <!-- Stepper -->
+    <ol class="stepper" aria-label="Tiến trình đặt dịch vụ">
+      <li class="active"><span>1</span><b>Hợp đồng</b></li>
+      <li><span>2</span><b>Yêu cầu (Request)</b></li>
+      <li><span>3</span><b>Thanh toán</b></li>
+    </ol>
+
+    <!-- Card -->
+    <section class="card">
+      <header class="card__header">
+        <div class="card__title">
+          <h1>HỢP ĐỒNG DỊCH VỤ VẬN CHUYỂN</h1>
+          <p class="muted">Vui lòng đọc và đồng ý điều khoản để tiếp tục.</p>
+        </div>
+        <div class="card__tools">
+          <button id="btnPrint" class="btn" type="button" aria-label="In hợp đồng">In</button>
+        </div>
+      </header>
+
+      <!-- Thông tin 2 bên -->
+      <div class="parties">
+        <div><strong>Bên A (Khách hàng):</strong>
+          <span id="customerName" th:text="${customerName}">Khách hàng</span>
+        </div>
+        <div><strong>Bên B:</strong> Furniture Moving</div>
+      </div>
+
+      <!-- Nội dung hợp đồng -->
+      <article id="contractBody" class="paper" tabindex="0" aria-label="Nội dung hợp đồng">
+        <h2>Điều khoản chung</h2>
+        <ol>
+          <li>Bên A cung cấp thông tin trung thực khi tạo yêu cầu dịch vụ.</li>
+          <li>Bên B thực hiện dịch vụ theo báo giá đã thỏa thuận, đảm bảo an toàn hàng hóa.</li>
+          <li>Trong trường hợp xảy ra sự cố/hư hỏng, hai bên phối hợp giải quyết theo quy trình hỗ trợ.</li>
+          <li>Hợp đồng có hiệu lực kể từ thời điểm Bên A xác nhận “Tôi đồng ý”.</li>
+        </ol>
+
+        <h3>Chính sách bảo mật</h3>
+        <p>Thông tin cá nhân của Bên A được bảo mật và chỉ sử dụng nhằm mục đích cung cấp dịch vụ.</p>
+
+        <h3>Giới hạn trách nhiệm</h3>
+        <p>Bên B không chịu trách nhiệm cho các thiệt hại gián tiếp hoặc ngoài phạm vi dịch vụ đã cam kết.</p>
+      </article>
+
+      <!-- Đồng ý điều khoản -->
+      <form class="actions" th:action="@{/contract/accept}" method="post" novalidate>
+        <th:block th:if="${_csrf != null}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        </th:block>
+
+        <label class="check">
+          <input id="agree" type="checkbox" name="agree" value="1" required/>
+          <span>Tôi đã đọc và đồng ý với các điều khoản của hợp đồng.</span>
+        </label>
+
+        <div class="actions__buttons">
+          <a class="btn ghost" th:href="@{/}">Hủy</a>
+          <button id="btnAccept" class="btn primary" type="submit" disabled>📝 Tôi đồng ý</button>
+        </div>
+
+        <!-- Fallback không-JS: nếu người dùng submit khi chưa tick, trình duyệt sẽ báo required -->
+      </form>
+    </section>
+
+    <!-- Toast (ẩn/hiện bằng JS) -->
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script th:src="@{/contract/js/contract.js}"></script>
+</body>
+</html>
