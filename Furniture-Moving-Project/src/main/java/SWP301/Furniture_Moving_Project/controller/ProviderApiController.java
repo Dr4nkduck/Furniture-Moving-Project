@@ -1,4 +1,3 @@
-// src/main/java/SWP301/Furniture_Moving_Project/controller/ProviderApiController.java
 package SWP301.Furniture_Moving_Project.controller;
 
 import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
@@ -23,9 +22,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import java.util.*;
-
 
 
 /**
@@ -37,9 +36,22 @@ import java.util.*;
 public class ProviderApiController {
 
     private final ProviderPricingService providerPricingService;
+    private final ProviderRepository providerRepository;
 
-    public ProviderApiController(ProviderPricingService providerPricingService) {
+    public ProviderApiController(ProviderPricingService providerPricingService, ProviderRepository providerRepository) {
         this.providerPricingService = providerPricingService;
+        this.providerRepository = providerRepository;
+    }
+
+    // ============================================================
+    // GET /api/providers/available
+    // Returns list of available providers for request form
+    // Trả: [{ providerId, companyName, rating }]
+    // ============================================================
+    // === THÊM MỚI (phiên bản nhẹ, tránh lỗi entity mismatch) ===
+    @GetMapping("/available")
+    public List<Map<String,Object>> getAvailableProvidersLight() {
+        return providerRepository.findAvailableProvidersLight();
     }
 
     // ============================================================
@@ -145,14 +157,12 @@ public class ProviderApiController {
         public List<FurniturePriceDTO> furniturePrices;
     }
 
-
-
     // === THÊM FIELD (không phá constructor sẵn có) ===
     @Autowired
     private ProviderOrderService providerOrderService;
 
     // === PV-003: List/Search/Filter orders của provider ===
-// Hỗ trợ cả 2 dạng: (a) class-level không có base path  (b) class-level có @RequestMapping("/api/providers")
+    // Hỗ trợ cả 2 dạng: (a) class-level không có base path  (b) class-level có @RequestMapping("/api/providers")
     @GetMapping(path = {"/api/providers/{providerId}/orders", "/{providerId}/orders"})
     public List<ProviderOrderSummaryDTO> listOrders(
             @PathVariable Integer providerId,
@@ -169,7 +179,7 @@ public class ProviderApiController {
     }
 
     // === PV-004: Cập nhật trạng thái đơn ===
-// status: pending/accepted/declined/in_progress/completed/cancelled
+    // status: pending/accepted/declined/in_progress/completed/cancelled
     @PutMapping(path = {"/api/providers/{providerId}/orders/{orderId}/status", "/{providerId}/orders/{orderId}/status"})
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateOrderStatus(@PathVariable Integer providerId,
