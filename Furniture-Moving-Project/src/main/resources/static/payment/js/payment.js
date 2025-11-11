@@ -1,4 +1,4 @@
-// payment.js — hỗ trợ cả VNPay (payUrl/txnRef) và VietQR (vietqrImageUrl)
+// payment.js — hỗ trợ VNPay (payUrl/txnRef) & VietQR (vietqrImageUrl)
 (() => {
   const meta = (n) => document.querySelector(`meta[name="${n}"]`)?.getAttribute("content");
 
@@ -10,27 +10,27 @@
   const statusEl    = document.getElementById("statusText");
   const countdownEl = document.getElementById("countdown");
   const qrBox       = document.getElementById("qrBox");
-  const retryBtn    = document.getElementById("retryBtn");
+  const retryBtn    = document.getElementById("retryButton"); // khớp HTML
 
   let pollTimer = null;
   let cdTimer   = null;
 
-  function setStatus(msg) {
-    if (statusEl) statusEl.textContent = msg;
-  }
-
-  function formatCurrency(v) {
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+  const formatCurrency = (v) => {
     const n = Number(v);
-    if (!Number.isFinite(n)) return String(v);
-    return n.toLocaleString("vi-VN") + " đ";
-  }
-
-  function clearTimers() {
+    return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : String(v);
+  };
+  const clearTimers = () => {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     if (cdTimer)   { clearInterval(cdTimer);   cdTimer   = null; }
+  };
+  function enableRetry(enabled){
+    if (!retryBtn) return;
+    retryBtn.disabled = !enabled;
+    retryBtn.textContent = enabled ? "Tạo lại QR" : "Đang tạo...";
   }
 
-  function startCountdown(expireAtIso) {
+  function startCountdown(expireAtIso){
     if (!expireAtIso || !countdownEl) return;
     const end = new Date(expireAtIso).getTime();
     if (!isFinite(end)) return;
@@ -42,7 +42,7 @@
         clearInterval(cdTimer);
         countdownEl.textContent = "00:00";
         setStatus("Phiên thanh toán đã hết hạn.");
-        // Ngừng poll trạng thái nếu đang chạy
+        enableRetry(true);                      // ✅ bật lại khi hết hạn
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         return;
       }
@@ -52,7 +52,7 @@
     }, 500);
   }
 
-  function renderVietQR(imgUrl) {
+  function renderVietQR(imgUrl){
     qrBox.innerHTML = "";
     const img = new Image();
     img.src = imgUrl;
@@ -63,56 +63,47 @@
     qrBox.appendChild(img);
   }
 
-  function renderVNPayQRCode(payUrl) {
+  function renderVNPayQRCodeOrFallback(payUrl){
     qrBox.innerHTML = "";
-    // Yêu cầu QRCodeJS đã được include trong payment.html
-    /* global QRCode */
-    new QRCode(qrBox, {
-      text: payUrl,
-      width: 220,
-      height: 220,
-      correctLevel: QRCode.CorrectLevel.M
-    });
+    if (window.QRCode) {
+      /* global QRCode */
+      new QRCode(qrBox, { text: payUrl, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    } else {
+      const a = document.createElement("a");
+      a.href = payUrl;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "btn-open-vnpay";
+      a.textContent = "Mở VNPay để thanh toán";
+      qrBox.appendChild(a);
+    }
   }
 
-  function startPolling(txnRefOrNull) {
-    // Nếu BE yêu cầu txnRef → truyền; nếu không có (VietQR) → gọi status theo requestId
+  function startPolling(txnRefOrNull){
     pollTimer && clearInterval(pollTimer);
     pollTimer = setInterval(async () => {
       try {
         const url = txnRefOrNull
           ? `/payment/${requestId}/status?txnRef=${encodeURIComponent(txnRefOrNull)}`
           : `/payment/${requestId}/status`;
-
         const res = await fetch(url, { headers: { "Accept": "application/json" } });
-        if (!res.ok) return; // bỏ qua vòng này
+        if (!res.ok) return;
         const data = await res.json();
-        // data: { status: 'PENDING|PAID|FAILED|EXPIRED', amount, paidAt? }
-        if (data?.amount != null && amountEl) {
-          amountEl.textContent = formatCurrency(data.amount);
-        }
 
+        if (data?.amount != null && amountEl) amountEl.textContent = formatCurrency(data.amount);
         const st = String(data?.status || "").toUpperCase();
-        if (st === "PAID") {
-          setStatus("Thanh toán thành công.");
-          clearInterval(pollTimer);
-        } else if (st === "FAILED") {
-          setStatus("Thanh toán thất bại. Vui lòng thử lại.");
-          clearInterval(pollTimer);
-        } else if (st === "EXPIRED") {
-          setStatus("Phiên thanh toán đã hết hạn.");
-          clearInterval(pollTimer);
-        } else {
-          // PENDING → giữ nguyên
-        }
-      } catch (_) {
-        // im lặng, thử lại ở chu kỳ sau
-      }
+
+        if (st === "PAID")     { setStatus("Thanh toán thành công."); clearInterval(pollTimer); enableRetry(true); }
+        else if (st === "FAILED"){ setStatus("Thanh toán thất bại. Vui lòng thử lại."); clearInterval(pollTimer); enableRetry(true); }
+        else if (st === "EXPIRED"){ setStatus("Phiên thanh toán đã hết hạn."); clearInterval(pollTimer); enableRetry(true); }
+        // PENDING -> giữ nguyên
+      } catch (_) {}
     }, 5000);
   }
 
-  async function initPayment() {
+  async function initPayment(){
     clearTimers();
+    enableRetry(false); // khoá nút trong lúc tạo
     if (qrBox) qrBox.innerHTML = `<div class="qr-skeleton">Đang khởi tạo phiên thanh toán...</div>`;
     setStatus("");
 
@@ -120,47 +111,35 @@
       const headers = { "Accept": "application/json" };
       if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
 
-      const res = await fetch(`/payment/${requestId}/init`, {
-        method: "POST",
-        headers
-      });
+      const res = await fetch(`/payment/${requestId}/init`, { method: "POST", headers });
+      if (!res.ok) { setStatus("Không khởi tạo được phiên thanh toán."); enableRetry(true); return; }
 
-      if (!res.ok) {
-        setStatus("Không khởi tạo được phiên thanh toán.");
-        return;
-      }
+      const { payUrl, txnRef, expireAt, amount, vietqrImageUrl } = await res.json();
 
-      const data = await res.json();
-      const { payUrl, txnRef, expireAt, amount, vietqrImageUrl } = data || {};
-
-      // Hiển thị số tiền nếu có
-      if (amountEl && amount != null) {
-        amountEl.textContent = formatCurrency(amount);
-      }
-
-      // Countdown nếu có
+      if (amountEl && amount != null) amountEl.textContent = formatCurrency(amount);
       if (expireAt) startCountdown(expireAt);
 
-      // Nhánh VietQR (ảnh tĩnh)
       if (vietqrImageUrl) {
         renderVietQR(vietqrImageUrl);
         setStatus("Quét mã VietQR bằng ứng dụng ngân hàng để thanh toán.");
+        enableRetry(true);                   // ✅ bật lại nút khi thành công
         startPolling(null);
         return;
       }
 
-      // Nhánh VNPay
       if (payUrl && txnRef) {
-        renderVNPayQRCode(payUrl);
-        setStatus("Quét mã VNPay QR để thanh toán.");
+        renderVNPayQRCodeOrFallback(payUrl);
+        setStatus("Quét mã VNPay QR hoặc mở VNPay để thanh toán.");
+        enableRetry(true);                   // ✅ bật lại nút khi thành công
         startPolling(txnRef);
         return;
       }
 
-      // Không đúng format mong đợi
       setStatus("Dữ liệu thanh toán trả về không hợp lệ.");
+      enableRetry(true);
     } catch (err) {
       setStatus("Có lỗi khi khởi tạo thanh toán.");
+      enableRetry(true);
     }
   }
 

@@ -1,301 +1,366 @@
-/* static/payment/css/payment.css */
+/**********************************************
+ * PAYMENT PAGE — same theme as REQUEST
+ * Scope qua .page-payment, không cần Bootstrap
+ **********************************************/
 
-:root {
-  --payment-bg: #050816;
-  --payment-card-bg: #0b1020;
-  --payment-border: rgba(255, 255, 255, 0.06);
-  --payment-accent: #4f46e5;
-  --payment-accent-soft: rgba(79, 70, 229, 0.18);
-  --payment-text: #f9fafb;
-  --payment-muted: #9ca3af;
-  --payment-danger: #f87171;
-  --payment-success: #4ade80;
-  --payment-radius: 18px;
-  --payment-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  --payment-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
+/* =====================
+   THEME TOKENS (match request)
+   ===================== */
+.page-payment{
+  --brand:#f5b301;
+  --ink:#101114;
+  --bg:#ffffff;
+  --muted:#5b6168;
+  --border:#e8eaef;
+  --radius:14px;
+  --shadow:0 10px 30px rgba(0,0,0,.08);
+  --shadow-sm:0 6px 16px rgba(0,0,0,.06);
+  --maxw:1160px;
+  --font:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+  --h1:clamp(26px,3.6vw,38px);
+  --h2:clamp(20px,2.8vw,28px);
+  --h3:clamp(16px,2.2vw,20px);
+  --surface:#ffffff;
+  --surface-2:#f7f8fa;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme:dark){
+  .page-payment{
+    --bg:#0f1115; --ink:#f2f3f5; --muted:#b9c0c7; --border:#23262d;
+    --surface:#141824; --surface-2:#1a2030;
+    --shadow:0 10px 30px rgba(0,0,0,.32);
+    --shadow-sm:0 6px 16px rgba(0,0,0,.28);
+  }
 }
 
-.payment-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background: radial-gradient(circle at top left, #1f2937, #020617 55%);
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  color: var(--payment-text);
-  font-family: var(--payment-font);
+/* =====================
+   RESET + CONTAINER
+   ===================== */
+.page-payment{margin:0;min-height:100vh;font-family:var(--font);color:var(--ink);background:var(--bg);}
+.page-payment *{box-sizing:border-box;}
+.page-payment img{max-width:100%;display:block;}
+.page-payment a{color:inherit;text-decoration:none;}
+.payment-page{width:min(100% - 32px, var(--maxw));margin-inline:auto;padding:32px 0 96px;}
+
+/* =====================
+   HEADER (card compact)
+   ===================== */
+.payment-header{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.payment-header .brand{display:flex; align-items:center; gap:12px;}
+.payment-header .logo-circle{
+  width:48px;height:48px;border-radius:50%;
+  display:grid;place-items:center;font-weight:900;
+  background:var(--brand); color:#111;
+}
+.payment-header .brand-text h1{margin:0;font-size:18px;letter-spacing:.2px;}
+.payment-header .brand-text p{margin:2px 0 0;color:var(--muted);font-size:13px;}
+.payment-header .order-mini{text-align:right;}
+.payment-header .order-id{font-size:14px;color:var(--muted);}
+.payment-header .order-status{font-weight:900;color:var(--brand);}
+
+/* =====================
+   LAYOUT GRID (giống request)
+   ===================== */
+.payment-layout{
+  display:grid; gap:var(--h3);
+  grid-template-columns:1.35fr .65fr;
+  align-items:start; margin-top:var(--h3);
+}
+@media (max-width:980px){ .payment-layout{grid-template-columns:1fr;} }
+
+/* =====================
+   CARD chung
+   ===================== */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+.card .hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card .bd{padding:16px 18px;display:grid;gap:12px;}
+
+/* =====================
+   ORDER SUMMARY (trái)
+   ===================== */
+.order-summary-card.card{}
+.order-summary-card .hd h2{margin:0;font-size:var(--h2);}
+.summary-row{display:flex;justify-content:space-between;gap:10px;font-size:15px;color:var(--ink);}
+.summary-row strong{font-weight:900;}
+.order-summary-card .kv{display:flex;justify-content:space-between;gap:12px;}
+.address-block{border-top:1px dashed var(--border);padding-top:10px;margin-top:6px;}
+.address-block h3{margin:0 0 4px;font-size:14px;color:var(--brand);letter-spacing:.2px;}
+.summary-note{
+  background:var(--surface-2);border:1px solid var(--border);
+  padding:10px 12px;border-radius:10px;color:var(--muted);font-size:13px;
 }
 
-.payment-page {
-  width: 100%;
-  max-width: 1240px;
-  margin: 24px auto;
-  padding: 0 16px 24px;
-  box-sizing: border-box;
+/* =====================
+   PAYMENT PANEL (phải)
+   ===================== */
+.payment-panel-card.card{}
+.payment-panel-card .hd h2{margin:0;font-size:var(--h2);}
+.qr-wrapper{display:grid;gap:10px;}
+.qr-box{
+  min-height:240px; display:grid; place-items:center;
+  background:var(--surface-2); border:2px dashed color-mix(in oklab, var(--border) 70%, transparent);
+  border-radius:10px;
 }
-
-/* Header */
-
-.payment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-  padding: 14px 18px;
-  border-radius: 999px;
-  border: 1px solid var(--payment-border);
-  background: linear-gradient(120deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.75));
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(16px);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 30% 20%, #eef2ff, #4f46e5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #020617;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  font-size: 15px;
-}
-
-.brand-text h1 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.brand-text p {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: var(--payment-muted);
-}
-
-.order-mini {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-}
-
-.order-id {
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--payment-border);
-  background: rgba(15, 23, 42, 0.9);
-}
-
-.order-status {
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #bbf7d0;
-  border: 1px solid rgba(34, 197, 94, 0.4);
-}
-
-/* Layout chính */
-
-.payment-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 18px;
-}
-
-/* Card chung */
-
-.order-summary-card,
-.payment-panel-card {
-  background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.3), transparent 55%),
-    var(--payment-card-bg);
-  border-radius: var(--payment-radius);
-  border: 1px solid var(--payment-border);
-  box-shadow: var(--payment-shadow);
-  padding: 18px 18px 20px;
-  box-sizing: border-box;
-}
-
-.order-summary-card h2,
-.payment-panel-card h2 {
-  font-size: 17px;
-  margin: 0 0 14px;
-}
-
-/* Order summary */
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-  padding: 6px 0;
-  border-bottom: 1px dashed rgba(148, 163, 184, 0.4);
-}
-
-.summary-row:last-of-type {
-  border-bottom: none;
-}
-
-.summary-row span:first-child {
-  color: var(--payment-muted);
-}
-
-.summary-row strong {
-  font-weight: 600;
-}
-
-.address-block {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-}
-
-.address-block h3 {
-  margin: 0 0 4px;
-  font-size: 13px;
-}
-
-.address-block p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--payment-muted);
-}
-
-.summary-note {
-  margin-top: 14px;
-  font-size: 12px;
-  color: var(--payment-muted);
-}
-
-/* Payment panel */
-
-.qr-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.qr-box {
-  width: 240px;
-  height: 240px;
-  border-radius: 18px;
-  background: radial-gradient(circle at top, #1e293b, #020617);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.9);
-  overflow: hidden;
-}
-
-.qr-placeholder {
-  font-size: 13px;
-  color: var(--payment-muted);
-  text-align: center;
-  padding: 12px;
-}
-
-.status-area {
-  text-align: center;
-  font-size: 13px;
-}
-
-.status-text {
-  color: var(--payment-text);
-  margin-bottom: 4px;
-}
-
-.countdown-text {
-  font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
-    monospace;
-  color: var(--payment-accent);
-  font-size: 12px;
-}
+.qr-img{width:220px;height:220px;object-fit:contain;}
+.qr-skeleton{color:var(--muted);font-style:italic;}
+.status-area{font-size:13px;color:var(--muted);text-align:center;}
+#countdown{font-weight:900;letter-spacing:.5px;margin-top:-4px;color:var(--ink);}
 
 /* Buttons */
-
-.actions {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
+.actions{display:flex;justify-content:center;}
+.actions .btn-outline,
+.btn-open-vnpay{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 14px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);cursor:pointer;font-weight:800;
 }
-
-.btn-outline {
-  border-radius: 999px;
-  padding: 8px 18px;
-  font-size: 13px;
-  cursor: pointer;
-  border: 1px solid rgba(148, 163, 184, 0.6);
-  background: radial-gradient(circle at top left, rgba(129, 140, 248, 0.3), rgba(15, 23, 42, 0.95));
-  color: var(--payment-text);
-  transition: all 0.18s ease-out;
-}
-
-.btn-outline:hover {
-  border-color: var(--payment-accent);
-  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.55);
-  transform: translateY(-1px);
-}
+.actions .btn-outline:hover{box-shadow:var(--shadow-sm);}
+.btn-open-vnpay{background:var(--brand);color:#111;border-color:transparent;}
+.btn-open-vnpay:hover{filter:brightness(.96);}
+.actions .btn-outline[disabled]{opacity:.6;cursor:not-allowed}
 
 /* Tips */
+.tips{border-top:1px dashed var(--border); padding-top:10px;}
+.tips h3{margin:0 0 4px;font-size:14px;color:var(--ink);}
+.tips ol{margin:0 0 0 18px; padding:0; color:var(--muted);}
 
-.tips {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(148, 163, 184, 0.45);
-  font-size: 12px;
-  color: var(--payment-muted);
+/* =====================
+   FRAGMENTS (topbar / navbar / footer)
+   ===================== */
+
+/* TOP BAR */
+.page-payment .top-bar{
+  background:var(--brand); color:#111; min-height:44px;
+  display:flex; align-items:center; gap:12px; padding:6px 12px; box-shadow:var(--shadow-sm);
+}
+.page-payment .top-bar *{margin:0;}
+.page-payment .top-bar a{text-decoration:none;color:inherit;}
+
+/* NAVBAR – ẩn các toggler “MENU” thừa & style gọn */
+.page-payment .nav-bar{background:#0e1a3a;color:#fff;box-shadow:var(--shadow-sm);}
+.page-payment .nav-bar nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;flex-wrap:wrap;}
+.page-payment .nav-bar .navbar-brand{color:var(--brand);font-weight:900;}
+.page-payment .nav-bar .navbar-nav{display:flex;gap:12px;list-style:none;margin:0;padding:0;}
+.page-payment .nav-bar .navbar-nav a{color:#fff;padding:6px 10px;border-radius:8px;}
+.page-payment .nav-bar .navbar-nav a:hover{background:rgba(255,255,255,.08);color:var(--brand);}
+.page-payment .navbar-toggler,
+.page-payment .navbar-toggler-icon,
+.page-payment .nav-bar .menu,
+.page-payment .nav-bar .menu-label,
+.page-payment .nav-bar hr{display:none!important;}
+
+/* Footer */
+.page-payment .footer{
+  background:#0e1a3a; color:#fff; padding:32px 16px; border-top:1px solid color-mix(in oklab, #fff 10%, transparent);
+}
+.page-payment .footer h2{color:var(--brand);font-size:16px;margin:0 0 10px;}
+.page-payment .footer a{color:#fff;}
+.page-payment .footer a:hover{color:var(--brand);}
+.page-payment .footer .footer-menu{margin-top:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);text-align:center;}
+.page-payment .footer .copyright{margin-top:12px;text-align:center;color:rgba(255,255,255,.85);font-size:13px;}
+
+/* =====================
+   MISC
+   ===================== */
+.page-payment .top-bar a,
+.page-payment .nav-bar a,
+.page-payment .footer a{ text-decoration:none; color:inherit; }
+
+/* === PATCH — polish payment UI (scope .page-payment) ================== */
+
+/* 1) Ẩn brand/toggler "MENU" của fragment navbar */
+.page-payment .nav-bar .navbar-brand,
+.page-payment .nav-bar .menu { display: none !important; }
+
+/* 2) Topbar gọn lại */
+.page-payment .top-bar{ min-height:50px; padding:6px 16px; }
+.page-payment .top-bar p{ margin:0; font-size:13px; opacity:.9; }
+
+/* Header: cột mã đơn bên phải không nhảy vị trí */
+.payment-header .order-mini{ min-width:220px; }
+
+/* 3) Order summary dạng “bảng” nhẹ nhàng */
+.order-summary-card .bd > .summary-row{
+  padding:8px 0;
+  border-bottom:1px dashed var(--border);
+}
+.order-summary-card .bd > .summary-row:last-of-type{ border-bottom:0; }
+.order-summary-card .bd > .summary-row span:first-child{ color:var(--muted); }
+
+.address-block{
+  margin-top:10px; padding-top:10px;
+  border-top:1px dashed var(--border);
+}
+.address-block p{ margin:0; }
+
+/* 4) QR panel gọn + nổi bật countdown */
+.payment-panel-card .bd{ gap:14px; }
+.qr-box{
+  min-height:260px;
+  border-radius:12px;
+  border:2px dashed color-mix(in oklab, var(--border) 80%, transparent);
+}
+.status-area{ margin-top:-2px; }
+#countdown{ margin-top:2px; font-weight:800; color:var(--brand); }
+
+/* 5) Nút đồng bộ theme */
+.actions .btn-outline{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  font-weight:800;
+}
+.actions .btn-outline:hover{ box-shadow:var(--shadow-sm); }
+
+/* 6) Dark mode cải thiện tương phản */
+@media (prefers-color-scheme:dark){
+  .summary-note{ color: color-mix(in oklab, var(--muted) 85%, transparent); }
+  .payment-header, .card{
+    border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  }
+  .qr-box{
+    background: color-mix(in oklab, var(--surface-2) 85%, #000 15%);
+  }
+}
+/*************************************************
+ * FRAGMENTS PATCH — chỉ áp dụng ở trang payment
+ * (.page-payment scope)
+ *************************************************/
+
+/* ===== Topbar ===== */
+.page-payment .top-bar{
+  background:#fdbe33;
+  color:#030f27;
+  padding:12px 20px;
+  line-height:1.25;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
+.page-payment .top-bar .container,
+.page-payment .top-bar .container-fluid{display:flex; align-items:flex-start; gap:18px;}
+/* Tiêu đề thương hiệu gọn và đậm */
+.page-payment .top-bar h1,
+.page-payment .top-bar .logo h1{
+  margin:0 24px 0 0;
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:.2px;
+  white-space:nowrap;
+}
+/* Nhóm thông tin (giờ mở cửa/Hotline/Email) hiển thị theo cột nhỏ */
+.page-payment .top-bar .info-group{
+  display:flex; flex-direction:column; gap:4px; margin:0;
+  font-size:14px;
+}
+.page-payment .top-bar strong{font-weight:800;}
+.page-payment .top-bar a{color:inherit; text-decoration:none;}
+.page-payment .top-bar a:hover{opacity:.85;}
+
+/* ===== Navbar ===== */
+.page-payment .nav-bar{background:#0d1a37; color:#fff;}
+.page-payment .nav-bar .container,
+.page-payment .nav-bar .container-fluid{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:10px 20px;
+}
+.page-payment .navbar-brand{color:#fdbe33; font-weight:800; text-decoration:none; margin-right:16px;}
+.page-payment .navbar-toggler,
+.page-payment .navbar-toggler-icon{display:none!important;} /* ẩn “MENU” cũ nếu có */
+
+/* menu ngang, không cần Bootstrap */
+.page-payment .navbar-nav{display:flex; gap:16px; list-style:none; margin:0; padding:0;}
+.page-payment .navbar-nav .nav-item{position:relative;}
+.page-payment .navbar-nav .nav-item > a{
+  color:#fff; text-decoration:none; padding:8px 10px; border-radius:8px; display:inline-block;
+}
+.page-payment .navbar-nav .nav-item > a:hover,
+.page-payment .navbar-nav .nav-item > a.active{
+  color:#fdbe33; background:rgba(255,255,255,.08);
 }
 
-.tips h3 {
-  margin: 0 0 6px;
-  font-size: 13px;
-  color: var(--payment-text);
+/* dropdown đơn giản bằng hover nếu fragment có */
+.page-payment .navbar-nav .dropdown-menu{
+  position:absolute; top:100%; left:0; min-width:200px;
+  display:none; padding:8px; border-radius:10px; z-index:999;
+  background:#112147; border:1px solid rgba(255,255,255,.08);
+}
+.page-payment .navbar-nav .dropdown-menu a{
+  display:block; padding:8px 10px; border-radius:8px; color:#fff; text-decoration:none;
+}
+.page-payment .navbar-nav .dropdown-menu a:hover{background:rgba(255,255,255,.08); color:#fdbe33;}
+.page-payment .navbar-nav .nav-item:hover > .dropdown-menu{display:block;}
+
+@media (max-width: 980px){
+  .page-payment .navbar-nav{flex-wrap:wrap; gap:10px;}
 }
 
-.tips ol {
-  margin: 0;
-  padding-left: 18px;
+/* ===== Footer ===== */
+.page-payment .footer{
+  background:#0f1931; color:#e9edf6; padding:40px 20px 16px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.page-payment .footer .container,
+.page-payment .footer .container-fluid{max-width:1160px; margin:0 auto;}
+
+/* lưới 3–4 cột linh hoạt */
+.page-payment .footer .row{
+  display:grid; gap:18px;
+  grid-template-columns:repeat(12,1fr);
+}
+.page-payment .footer .col-3,
+.page-payment .footer .col-4,
+.page-payment .footer .col-6,
+.page-payment .footer .col{
+  grid-column:span 3;   /* mặc định 4 cột */
+}
+@media (max-width: 992px){
+  .page-payment .footer .col-3,
+  .page-payment .footer .col-4,
+  .page-payment .footer .col-6,
+  .page-payment .footer .col{ grid-column:span 6; }   /* 2 cột */
+}
+@media (max-width: 640px){
+  .page-payment .footer .col-3,
+  .page-payment .footer .col-4,
+  .page-payment .footer .col-6,
+  .page-payment .footer .col{ grid-column:span 12; }  /* 1 cột */
 }
 
-.tips li {
-  margin-bottom: 4px;
+/* tiêu đề & link */
+.page-payment .footer h2,
+.page-payment .footer h3{
+  color:#fdbe33; font-size:16px; margin:0 0 10px; font-weight:800;
 }
+.page-payment .footer a{color:#e9edf6; text-decoration:none;}
+.page-payment .footer a:hover{color:#fdbe33;}
 
-/* Responsive */
+/* newsletter (input + btn) */
+.page-payment .footer input[type="email"],
+.page-payment .footer input[type="text"]{
+  width:100%; max-width:380px;
+  background:#0b142b; color:#e9edf6;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px; padding:10px 12px; outline:none;
+}
+.page-payment .footer input[type="email"]::placeholder{color:#a9b3c7;}
+.page-payment .footer .btn-newsletter{
+  display:inline-block; margin-top:8px;
+  background:#fdbe33; color:#0d1a37; border:0; border-radius:10px;
+  padding:10px 14px; font-weight:800; cursor:pointer;
+}
+.page-payment .footer .btn-newsletter:hover{filter:brightness(.95);}
 
-@media (max-width: 900px) {
-  .payment-layout {
-    grid-template-columns: 1fr;
-  }
+/* dải menu/điều khoản cuối footer */
+.page-payment .footer .footer-menu{
+  margin-top:18px; padding:12px 0;
+  border-top:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  text-align:center;
+}
+.page-payment .footer .footer-menu a{margin:0 10px;}
 
-  .payment-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    border-radius: 18px;
-  }
-
-  .order-mini {
-    align-self: stretch;
-    justify-content: space-between;
-  }
-
-  .payment-page {
-    margin-top: 16px;
-  }
+.page-payment .footer .copyright{
+  margin-top:10px; text-align:center; font-size:13px; color:#c9d2e3;
 }
