@@ -20,6 +20,7 @@ public class ServiceRequest {
     @Column(name = "customer_id", nullable = false)
     private Integer customerId;
 
+    // Provider được chỉ định (chính là assigned provider)
     @Column(name = "provider_id")
     private Integer providerId;
 
@@ -46,14 +47,13 @@ public class ServiceRequest {
     @Column(name = "created_at", columnDefinition = "datetime2")
     private LocalDateTime createdAt;
 
-    @Column(name = "cancel_reason")
+    @Transient
     private String cancelReason;
 
     @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FurnitureItem> furnitureItems = new ArrayList<>();
 
-    public ServiceRequest() {
-    }
+    public ServiceRequest() {}
 
     @PrePersist
     public void prePersist() {

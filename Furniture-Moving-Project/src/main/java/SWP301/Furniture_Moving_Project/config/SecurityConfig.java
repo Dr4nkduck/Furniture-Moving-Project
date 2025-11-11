@@ -54,6 +54,8 @@ public class SecurityConfig {
                                  "/superadmin/**",
                                  "/dashbooard/**","/customer-trends/**",
                                  "/provider-stats/**",
+                                    // ⬇⬇⬇ CHỈ THÊM 2 DÒNG NÀY CHO PAYMENT
+                                 "/payment/css/**", "/payment/js/**", "/payment/images/**",
                                  "/services/**",
                                  "/orders/**"
                 ).permitAll()
@@ -78,4 +80,5 @@ public class SecurityConfig {
                 .permitAll());
         return http.build();
     }
+
 }
