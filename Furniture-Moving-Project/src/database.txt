@@ -1,476 +1,413 @@
-	/* ============================================================
-	   FurnitureTransportPlatform (Final, App-Compatible)
-	   ============================================================ */
+/* ============================================================
+   FurnitureTransportPlatform (Final, App-Compatible)
+   ============================================================ */
 
-	---------------------------------------------------------------
-	-- 0) DROP & CREATE DATABASE (force drop if in use)
-	---------------------------------------------------------------
-	IF DB_ID('FurnitureTransportPlatform') IS NOT NULL
-	BEGIN
-		ALTER DATABASE FurnitureTransportPlatform SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-		DROP DATABASE FurnitureTransportPlatform;
-	END;
-	GO
-	
-	CREATE DATABASE FurnitureTransportPlatform;
-	GO
-	USE FurnitureTransportPlatform;
-	GO
+---------------------------------------------------------------
+-- 0) DROP & CREATE DATABASE (force drop if in use)
+---------------------------------------------------------------
+IF DB_ID('FurnitureTransportPlatform') IS NOT NULL
+BEGIN
+    ALTER DATABASE FurnitureTransportPlatform SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE FurnitureTransportPlatform;
+END;
+GO
 
-	/* ============================================================
-	   1) CORE: ROLES, USERS, USER_ROLES
-	   ============================================================ */
+CREATE DATABASE FurnitureTransportPlatform;
+GO
+USE FurnitureTransportPlatform;
+GO
 
-	-- ROLES
-	IF OBJECT_ID('roles','U') IS NOT NULL DROP TABLE roles;
-	CREATE TABLE roles (
-		role_id        INT IDENTITY(1,1) PRIMARY KEY,
-		role_name      VARCHAR(50) NOT NULL UNIQUE,   -- ADMIN, CUSTOMER, PROVIDER, STAFF, SUPPORT
-		description    NVARCHAR(255),
-		is_active      BIT NOT NULL DEFAULT 1,
-		created_at     DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
-	);
+/* ============================================================
+   1) CORE: ROLES, USERS, USER_ROLES
+   ============================================================ */
 
-	-- USERS
-	IF OBJECT_ID('users','U') IS NOT NULL DROP TABLE users;
-	CREATE TABLE users (
-		user_id        INT IDENTITY(1,1) PRIMARY KEY,
-		username       VARCHAR(50)  NOT NULL UNIQUE,
-		email          VARCHAR(255) NOT NULL UNIQUE,
-		phone          VARCHAR(20),
-		first_name     VARCHAR(50)  NOT NULL,
-		last_name      VARCHAR(50)  NOT NULL,
-		status         VARCHAR(20)  NOT NULL DEFAULT 'active',  -- active, suspended, deleted
-		email_verified BIT          NOT NULL DEFAULT 0,
-		phone_verified BIT          NOT NULL DEFAULT 0,
-		preferences    NVARCHAR(MAX),
-		created_at     DATETIME2    NOT NULL DEFAULT SYSUTCDATETIME(),
-		updated_at     DATETIME2    NOT NULL DEFAULT SYSUTCDATETIME()
-	);
+-- ROLES
+IF OBJECT_ID('roles','U') IS NOT NULL DROP TABLE roles;
+CREATE TABLE roles (
+    role_id        INT IDENTITY(1,1) PRIMARY KEY,
+    role_name      VARCHAR(50) NOT NULL UNIQUE,   -- ADMIN, CUSTOMER, PROVIDER, STAFF, SUPPORT
+    description    NVARCHAR(255),
+    is_active      BIT NOT NULL DEFAULT 1,
+    created_at     DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
 
-	-- USER_ROLES (N-N)
-	IF OBJECT_ID('user_roles','U') IS NOT NULL DROP TABLE user_roles;
-	CREATE TABLE user_roles (
-		user_role_id   INT IDENTITY(1,1) PRIMARY KEY,
-		user_id        INT NOT NULL,
-		role_id        INT NOT NULL,
-		is_primary     BIT NOT NULL DEFAULT 0,
-		assigned_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_user_roles_user FOREIGN KEY (user_id) REFERENCES users(user_id),
-		CONSTRAINT FK_user_roles_role FOREIGN KEY (role_id) REFERENCES roles(role_id),
-		CONSTRAINT UQ_user_roles UNIQUE (user_id, role_id)
-	);
+-- USERS
+IF OBJECT_ID('users','U') IS NOT NULL DROP TABLE users;
+CREATE TABLE users (
+    user_id        INT IDENTITY(1,1) PRIMARY KEY,
+    username       VARCHAR(50)  NOT NULL UNIQUE,
+    email          VARCHAR(255) NOT NULL UNIQUE,
+    phone          VARCHAR(20),
+    first_name     VARCHAR(50)  NOT NULL,
+    last_name      VARCHAR(50)  NOT NULL,
+    status         VARCHAR(20)  NOT NULL DEFAULT 'active',  -- active, suspended, deleted
+    email_verified BIT          NOT NULL DEFAULT 0,
+    phone_verified BIT          NOT NULL DEFAULT 0,
+    preferences    NVARCHAR(MAX),
+    created_at     DATETIME2    NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at     DATETIME2    NOT NULL DEFAULT SYSUTCDATETIME()
+);
 
-	-- Helpful indexes for FKs
-	CREATE INDEX IX_user_roles_user  ON user_roles(user_id);
-	CREATE INDEX IX_user_roles_role  ON user_roles(role_id);
+-- USER_ROLES (N-N)
+IF OBJECT_ID('user_roles','U') IS NOT NULL DROP TABLE user_roles;
+CREATE TABLE user_roles (
+    user_role_id   INT IDENTITY(1,1) PRIMARY KEY,
+    user_id        INT NOT NULL,
+    role_id        INT NOT NULL,
+    is_primary     BIT NOT NULL DEFAULT 0,
+    assigned_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_user_roles_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT FK_user_roles_role FOREIGN KEY (role_id) REFERENCES roles(role_id),
+    CONSTRAINT UQ_user_roles UNIQUE (user_id, role_id)
+);
+CREATE INDEX IX_user_roles_user  ON user_roles(user_id);
+CREATE INDEX IX_user_roles_role  ON user_roles(role_id);
 
-	 /* ============================================================
-		2) AUTHENTICATION (1-1 với users, unique user_id)
-		============================================================ */
-	IF OBJECT_ID('authentication','U') IS NOT NULL DROP TABLE authentication;
-	CREATE TABLE authentication (
-		auth_id               INT IDENTITY(1,1) PRIMARY KEY,
-		user_id               INT NOT NULL,
-		password_hash         VARCHAR(255) NOT NULL,  -- Khớp entity
-		mfa_enabled           BIT NOT NULL DEFAULT 0,
-		mfa_method            VARCHAR(20),
-		failed_attempts       INT NOT NULL DEFAULT 0,
-		account_locked_until  DATETIME2 NULL,         -- Khớp entity: account_locked_until
-		created_at            DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		updated_at            DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_authentication_user FOREIGN KEY (user_id) REFERENCES users(user_id),
-		CONSTRAINT UQ_authentication_user UNIQUE (user_id)  -- 1-1
-	);
+ /* ============================================================
+    2) AUTHENTICATION (1-1 với users, unique user_id)
+    ============================================================ */
+IF OBJECT_ID('authentication','U') IS NOT NULL DROP TABLE authentication;
+CREATE TABLE authentication (
+    auth_id               INT IDENTITY(1,1) PRIMARY KEY,
+    user_id               INT NOT NULL,
+    password_hash         VARCHAR(255) NOT NULL,
+    mfa_enabled           BIT NOT NULL DEFAULT 0,
+    mfa_method            VARCHAR(20),
+    failed_attempts       INT NOT NULL DEFAULT 0,
+    account_locked_until  DATETIME2 NULL,
+    created_at            DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at            DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_authentication_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT UQ_authentication_user UNIQUE (user_id)
+);
+CREATE INDEX IX_auth_user ON authentication(user_id);
 
-	CREATE INDEX IX_auth_user ON authentication(user_id);
+ /* ============================================================
+    3) DOMAIN TABLES
+    ============================================================ */
 
-	 /* ============================================================
-		3) DOMAIN TABLES (không ảnh hưởng auth/redirect)
-		============================================================ */
+-- CUSTOMERS
+IF OBJECT_ID('customers','U') IS NOT NULL DROP TABLE customers;
+CREATE TABLE customers (
+    customer_id     INT IDENTITY(1,1) PRIMARY KEY,
+    user_id         INT NOT NULL,
+    loyalty_points  INT NOT NULL DEFAULT 0,
+    customer_since  DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_customers_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_customers_user ON customers(user_id);
 
-	-- CUSTOMERS
-	IF OBJECT_ID('customers','U') IS NOT NULL DROP TABLE customers;
-	CREATE TABLE customers (
-		customer_id     INT IDENTITY(1,1) PRIMARY KEY,
-		user_id         INT NOT NULL,
-		loyalty_points  INT NOT NULL DEFAULT 0,
-		customer_since  DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_customers_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_customers_user ON customers(user_id);
+-- SERVICE PROVIDERS (chuẩn)
+IF OBJECT_ID('providers','U') IS NOT NULL DROP TABLE providers;
+CREATE TABLE providers (
+    provider_id          INT IDENTITY(1,1) PRIMARY KEY,
+    user_id              INT NOT NULL,
+    company_name         VARCHAR(255) NOT NULL,
+    verification_status  VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending/verified/rejected
+    rating               DECIMAL(3,2) NOT NULL DEFAULT 0,
+    total_reviews        INT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_providers_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_providers_user ON providers(user_id);
 
-	-- SERVICE PROVIDERS
-	IF OBJECT_ID('providers','U') IS NOT NULL DROP TABLE providers;
-	CREATE TABLE providers (
-		provider_id          INT IDENTITY(1,1) PRIMARY KEY,
-		user_id              INT NOT NULL,
-		company_name         VARCHAR(255) NOT NULL,
-		verification_status  VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending/verified/rejected
-		rating               DECIMAL(3,2) NOT NULL DEFAULT 0,
-		total_reviews        INT NOT NULL DEFAULT 0,
-		CONSTRAINT FK_providers_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_providers_user ON providers(user_id);
+-- ADMINS
+IF OBJECT_ID('admins','U') IS NOT NULL DROP TABLE admins;
+CREATE TABLE admins (
+    admin_id      INT IDENTITY(1,1) PRIMARY KEY,
+    user_id       INT NOT NULL,
+    department    VARCHAR(100),
+    access_level  VARCHAR(20) NOT NULL DEFAULT 'standard',
+    CONSTRAINT FK_admins_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_admins_user ON admins(user_id);
 
-	-- ADMINS
-	IF OBJECT_ID('admins','U') IS NOT NULL DROP TABLE admins;
-	CREATE TABLE admins (
-		admin_id      INT IDENTITY(1,1) PRIMARY KEY,
-		user_id       INT NOT NULL,
-		department    VARCHAR(100),
-		access_level  VARCHAR(20) NOT NULL DEFAULT 'standard',
-		CONSTRAINT FK_admins_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_admins_user ON admins(user_id);
+-- ADDRESSES
+IF OBJECT_ID('addresses','U') IS NOT NULL DROP TABLE addresses;
+CREATE TABLE addresses (
+    address_id      INT IDENTITY(1,1) PRIMARY KEY,
+    user_id         INT NOT NULL,
+    address_type    VARCHAR(20) NOT NULL,
+    street_address  VARCHAR(255) NOT NULL,
+    city            VARCHAR(100) NOT NULL,
+    state           VARCHAR(50) NOT NULL,
+    zip_code        VARCHAR(10) NOT NULL,
+    latitude        DECIMAL(10,8) NULL,
+    longitude       DECIMAL(11,8) NULL,
+    is_default      BIT NOT NULL DEFAULT 0,
+    created_at      DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_addresses_user ON addresses(user_id);
 
-	-- ADDRESSES
-	IF OBJECT_ID('addresses','U') IS NOT NULL DROP TABLE addresses;
-	CREATE TABLE addresses (
-		address_id      INT IDENTITY(1,1) PRIMARY KEY,
-		user_id         INT NOT NULL,
-		address_type    VARCHAR(20) NOT NULL,              -- home/office/warehouse...
-		street_address  VARCHAR(255) NOT NULL,
-		city            VARCHAR(100) NOT NULL,
-		state           VARCHAR(50) NOT NULL,
-		zip_code        VARCHAR(10) NOT NULL,
-		latitude        DECIMAL(10,8) NULL,
-		longitude       DECIMAL(11,8) NULL,
-		is_default      BIT NOT NULL DEFAULT 0,
-		created_at      DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_addresses_user ON addresses(user_id);
+-- SERVICE REQUESTS
+IF OBJECT_ID('service_requests','U') IS NOT NULL DROP TABLE service_requests;
+CREATE TABLE service_requests (
+    request_id          INT IDENTITY(1,1) PRIMARY KEY,
+    customer_id         INT NOT NULL,
+    provider_id         INT NULL,
+    pickup_address_id   INT NOT NULL,
+    delivery_address_id INT NOT NULL,
+    request_date        DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    preferred_date      DATE NOT NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'pending',
+    total_cost          DECIMAL(10,2) NULL,
+    created_at          DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_sr_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    CONSTRAINT FK_sr_provider FOREIGN KEY (provider_id) REFERENCES providers(provider_id),
+    CONSTRAINT FK_sr_pickup   FOREIGN KEY (pickup_address_id)   REFERENCES addresses(address_id),
+    CONSTRAINT FK_sr_delivery FOREIGN KEY (delivery_address_id) REFERENCES addresses(address_id)
+);
+CREATE INDEX IX_sr_customer ON service_requests(customer_id);
+CREATE INDEX IX_sr_provider ON service_requests(provider_id);
 
-	-- SERVICE REQUESTS
-	IF OBJECT_ID('service_requests','U') IS NOT NULL DROP TABLE service_requests;
-	CREATE TABLE service_requests (
-		request_id          INT IDENTITY(1,1) PRIMARY KEY,
-		customer_id         INT NOT NULL,
-		provider_id         INT NULL,
-		pickup_address_id   INT NOT NULL,
-		delivery_address_id INT NOT NULL,
-		request_date        DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		preferred_date      DATE NOT NULL,
-		status              VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending/assigned/in_progress/completed/cancelled
-		total_cost          DECIMAL(10,2) NULL,
-		created_at          DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_sr_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-		CONSTRAINT FK_sr_provider FOREIGN KEY (provider_id) REFERENCES providers(provider_id),
-		CONSTRAINT FK_sr_pickup   FOREIGN KEY (pickup_address_id)   REFERENCES addresses(address_id),
-		CONSTRAINT FK_sr_delivery FOREIGN KEY (delivery_address_id) REFERENCES addresses(address_id)
-	);
-	CREATE INDEX IX_sr_customer ON service_requests(customer_id);
-	CREATE INDEX IX_sr_provider ON service_requests(provider_id);
-	-- Request Image for each Request
-	IF OBJECT_ID('request_images','U') IS NOT NULL DROP TABLE request_images;
-	CREATE TABLE request_images (
-	  image_id      INT IDENTITY(1,1) PRIMARY KEY,
-	  request_id    INT NOT NULL,
-	  original_name NVARCHAR(255) NOT NULL,  -- tên gốc FE tải lên
-	  stored_name   NVARCHAR(255) NOT NULL,  -- tên file đã lưu (ổ đĩa/S3)
-	  url           NVARCHAR(1000) NULL,     -- URL công khai (nếu có)
-	  content_type  NVARCHAR(100) NULL,
-	  size          BIGINT NULL,             -- bytes
-	  created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-	  CONSTRAINT FK_request_images_request FOREIGN KEY (request_id)
-		REFERENCES service_requests(request_id)
-	);
-	CREATE INDEX IX_request_images_request ON request_images(request_id);
+-- REQUEST IMAGES
+IF OBJECT_ID('request_images','U') IS NOT NULL DROP TABLE request_images;
+CREATE TABLE request_images (
+  image_id      INT IDENTITY(1,1) PRIMARY KEY,
+  request_id    INT NOT NULL,
+  original_name NVARCHAR(255) NOT NULL,
+  stored_name   NVARCHAR(255) NOT NULL,
+  url           NVARCHAR(1000) NULL,
+  content_type  NVARCHAR(100) NULL,
+  size          BIGINT NULL,
+  created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_request_images_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id)
+);
+CREATE INDEX IX_request_images_request ON request_images(request_id);
 
-	-- REQUEST_ADDRESSES (snapshot địa chỉ theo từng đơn)
-	IF OBJECT_ID('request_addresses','U') IS NOT NULL DROP TABLE request_addresses;
-	CREATE TABLE request_addresses (
-		request_address_id INT IDENTITY(1,1) PRIMARY KEY,
-		request_id         INT         NOT NULL,
-		address_type       VARCHAR(20) NOT NULL,       -- 'PICKUP' | 'DELIVERY'
-		street_address     NVARCHAR(255) NOT NULL,
-		city               NVARCHAR(100) NULL,
-		state              NVARCHAR(50)  NULL,
-		zip_code           NVARCHAR(10)  NULL,
-		floor              INT           NULL,
-		special_instructions NVARCHAR(MAX) NULL,
-		has_elevator       BIT           NOT NULL DEFAULT 0,
-		contact_name       NVARCHAR(100) NULL,
-		contact_phone      NVARCHAR(30)  NULL,
-		created_at         DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+-- REQUEST_ADDRESSES
+IF OBJECT_ID('request_addresses','U') IS NOT NULL DROP TABLE request_addresses;
+CREATE TABLE request_addresses (
+    request_address_id INT IDENTITY(1,1) PRIMARY KEY,
+    request_id         INT         NOT NULL,
+    address_type       VARCHAR(20) NOT NULL,    -- 'PICKUP' | 'DELIVERY'
+    street_address     NVARCHAR(255) NOT NULL,
+    city               NVARCHAR(100) NULL,
+    state              NVARCHAR(50)  NULL,
+    zip_code           NVARCHAR(10)  NULL,
+    floor              INT           NULL,
+    special_instructions NVARCHAR(MAX) NULL,
+    has_elevator       BIT           NOT NULL DEFAULT 0,
+    contact_name       NVARCHAR(100) NULL,
+    contact_phone      NVARCHAR(30)  NULL,
+    created_at         DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_reqaddr_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id),
+    CONSTRAINT CK_reqaddr_type CHECK (address_type IN ('PICKUP','DELIVERY'))
+);
+CREATE INDEX IX_reqaddr_request     ON request_addresses(request_id);
+CREATE UNIQUE INDEX UX_reqaddr_type ON request_addresses(request_id, address_type);
 
-		CONSTRAINT FK_reqaddr_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id),
-		CONSTRAINT CK_reqaddr_type CHECK (address_type IN ('PICKUP','DELIVERY'))
-	);
+-- FURNITURE ITEMS
+IF OBJECT_ID('furniture_items','U') IS NOT NULL DROP TABLE furniture_items;
+CREATE TABLE furniture_items (
+    item_id           INT IDENTITY(1,1) PRIMARY KEY,
+    request_id        INT NOT NULL,
+    item_type         VARCHAR(50) NOT NULL,
+    size              VARCHAR(50) NULL,
+    quantity          INT NOT NULL DEFAULT 1,
+    is_fragile        BIT NOT NULL DEFAULT 0,
+    special_handling  NVARCHAR(MAX) NULL,
+    CONSTRAINT FK_furniture_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id)
+);
+CREATE INDEX IX_furniture_request ON furniture_items(request_id);
 
-	-- Indexes cho truy vấn theo request và đảm bảo 1 loại/đơn
-	CREATE INDEX IX_reqaddr_request     ON request_addresses(request_id);
-	CREATE UNIQUE INDEX UX_reqaddr_type ON request_addresses(request_id, address_type);
+-- PRICE SERVICES
+IF OBJECT_ID('price_services','U') IS NOT NULL DROP TABLE price_services;
+CREATE TABLE price_services (
+    service_id   INT IDENTITY(1,1) PRIMARY KEY,
+    provider_id  INT NOT NULL,
+    base_price   DECIMAL(10,2) NOT NULL,
+    description  NVARCHAR(MAX),
+    created_at   DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_price_services_provider FOREIGN KEY (provider_id) REFERENCES providers(provider_id)
+);
+CREATE INDEX IX_prices_provider ON price_services(provider_id);
 
-	-- FURNITURE ITEMS
-	IF OBJECT_ID('furniture_items','U') IS NOT NULL DROP TABLE furniture_items;
-	CREATE TABLE furniture_items (
-		item_id           INT IDENTITY(1,1) PRIMARY KEY,
-		request_id        INT NOT NULL,
-		item_type         VARCHAR(50) NOT NULL,
-		size              VARCHAR(50) NULL,
-		quantity          INT NOT NULL DEFAULT 1,
-		is_fragile        BIT NOT NULL DEFAULT 0,
-		special_handling  NVARCHAR(MAX) NULL,
-		CONSTRAINT FK_furniture_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id)
-	);
-	CREATE INDEX IX_furniture_request ON furniture_items(request_id);
+-- PRICE QUOTATIONS
+IF OBJECT_ID('price_quotations','U') IS NOT NULL DROP TABLE price_quotations;
+CREATE TABLE price_quotations (
+    quote_id      INT IDENTITY(1,1) PRIMARY KEY,
+    request_id    INT NOT NULL,
+    service_id    INT NOT NULL,
+    quoted_price  DECIMAL(10,2) NOT NULL,
+    valid_until   DATE NOT NULL,
+    status        VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_pq_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id),
+    CONSTRAINT FK_pq_service FOREIGN KEY (service_id) REFERENCES price_services(service_id)
+);
+CREATE INDEX IX_pq_request ON price_quotations(request_id);
+CREATE INDEX IX_pq_service ON price_quotations(service_id);
 
-	-- PRICE SERVICES
-	IF OBJECT_ID('price_services','U') IS NOT NULL DROP TABLE price_services;
-	CREATE TABLE price_services (
-		service_id   INT IDENTITY(1,1) PRIMARY KEY,
-		provider_id  INT NOT NULL,
-		base_price   DECIMAL(10,2) NOT NULL,
-		description  NVARCHAR(MAX),
-		created_at   DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_price_services_provider FOREIGN KEY (provider_id) REFERENCES providers(provider_id)
-	);
-	CREATE INDEX IX_prices_provider ON price_services(provider_id);
+-- PAYMENTS
+IF OBJECT_ID('payments','U') IS NOT NULL DROP TABLE payments;
+CREATE TABLE payments (
+  payment_id         INT IDENTITY(1,1) PRIMARY KEY,
+  service_request_id INT NOT NULL,
+  amount             DECIMAL(18,2) NOT NULL,
+  status             VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  created_at         DATETIME2   NOT NULL DEFAULT SYSUTCDATETIME(),
+  expire_at          DATETIME2   NOT NULL,                -- CHECK đảm bảo > created_at
+  paid_at            DATETIME2   NULL,
+  bank_code          VARCHAR(20)   NULL,
+  account_number     VARCHAR(64)   NULL,
+  account_name       NVARCHAR(120) NULL,
+  add_info           NVARCHAR(140) NULL,
+  CONSTRAINT FK_payments_request FOREIGN KEY (service_request_id) REFERENCES service_requests(request_id),
+  CONSTRAINT CK_payments_status CHECK (status IN ('PENDING','PAID','FAILED','EXPIRED')),
+  CONSTRAINT CK_payments_time   CHECK (expire_at > created_at)
+);
+CREATE INDEX IX_payments_request        ON payments(service_request_id);
+CREATE INDEX IX_payments_status_created ON payments(status, created_at DESC);
+CREATE INDEX IX_payments_add_info       ON payments(add_info);
+CREATE UNIQUE INDEX UX_payments_paid_once ON payments(service_request_id) WHERE status = 'PAID';
 
-	-- PRICE QUOTATIONS
-	IF OBJECT_ID('price_quotations','U') IS NOT NULL DROP TABLE price_quotations;
-	CREATE TABLE price_quotations (
-		quote_id      INT IDENTITY(1,1) PRIMARY KEY,
-		request_id    INT NOT NULL,
-		service_id    INT NOT NULL,
-		quoted_price  DECIMAL(10,2) NOT NULL,
-		valid_until   DATE NOT NULL,
-		status        VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending/accepted/rejected/expired
-		created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_pq_request FOREIGN KEY (request_id) REFERENCES service_requests(request_id),
-		CONSTRAINT FK_pq_service FOREIGN KEY (service_id) REFERENCES price_services(service_id)
-	);
-	CREATE INDEX IX_pq_request ON price_quotations(request_id);
-	CREATE INDEX IX_pq_service ON price_quotations(service_id);
-	-- Payments (VietQR sessions for each ServiceRequest)
-	IF OBJECT_ID('payments','U') IS NOT NULL DROP TABLE payments;
-	CREATE TABLE payments (
-	  payment_id         INT IDENTITY(1,1) PRIMARY KEY,
-	  service_request_id INT NOT NULL,
-	  amount             DECIMAL(18,2) NOT NULL,              -- số tiền (VND)
-	  status             VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-	  created_at         DATETIME2   NOT NULL DEFAULT SYSUTCDATETIME(),
-	  expire_at          DATETIME2   NOT NULL,                -- hết hạn phiên
-	  paid_at            DATETIME2   NULL,                    -- thời điểm xác nhận đã trả
+-- REVIEWS
+IF OBJECT_ID('reviews','U') IS NOT NULL DROP TABLE reviews;
+CREATE TABLE reviews (
+    review_id     INT IDENTITY(1,1) PRIMARY KEY,
+    request_id    INT NOT NULL UNIQUE,
+    customer_id   INT NOT NULL,
+    provider_id   INT NOT NULL,
+    rating        INT NOT NULL,         -- 1..5
+    comment       NVARCHAR(MAX),
+    created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_reviews_request  FOREIGN KEY (request_id)  REFERENCES service_requests(request_id),
+    CONSTRAINT FK_reviews_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    CONSTRAINT FK_reviews_provider FOREIGN KEY (provider_id) REFERENCES providers(provider_id),
+    CONSTRAINT CK_reviews_rating CHECK (rating BETWEEN 1 AND 5)
+);
 
-	  -- VietQR audit (tài khoản nhận + nội dung CK)
-	  bank_code          VARCHAR(20)   NULL,                  -- vcb, mb, tcb...
-	  account_number     VARCHAR(64)   NULL,
-	  account_name       NVARCHAR(120) NULL,
-	  add_info           NVARCHAR(140) NULL,                  -- ví dụ: REQ5
+-- SUPPORT TICKETS
+IF OBJECT_ID('support_tickets','U') IS NOT NULL DROP TABLE support_tickets;
+CREATE TABLE support_tickets (
+    ticket_id          INT IDENTITY(1,1) PRIMARY KEY,
+    requester_user_id  INT NOT NULL,
+    subject            VARCHAR(255) NOT NULL,
+    description        NVARCHAR(MAX) NOT NULL,
+    status             VARCHAR(20) NOT NULL DEFAULT 'open',
+    created_at         DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_support_requester FOREIGN KEY (requester_user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_support_requester ON support_tickets(requester_user_id);
 
-	  CONSTRAINT FK_payments_request FOREIGN KEY (service_request_id)
-		REFERENCES service_requests(request_id),
-	  CONSTRAINT CK_payments_status CHECK (status IN ('PENDING','PAID','FAILED','EXPIRED')),
-	  CONSTRAINT CK_payments_time   CHECK (expire_at > created_at)
-	);
+-- ACTIVITY LOGS
+IF OBJECT_ID('activity_logs','U') IS NOT NULL DROP TABLE activity_logs;
+CREATE TABLE activity_logs (
+    log_id            INT IDENTITY(1,1) PRIMARY KEY,
+    user_id           INT NULL,
+    event_type        VARCHAR(50) NOT NULL,
+    event_description NVARCHAR(MAX) NULL,
+    ip_address        VARCHAR(45) NULL, -- IPv4/IPv6
+    timestamp         DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_activity_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_logs_user ON activity_logs(user_id);
 
-	CREATE INDEX IX_payments_request        ON payments(service_request_id);
-	CREATE INDEX IX_payments_status_created ON payments(status, created_at DESC);
-	CREATE INDEX IX_payments_add_info       ON payments(add_info);
+ /* ============================================================
+    4) SEED DATA cơ bản
+    ============================================================ */
 
-	-- (Tuỳ chọn) đảm bảo mỗi request chỉ có 1 bản ghi đã PAID
-	CREATE UNIQUE INDEX UX_payments_paid_once ON payments(service_request_id)
-	WHERE status = 'PAID';
+-- ROLES
+INSERT INTO roles (role_name, description) VALUES
+('ADMIN','System administrator'),
+('CUSTOMER','Service customer'),
+('PROVIDER','Furniture transport provider'),
+('STAFF','Internal staff'),
+('SUPPORT','Support agent');
 
+-- USERS
+INSERT INTO users (username, email, first_name, last_name, phone) VALUES
+('admin1','admin1@ftp.com','System','Admin','0900000001'),
+('johnc','johnc@mail.com','John','Carter','0900000002'),
+('prov1','prov1@mail.com','Alice','Smith','0900000003');
 
-	-- REVIEWS
-	IF OBJECT_ID('reviews','U') IS NOT NULL DROP TABLE reviews;
-	CREATE TABLE reviews (
-		review_id     INT IDENTITY(1,1) PRIMARY KEY,
-		request_id    INT NOT NULL UNIQUE,  -- mỗi request chỉ review 1 lần
-		customer_id   INT NOT NULL,
-		provider_id   INT NOT NULL,
-		rating        INT NOT NULL,         -- 1..5
-		comment       NVARCHAR(MAX),
-		created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_reviews_request  FOREIGN KEY (request_id)  REFERENCES service_requests(request_id),
-		CONSTRAINT FK_reviews_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-		CONSTRAINT FK_reviews_provider FOREIGN KEY (provider_id) REFERENCES providers(provider_id),
-		CONSTRAINT CK_reviews_rating CHECK (rating BETWEEN 1 AND 5)
-	);
+-- USER_ROLES
+INSERT INTO user_roles (user_id, role_id, is_primary) VALUES
+(1,1,1), -- admin1 -> ADMIN
+(2,2,1), -- johnc -> CUSTOMER
+(3,3,1); -- prov1 -> PROVIDER
 
-	-- SUPPORT TICKETS
-	IF OBJECT_ID('support_tickets','U') IS NOT NULL DROP TABLE support_tickets;
-	CREATE TABLE support_tickets (
-		ticket_id          INT IDENTITY(1,1) PRIMARY KEY,
-		requester_user_id  INT NOT NULL,
-		subject            VARCHAR(255) NOT NULL,
-		description        NVARCHAR(MAX) NOT NULL,
-		status             VARCHAR(20) NOT NULL DEFAULT 'open',  -- open/assigned/closed
-		created_at         DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_support_requester FOREIGN KEY (requester_user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_support_requester ON support_tickets(requester_user_id);
+-- AUTHENTICATION placeholders
+INSERT INTO authentication (user_id, password_hash, mfa_enabled) VALUES
+(1,'placeholder',0),
+(2,'placeholder',0),
+(3,'placeholder',0);
 
-	-- ACTIVITY LOGS
-	IF OBJECT_ID('activity_logs','U') IS NOT NULL DROP TABLE activity_logs;
-	CREATE TABLE activity_logs (
-		log_id            INT IDENTITY(1,1) PRIMARY KEY,
-		user_id           INT NULL,
-		event_type        VARCHAR(50) NOT NULL,
-		event_description NVARCHAR(MAX) NULL,
-		ip_address        VARCHAR(45) NULL, -- IPv4/IPv6
-		timestamp         DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_activity_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_logs_user ON activity_logs(user_id);
+-- CUSTOMERS
+INSERT INTO customers (user_id, loyalty_points) VALUES (2,100);
 
-	 /* ============================================================
-		4) SEED DATA (khớp role & login)
-		============================================================ */
+-- PROVIDERS
+INSERT INTO providers (user_id, company_name, verification_status, rating, total_reviews) VALUES
+(3,'FastMove Co.','verified',4.80,25);
 
-	-- ROLES
-	INSERT INTO roles (role_name, description) VALUES
-	('ADMIN','System administrator'),
-	('CUSTOMER','Service customer'),
-	('PROVIDER','Furniture transport provider'),
-	('STAFF','Internal staff'),
-	('SUPPORT','Support agent');
+-- ADMINS
+INSERT INTO admins (user_id, department, access_level) VALUES (1,'IT','super');
 
-	-- USERS (3 tài khoản)
-	INSERT INTO users (username, email, first_name, last_name, phone) VALUES
-	('admin1','admin1@ftp.com','System','Admin','0900000001'),
-	('johnc','johnc@mail.com','John','Carter','0900000002'),
-	('prov1','prov1@mail.com','Alice','Smith','0900000003');
+-- ADDRESSES
+INSERT INTO addresses (user_id,address_type,street_address,city,state,zip_code,is_default) VALUES
+(2,'home','123 Main St','Hanoi','HN','10000',1),
+(3,'office','456 Service Rd','HCMC','HCM','70000',1);
 
-	-- USER_ROLES (map đúng user_id ↔ role_id)
-	-- role_id: 1 ADMIN, 2 CUSTOMER, 3 PROVIDER
-	INSERT INTO user_roles (user_id, role_id, is_primary) VALUES
-	(1,1,1), -- admin1 -> ADMIN
-	(2,2,1), -- johnc -> CUSTOMER
-	(3,3,1); -- prov1 -> PROVIDER
+-- SERVICE REQUEST mẫu
+INSERT INTO service_requests (customer_id,provider_id,pickup_address_id,delivery_address_id,preferred_date,total_cost,status)
+VALUES (1,1,1,2,'2025-10-01',500.00,'pending');
 
-	-- AUTHENTICATION (mật khẩu set {noop} ở bước UPDATE bên dưới)
-	INSERT INTO authentication (user_id, password_hash, mfa_enabled) VALUES
-	(1,'placeholder',0),
-	(2,'placeholder',0),
-	(3,'placeholder',0);
+-- FURNITURE ITEMS
+INSERT INTO furniture_items (request_id,item_type,size,quantity,is_fragile)
+VALUES (1,'Sofa','2m x 1m',1,1);
 
-	-- CUSTOMERS (johnc)
-	INSERT INTO customers (user_id, loyalty_points) VALUES
-	(2,100);
+-- PRICE SERVICES
+INSERT INTO price_services (provider_id,base_price,description)
+VALUES (1,300.00,N'Basic moving service');
 
-	-- PROVIDERS (prov1)
-	INSERT INTO providers (user_id, company_name, verification_status, rating, total_reviews) VALUES
-	(3,'FastMove Co.','verified',4.80,25);
+-- REQUEST_ADDRESSES snapshot
+INSERT INTO request_addresses
+(request_id, address_type, street_address, city, state, zip_code, floor, has_elevator, contact_name, contact_phone)
+VALUES
+(1, 'PICKUP',   N'123 Main St',    N'Hanoi', N'HN',  N'10000', 3, 0, N'John Carter',  N'0900000002'),
+(1, 'DELIVERY', N'456 Service Rd', N'HCMC',  N'HCM', N'70000', 5, 1, N'Alice Smith',  N'0900000003');
 
-	-- ADMINS (admin1)
-	INSERT INTO admins (user_id, department, access_level) VALUES
-	(1,'IT','super');
+-- PRICE QUOTATIONS
+INSERT INTO price_quotations (request_id,service_id,quoted_price,valid_until,status)
+VALUES (1,1,500.00,'2025-10-05','pending');
 
-	-- ADDRESSES (liên kết theo user_id)
-	INSERT INTO addresses (user_id,address_type,street_address,city,state,zip_code,is_default) VALUES
-	(2,'home','123 Main St','Hanoi','HN','10000',1),
-	(3,'office','456 Service Rd','HCMC','HCM','70000',1);
+-- REVIEWS
+INSERT INTO reviews (request_id,customer_id,provider_id,rating,comment)
+VALUES (1,1,1,5,N'Great service, fast and safe!');
 
-	-- SERVICE REQUESTS (customer_id = 1 vì customers vừa insert 1 dòng; provider_id = 1 vì providers vừa insert 1 dòng)
-	INSERT INTO service_requests (customer_id,provider_id,pickup_address_id,delivery_address_id,preferred_date,total_cost,status)
-	VALUES
-	(1,1,1,2,'2025-10-01',500.00,'pending');
+-- SUPPORT TICKETS
+INSERT INTO support_tickets (requester_user_id,subject,description)
+VALUES (2,'Delay in service',N'My furniture delivery was delayed by 2 hours');
 
-	-- FURNITURE ITEMS
-	INSERT INTO furniture_items (request_id,item_type,size,quantity,is_fragile)
-	VALUES
-	(1,'Sofa','2m x 1m',1,1);
+-- ACTIVITY LOGS
+INSERT INTO activity_logs (user_id,event_type,event_description,ip_address)
+VALUES
+(2,'LOGIN',N'Customer logged in','192.168.1.100'),
+(3,'QUOTE',N'Provider sent quotation','192.168.1.101');
 
-	-- PRICE SERVICES (provider_id = 1)
-	INSERT INTO price_services (provider_id,base_price,description)
-	VALUES
-	(1,300.00,N'Basic moving service');
-	-- REQUEST_ADDRESSES: snapshot PICKUP & DELIVERY cho request_id = 1
-	INSERT INTO request_addresses
-	(request_id, address_type, street_address, city, state, zip_code, floor, has_elevator, contact_name, contact_phone)
-	VALUES
-	(1, 'PICKUP',   N'123 Main St',    N'Hanoi', N'HN',  N'10000', 3, 0, N'John Carter',  N'0900000002'),
-	(1, 'DELIVERY', N'456 Service Rd', N'HCMC',  N'HCM', N'70000', 5, 1, N'Alice Smith',  N'0900000003');
+-- UPDATE PASSWORDS (demo {noop})
+UPDATE authentication SET password_hash = '{noop}Admin@123' WHERE user_id = 1;
+UPDATE authentication SET password_hash = '{noop}User@123'  WHERE user_id = 2;
+UPDATE authentication SET password_hash = '{noop}Prov@123'  WHERE user_id = 3;
 
-	-- PRICE QUOTATIONS (request_id = 1, service_id = 1)
-	INSERT INTO price_quotations (request_id,service_id,quoted_price,valid_until,status)
-	VALUES
-	(1,1,500.00,'2025-10-05','pending');
+IF OBJECT_ID('password_reset_tokens','U') IS NOT NULL DROP TABLE password_reset_tokens;
+CREATE TABLE password_reset_tokens (
+    token_id   INT IDENTITY(1,1) PRIMARY KEY,
+    user_id    INT NOT NULL,
+    otp_code   VARCHAR(6) NOT NULL,
+    expires_at DATETIME2 NOT NULL,
+    consumed   BIT NOT NULL DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_prt_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IX_prt_user ON password_reset_tokens(user_id);
 
-	-- REVIEWS (request_id = 1, customer_id = 1, provider_id = 1)
-	INSERT INTO reviews (request_id,customer_id,provider_id,rating,comment)
-	VALUES
-	(1,1,1,5,N'Great service, fast and safe!');
-
-	-- SUPPORT TICKETS (requester_user_id = user 2 - johnc)
-	INSERT INTO support_tickets (requester_user_id,subject,description)
-	VALUES
-	(2,'Delay in service',N'My furniture delivery was delayed by 2 hours');
-
-	-- ACTIVITY LOGS
-	INSERT INTO activity_logs (user_id,event_type,event_description,ip_address)
-	VALUES
-	(2,'LOGIN',N'Customer logged in','192.168.1.100'),
-	(3,'QUOTE',N'Provider sent quotation','192.168.1.101');
-
-	 /* ============================================================
-		5) UPDATE PASSWORDS (test nhanh với {noop})
-		Yêu cầu: SecurityConfig dùng DelegatingPasswordEncoder
-		============================================================ */
-	-- ADMIN: admin1 / Admin@123
-	UPDATE authentication SET password_hash = '{noop}Admin@123' WHERE user_id = 1;
-	-- CUSTOMER: johnc / User@123
-	UPDATE authentication SET password_hash = '{noop}User@123'  WHERE user_id = 2;
-	-- PROVIDER: prov1 / Prov@123
-	UPDATE authentication SET password_hash = '{noop}Prov@123'  WHERE user_id = 3;
-
-	IF OBJECT_ID('password_reset_tokens','U') IS NOT NULL DROP TABLE password_reset_tokens;
-	CREATE TABLE password_reset_tokens (
-		token_id   INT IDENTITY(1,1) PRIMARY KEY,
-		user_id    INT NOT NULL,
-		otp_code   VARCHAR(6) NOT NULL,
-		expires_at DATETIME2 NOT NULL,
-		consumed   BIT NOT NULL DEFAULT 0,
-		created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-		CONSTRAINT FK_prt_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-	);
-	CREATE INDEX IX_prt_user ON password_reset_tokens(user_id);
-
-
-	/* query account
-	SELECT u.username, r.role_name, a.password_hash
-	FROM users u
-	JOIN user_roles ur ON ur.user_id = u.user_id
-	JOIN roles r ON r.role_id = ur.role_id
-	JOIN authentication a ON a.user_id = u.user_id
-	 ORDER BY u.user_id;
-	 */
-
-	 /*
-	Tài khoản đăng nhập 
-
-	Admin: admin1 / Admin@123 → /admin/dashboard
-
-	Customer: johnc / User@123 → /user
-
-	Provider: prov1 / Prov@123 → /provider
-	 */
-
-	 -- -- -- -- 
-
-
--- Overview tất cả tài khoản (có hiện SUPER_ADMIN)
+-- Overview tài khoản
 SELECT 
-    u.user_id,
-    u.username,
-    u.email,
-    u.phone,
-    u.first_name,
-    u.last_name,
-    u.status,
-    u.email_verified,
-    u.phone_verified,
-    u.created_at,
-    u.updated_at,
-    a.failed_attempts,
-    a.account_locked_until,
-    a.mfa_enabled,
-    a.mfa_method,
+    u.user_id, u.username, u.email, u.phone, u.first_name, u.last_name,
+    u.status, u.email_verified, u.phone_verified, u.created_at, u.updated_at,
+    a.failed_attempts, a.account_locked_until, a.mfa_enabled, a.mfa_method,
     MAX(CASE WHEN ur.is_primary = 1 THEN r.role_name END) AS primary_role,
     MAX(CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 1 ELSE 0 END) AS has_super_admin,
     CASE 
@@ -480,15 +417,11 @@ SELECT
     END AS admin_level,
     STRING_AGG(r.role_name, ', ')
       WITHIN GROUP (ORDER BY 
-        CASE 
-          WHEN r.role_name = 'SUPER_ADMIN' THEN 0
-          WHEN r.role_name = 'ADMIN'       THEN 1
-          WHEN r.role_name = 'PROVIDER'    THEN 2
-          WHEN r.role_name = 'CUSTOMER'    THEN 3
-          ELSE 9
-        END,
-        r.role_name
-      ) AS roles_csv
+        CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 0
+             WHEN r.role_name = 'ADMIN'       THEN 1
+             WHEN r.role_name = 'PROVIDER'    THEN 2
+             WHEN r.role_name = 'CUSTOMER'    THEN 3
+             ELSE 9 END, r.role_name) AS roles_csv
 FROM users u
 LEFT JOIN authentication a ON a.user_id = u.user_id
 LEFT JOIN user_roles   ur  ON ur.user_id = u.user_id
@@ -499,181 +432,123 @@ GROUP BY
     a.failed_attempts,a.account_locked_until,a.mfa_enabled,a.mfa_method
 ORDER BY u.user_id;
 
-
- /* ============================================================
-    7) SUPER ADMIN ACCOUNT
-    ============================================================ */
-
+---------------------------------------------------------------
+-- Thêm SUPER ADMIN (idempotent)
+---------------------------------------------------------------
 BEGIN TRY
     BEGIN TRAN;
 
     IF NOT EXISTS (SELECT 1 FROM roles WHERE role_name='SUPER_ADMIN')
-    BEGIN
-        INSERT INTO roles(role_name, description)
-        VALUES ('SUPER_ADMIN','God admin (all permissions)');
-    END
+        INSERT INTO roles(role_name, description) VALUES ('SUPER_ADMIN','God admin (all permissions)');
 
     IF NOT EXISTS (SELECT 1 FROM users WHERE username='superadmin')
-    BEGIN
         INSERT INTO users(username, email, first_name, last_name, phone, status, created_at, updated_at)
         VALUES ('superadmin','superadmin@ftp.com','Super','Admin','0900000999','active', SYSUTCDATETIME(), SYSUTCDATETIME());
-    END
 
     DECLARE @uid INT = (SELECT TOP 1 user_id FROM users WHERE username='superadmin');
     DECLARE @rid_super INT = (SELECT TOP 1 role_id FROM roles WHERE role_name='SUPER_ADMIN');
 
     IF NOT EXISTS (SELECT 1 FROM authentication WHERE user_id=@uid)
-    BEGIN
         INSERT INTO authentication(user_id, password_hash, mfa_enabled, failed_attempts, created_at, updated_at)
         VALUES (@uid, '{noop}Superadmin123', 0, 0, SYSUTCDATETIME(), SYSUTCDATETIME());
-    END
     ELSE
-    BEGIN
         UPDATE authentication
-        SET password_hash = '{noop}Superadmin123',
-            failed_attempts = 0,
-            account_locked_until = NULL,
-            updated_at = SYSUTCDATETIME()
-        WHERE user_id=@uid;
-    END
+           SET password_hash = '{noop}Superadmin123',
+               failed_attempts = 0,
+               account_locked_until = NULL,
+               updated_at = SYSUTCDATETIME()
+         WHERE user_id=@uid;
 
     IF NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id=@uid AND role_id=@rid_super)
-    BEGIN
-        INSERT INTO user_roles(user_id, role_id, is_primary)
-        VALUES (@uid, @rid_super, 1);
-    END
+        INSERT INTO user_roles(user_id, role_id, is_primary) VALUES (@uid, @rid_super, 1);
     ELSE
-    BEGIN
-        UPDATE user_roles SET is_primary = 1
-        WHERE user_id=@uid AND role_id=@rid_super;
-    END
+        UPDATE user_roles SET is_primary = 1 WHERE user_id=@uid AND role_id=@rid_super;
 
     IF NOT EXISTS (SELECT 1 FROM admins WHERE user_id=@uid)
-    BEGIN
-        INSERT INTO admins(user_id, department, access_level)
-        VALUES (@uid, 'IT', 'super');
-    END
+        INSERT INTO admins(user_id, department, access_level) VALUES (@uid, 'IT', 'super');
     ELSE
-    BEGIN
         UPDATE admins SET access_level='super' WHERE user_id=@uid;
-    END
 
+    -- Hạ quyền SUPER_ADMIN của admin1 nếu lỡ có
     DECLARE @uid_admin1 INT = (SELECT user_id FROM users WHERE username='admin1');
     IF @uid_admin1 IS NOT NULL
     BEGIN
         DELETE ur
-        FROM user_roles ur
-        JOIN roles r ON r.role_id = ur.role_id
-        WHERE ur.user_id=@uid_admin1 AND r.role_name='SUPER_ADMIN';
+          FROM user_roles ur
+          JOIN roles r ON r.role_id = ur.role_id
+         WHERE ur.user_id=@uid_admin1 AND r.role_name='SUPER_ADMIN';
     END
 
     COMMIT TRAN;
-    PRINT 'OK: superadmin đã có ROLE_SUPER_ADMIN (mật khẩu {noop}Superadmin123).';
+    PRINT 'OK: superadmin {noop}Superadmin123';
 END TRY
 BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK TRAN;
     PRINT 'ERROR: ' + ERROR_MESSAGE();
-END CATCH
+END CATCH;
+
+-- Query tham khảo snapshot địa chỉ
 SELECT sr.request_id, ra.address_type, ra.street_address, ra.city, ra.state,
        ra.floor, ra.has_elevator, ra.contact_name, ra.contact_phone
 FROM service_requests sr
 JOIN request_addresses ra ON ra.request_id = sr.request_id
 ORDER BY sr.request_id, ra.address_type;
 
-DECLARE @rid INT = 5;  -- ← đổi sang request_id bạn cần
-
+-- Truy vấn chi tiết 1 request (đổi @rid khi cần)
+DECLARE @rid INT = 1;
 SELECT
-  sr.request_id,
-  sr.status,
-  sr.preferred_date,
-  sr.total_cost,
-  sr.created_at,
-  u.username                  AS customer_username,
-  pr.company_name             AS provider_name,
-
-  -- Pickup/Delivery (tách 2 dòng → 2 cột)
-  ra_pickup.street_address    AS pickup_street,
-  ra_pickup.city              AS pickup_city,
-  ra_pickup.state             AS pickup_state,
-  ra_pickup.floor             AS pickup_floor,
-  ra_pickup.has_elevator      AS pickup_has_elevator,
-  ra_pickup.contact_name      AS pickup_contact,
-  ra_pickup.contact_phone     AS pickup_phone,
-
-  ra_drop.street_address      AS drop_street,
-  ra_drop.city                AS drop_city,
-  ra_drop.state               AS drop_state,
-  ra_drop.floor               AS drop_floor,
-  ra_drop.has_elevator        AS drop_has_elevator,
-  ra_drop.contact_name        AS drop_contact,
-  ra_drop.contact_phone       AS drop_phone,
-
-  -- Thông tin item (1 dòng/1 item)
-  fi.item_id,
-  fi.item_type,
-  fi.size,
-  fi.quantity,
-  fi.is_fragile,
-
-  -- Thông tin image (1 dòng/1 image) – sẽ nhân bản nếu bạn cross join 2 tập; nên tách riêng nếu cần
-  ri.image_id,
-  ri.original_name,
-  ri.url,
-  ri.content_type,
-  ri.size AS image_size
-
+  sr.request_id, sr.status, sr.preferred_date, sr.total_cost, sr.created_at,
+  u.username AS customer_username, pr.company_name AS provider_name,
+  ra_pickup.street_address AS pickup_street, ra_pickup.city AS pickup_city, ra_pickup.state AS pickup_state,
+  ra_pickup.floor AS pickup_floor, ra_pickup.has_elevator AS pickup_has_elevator,
+  ra_pickup.contact_name AS pickup_contact, ra_pickup.contact_phone AS pickup_phone,
+  ra_drop.street_address AS drop_street, ra_drop.city AS drop_city, ra_drop.state AS drop_state,
+  ra_drop.floor AS drop_floor, ra_drop.has_elevator AS drop_has_elevator,
+  ra_drop.contact_name AS drop_contact, ra_drop.contact_phone AS drop_phone,
+  fi.item_id, fi.item_type, fi.size, fi.quantity, fi.is_fragile,
+  ri.image_id, ri.original_name, ri.url, ri.content_type, ri.size AS image_size
 FROM service_requests sr
 JOIN customers  c  ON c.customer_id  = sr.customer_id
 JOIN users      u  ON u.user_id      = c.user_id
 LEFT JOIN providers pr ON pr.provider_id = sr.provider_id
-
 OUTER APPLY (
-  SELECT TOP (1) *
-  FROM request_addresses ra
-  WHERE ra.request_id = sr.request_id AND ra.address_type = 'PICKUP'
-  ORDER BY ra.request_address_id
+  SELECT TOP (1) * FROM request_addresses ra
+   WHERE ra.request_id = sr.request_id AND ra.address_type = 'PICKUP'
+   ORDER BY ra.request_address_id
 ) ra_pickup
-
 OUTER APPLY (
-  SELECT TOP (1) *
-  FROM request_addresses ra
-  WHERE ra.request_id = sr.request_id AND ra.address_type = 'DELIVERY'
-  ORDER BY ra.request_address_id
+  SELECT TOP (1) * FROM request_addresses ra
+   WHERE ra.request_id = sr.request_id AND ra.address_type = 'DELIVERY'
+   ORDER BY ra.request_address_id
 ) ra_drop
-
-LEFT JOIN furniture_items fi
-  ON fi.request_id = sr.request_id
-LEFT JOIN request_images ri
-  ON ri.request_id = sr.request_id
+LEFT JOIN furniture_items fi ON fi.request_id = sr.request_id
+LEFT JOIN request_images ri  ON ri.request_id = sr.request_id
 WHERE sr.request_id = @rid
 ORDER BY fi.item_id, ri.image_id;
 
+-- Add cột cancel_reason (idempotent: chỉ thêm nếu chưa có)
+IF COL_LENGTH('service_requests','cancel_reason') IS NULL
+    ALTER TABLE service_requests ADD cancel_reason NVARCHAR(255) NULL;
+GO
 
-
-
-ALTER TABLE service_requests ADD cancel_reason NVARCHAR(255) NULL;
-
-
-
-
-
+---------------------------------------------------------------
+-- Nếu trong DB cũ từng dùng tên service_providers, đổi sang providers
+---------------------------------------------------------------
 BEGIN TRY
     BEGIN TRAN;
 
-    -- 1) Đổi tên bảng nếu cần
     IF OBJECT_ID('dbo.service_providers','U') IS NOT NULL
-    AND OBJECT_ID('dbo.providers','U') IS NULL
+       AND OBJECT_ID('dbo.providers','U') IS NULL
     BEGIN
         EXEC sp_rename 'dbo.service_providers', 'providers';
     END
 
-    -- 2) Đổi tên các CONSTRAINT/INDEX còn mang tiền tố service_providers_ → providers_
     ;WITH c AS (
         SELECT o.name AS old_name, 
                REPLACE(o.name, 'service_providers', 'providers') AS new_name
         FROM sys.objects o
         WHERE o.name LIKE 'service_providers%' 
-          AND o.type IN ('PK','F','UQ','C','D') -- PK/FK/Unique/Check/Default
+          AND o.type IN ('PK','F','UQ','C','D')
     )
     SELECT * INTO #todo FROM c WHERE old_name <> new_name;
 
@@ -684,19 +559,17 @@ BEGIN TRY
         BEGIN TRY
             EXEC sp_rename @objname = @old, @newname = @new, @objtype = 'OBJECT';
         END TRY BEGIN CATCH
-            PRINT 'Skip rename object: ' + @old + ' → ' + @new + ' (' + ERROR_MESSAGE() + ')';
+            PRINT 'Skip rename object: ' + @old + ' -> ' + @new + ' (' + ERROR_MESSAGE() + ')';
         END CATCH
         DELETE FROM #todo WHERE old_name = @old;
     END
 
-    -- 3) Đổi tên các index (sys.indexes) nếu còn prefix cũ
     ;WITH ix AS (
         SELECT QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.' + QUOTENAME(OBJECT_NAME(i.object_id)) AS tbl,
                i.name old_name,
                REPLACE(i.name,'service_providers','providers') AS new_name
         FROM sys.indexes i
-        WHERE i.name IS NOT NULL
-          AND i.name LIKE 'service_providers%'
+        WHERE i.name IS NOT NULL AND i.name LIKE 'service_providers%'
     )
     SELECT * INTO #todoix FROM ix WHERE old_name <> new_name;
 
@@ -721,39 +594,51 @@ END CATCH
 GO
 
 /* ========== 1) provider_service_packages: dọn cột + thêm snapshot ========== */
--- Bỏ cột không dùng (nếu có)
-IF COL_LENGTH('provider_service_packages','base_fee') IS NOT NULL
-    ALTER TABLE provider_service_packages DROP COLUMN base_fee;
-IF COL_LENGTH('provider_service_packages','per_minute') IS NOT NULL
-    ALTER TABLE provider_service_packages DROP COLUMN per_minute;
-IF COL_LENGTH('provider_service_packages','surcharge_stairs') IS NOT NULL
-    ALTER TABLE provider_service_packages DROP COLUMN surcharge_stairs;
-IF COL_LENGTH('provider_service_packages','surcharge_no_elevator') IS NOT NULL
-    ALTER TABLE provider_service_packages DROP COLUMN surcharge_no_elevator;
-IF COL_LENGTH('provider_service_packages','surcharge_narrow_alley') IS NOT NULL
-    ALTER TABLE provider_service_packages DROP COLUMN surcharge_narrow_alley;
-IF COL_LENGTH('provider_service_packages','surcharge_weekend') IS NOT NULL
-    ALTER TABLE provider_service_packages DROP COLUMN surcharge_weekend;
+/* Chỉ chạy khi bảng tồn tại để tránh lỗi */
+IF OBJECT_ID('provider_service_packages','U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('provider_service_packages','base_fee') IS NOT NULL
+        ALTER TABLE provider_service_packages DROP COLUMN base_fee;
+    IF COL_LENGTH('provider_service_packages','per_minute') IS NOT NULL
+        ALTER TABLE provider_service_packages DROP COLUMN per_minute;
+    IF COL_LENGTH('provider_service_packages','surcharge_stairs') IS NOT NULL
+        ALTER TABLE provider_service_packages DROP COLUMN surcharge_stairs;
+    IF COL_LENGTH('provider_service_packages','surcharge_no_elevator') IS NOT NULL
+        ALTER TABLE provider_service_packages DROP COLUMN surcharge_no_elevator;
+    IF COL_LENGTH('provider_service_packages','surcharge_narrow_alley') IS NOT NULL
+        ALTER TABLE provider_service_packages DROP COLUMN surcharge_narrow_alley;
+    IF COL_LENGTH('provider_service_packages','surcharge_weekend') IS NOT NULL
+        ALTER TABLE provider_service_packages DROP COLUMN surcharge_weekend;
 
-IF COL_LENGTH('provider_service_packages','per_km') IS NULL
-    ALTER TABLE provider_service_packages ADD per_km DECIMAL(12,2) NULL;
+    IF COL_LENGTH('provider_service_packages','per_km') IS NULL
+        ALTER TABLE provider_service_packages ADD per_km DECIMAL(12,2) NULL;
 
-IF COL_LENGTH('provider_service_packages','package_name_snapshot') IS NULL
-    ALTER TABLE provider_service_packages ADD package_name_snapshot NVARCHAR(150) NULL;
+    IF COL_LENGTH('provider_service_packages','package_name_snapshot') IS NULL
+        ALTER TABLE provider_service_packages ADD package_name_snapshot NVARCHAR(150) NULL;
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_psp_provider')
-    CREATE INDEX IX_psp_provider ON provider_service_packages(provider_id);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_psp_package')
-    CREATE INDEX IX_psp_package ON provider_service_packages(package_id);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_psp_provider')
+        CREATE INDEX IX_psp_provider ON provider_service_packages(provider_id);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_psp_package')
+        CREATE INDEX IX_psp_package ON provider_service_packages(package_id);
 
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_psp_provider')
-    ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_provider
-        FOREIGN KEY (provider_id) REFERENCES providers(provider_id);
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_psp_package')
-    ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_package
-        FOREIGN KEY (package_id) REFERENCES service_packages(package_id);
+    IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_psp_provider')
+       AND OBJECT_ID('providers','U') IS NOT NULL
+        ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_provider
+            FOREIGN KEY (provider_id) REFERENCES providers(provider_id);
 
--- Bảng giá nội thất theo GÓI
+    IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_psp_package')
+       AND OBJECT_ID('service_packages','U') IS NOT NULL
+        ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_package
+            FOREIGN KEY (package_id) REFERENCES service_packages(package_id);
+END
+ELSE
+BEGIN
+    PRINT 'SKIP: provider_service_packages does not exist -> migration step 1 skipped.';
+END
+GO
+
+/* ========== 2) provider_package_furniture_prices (ppfp) ========== */
+/* Tạo bảng trước (không FK). Sau đó add FK có điều kiện để tránh lỗi 1767/1750 */
 IF OBJECT_ID('provider_package_furniture_prices','U') IS NULL
 BEGIN
   CREATE TABLE provider_package_furniture_prices(
@@ -762,66 +647,249 @@ BEGIN
     package_id  INT NOT NULL,
     furniture_type_id INT NOT NULL,
     price DECIMAL(12,2) NOT NULL,
-    CONSTRAINT FK_ppfp_provider  FOREIGN KEY (provider_id) REFERENCES providers(provider_id),
-    CONSTRAINT FK_ppfp_package   FOREIGN KEY (package_id)  REFERENCES service_packages(package_id),
-    CONSTRAINT FK_ppfp_furniture FOREIGN KEY (furniture_type_id) REFERENCES furniture_types(furniture_type_id),
     CONSTRAINT UQ_ppfp UNIQUE(provider_id, package_id, furniture_type_id)
   );
+  IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_ppfp_provider_package')
+    CREATE INDEX IX_ppfp_provider_package ON provider_package_furniture_prices(provider_id, package_id);
+END
+GO
 
-  CREATE INDEX IX_ppfp_provider_package ON provider_package_furniture_prices(provider_id, package_id);
-END;
-GO   -- tách batch để cột package_name_snapshot được compile xong
-
-
-/* ============================================================
-   9) SEED DEMO CHO PRICING
-   ============================================================ */
-
--- Seed furniture_types thêm (nếu thiếu)
-IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Sofa')
-  INSERT INTO furniture_types(code,name,unit) VALUES (N'SOFA',N'Sofa',N'chiếc');
-IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Giường')
-  INSERT INTO furniture_types(code,name,unit) VALUES (N'BED',N'Giường',N'chiếc');
-IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Ghế')
-  INSERT INTO furniture_types(code,name,unit) VALUES (N'CHAIR',N'Ghế',N'chiếc');
-
-DECLARE @packageId INT = (SELECT TOP 1 package_id FROM service_packages WHERE code=N'OFFICE');
-DECLARE @providerId INT = (SELECT TOP 1 provider_id FROM providers ORDER BY provider_id);
-
-IF @packageId IS NOT NULL AND @providerId IS NOT NULL
+-- Add FK có điều kiện
+IF OBJECT_ID('provider_package_furniture_prices','U') IS NOT NULL
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM provider_service_packages
-        WHERE provider_id=@providerId AND package_id=@packageId
-    )
+  -- provider FK: ưu tiên providers; fallback service_providers nếu tồn tại
+  IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_ppfp_provider')
+  BEGIN
+      IF OBJECT_ID('providers','U') IS NOT NULL
+          ALTER TABLE provider_package_furniture_prices
+            ADD CONSTRAINT FK_ppfp_provider FOREIGN KEY (provider_id)
+            REFERENCES providers(provider_id);
+      ELSE IF OBJECT_ID('service_providers','U') IS NOT NULL
+          ALTER TABLE provider_package_furniture_prices
+            ADD CONSTRAINT FK_ppfp_provider FOREIGN KEY (provider_id)
+            REFERENCES service_providers(provider_id);
+      ELSE
+          PRINT 'WARN: providers/service_providers not found -> skip FK_ppfp_provider';
+  END
+
+  -- package FK
+  IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_ppfp_package')
+  BEGIN
+      IF OBJECT_ID('service_packages','U') IS NOT NULL
+          ALTER TABLE provider_package_furniture_prices
+            ADD CONSTRAINT FK_ppfp_package FOREIGN KEY (package_id)
+            REFERENCES service_packages(package_id);
+      ELSE
+          PRINT 'WARN: service_packages not found -> skip FK_ppfp_package';
+  END
+
+  -- furniture FK
+  IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_ppfp_furniture')
+  BEGIN
+      IF OBJECT_ID('furniture_types','U') IS NOT NULL
+          ALTER TABLE provider_package_furniture_prices
+            ADD CONSTRAINT FK_ppfp_furniture FOREIGN KEY (furniture_type_id)
+            REFERENCES furniture_types(furniture_type_id);
+      ELSE
+          PRINT 'WARN: furniture_types not found -> skip FK_ppfp_furniture';
+  END
+END
+GO
+
+/* ========== 3) Seed nhẹ liên quan PSP/PPFP (chỉ chạy khi có PSP) ========== */
+IF OBJECT_ID('provider_service_packages','U') IS NOT NULL
+BEGIN
+    IF OBJECT_ID('furniture_types','U') IS NOT NULL
     BEGIN
-        INSERT INTO provider_service_packages(provider_id, package_id, per_km, package_name_snapshot)
-        SELECT @providerId, @packageId, 100000,
-               (SELECT name FROM service_packages WHERE package_id=@packageId);
+        IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Sofa')
+          INSERT INTO furniture_types(code,name,unit) VALUES (N'SOFA',N'Sofa',N'chiếc');
+        IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Giường')
+          INSERT INTO furniture_types(code,name,unit) VALUES (N'BED',N'Giường',N'chiếc');
+        IF NOT EXISTS (SELECT 1 FROM furniture_types WHERE name = N'Ghế')
+          INSERT INTO furniture_types(code,name,unit) VALUES (N'CHAIR',N'Ghế',N'chiếc');
     END
+    ELSE
+        PRINT 'SKIP: furniture_types missing -> skip seed furniture_types';
 
-    DECLARE @ft_sofa INT  = (SELECT TOP 1 furniture_type_id FROM furniture_types WHERE name=N'Sofa');
-    DECLARE @ft_bed  INT  = (SELECT TOP 1 furniture_type_id FROM furniture_types WHERE name=N'Giường');
-    DECLARE @ft_chair INT = (SELECT TOP 1 furniture_type_id FROM furniture_types WHERE name=N'Ghế');
+    DECLARE @packageId INT = NULL, @providerId INT = NULL;
 
-    IF @ft_sofa IS NOT NULL AND NOT EXISTS (
-       SELECT 1 FROM provider_package_furniture_prices
-       WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_sofa
-    )
-      INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
-      VALUES(@providerId,@packageId,@ft_sofa,1500000);
+    IF OBJECT_ID('service_packages','U') IS NOT NULL
+        SELECT TOP 1 @packageId = package_id FROM service_packages WHERE code=N'OFFICE';
+    ELSE
+        PRINT 'SKIP: service_packages missing -> @packageId=NULL';
 
-    IF @ft_bed IS NOT NULL AND NOT EXISTS (
-       SELECT 1 FROM provider_package_furniture_prices
-       WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_bed
-    )
-      INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
-      VALUES(@providerId,@packageId,@ft_bed,2000000);
+    IF OBJECT_ID('providers','U') IS NOT NULL
+        SELECT TOP 1 @providerId = provider_id FROM providers ORDER BY provider_id;
+    ELSE IF OBJECT_ID('service_providers','U') IS NOT NULL
+        SELECT TOP 1 @providerId = provider_id FROM service_providers ORDER BY provider_id;
+    ELSE
+        PRINT 'SKIP: providers/service_providers missing -> @providerId=NULL';
 
-    IF @ft_chair IS NOT NULL AND NOT EXISTS (
-       SELECT 1 FROM provider_package_furniture_prices
-       WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_chair
-    )
-      INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
-      VALUES(@providerId,@packageId,@ft_chair,800000);
-END;
+    IF @packageId IS NOT NULL AND @providerId IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM provider_service_packages
+            WHERE provider_id=@providerId AND package_id=@packageId
+        )
+        BEGIN
+            INSERT INTO provider_service_packages(provider_id, package_id, per_km, package_name_snapshot)
+            SELECT @providerId, @packageId, 100000,
+                   (SELECT name FROM service_packages WHERE package_id=@packageId);
+        END
+
+        IF OBJECT_ID('furniture_types','U') IS NOT NULL
+        BEGIN
+            DECLARE @ft_sofa INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Sofa');
+            DECLARE @ft_bed  INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Giường');
+            DECLARE @ft_chair INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Ghế');
+
+            IF @ft_sofa IS NOT NULL AND NOT EXISTS (
+               SELECT 1 FROM provider_package_furniture_prices
+               WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_sofa
+            )
+              INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
+              VALUES(@providerId,@packageId,@ft_sofa,1500000);
+
+            IF @ft_bed IS NOT NULL AND NOT EXISTS (
+               SELECT 1 FROM provider_package_furniture_prices
+               WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_bed
+            )
+              INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
+              VALUES(@providerId,@packageId,@ft_bed,2000000);
+
+            IF @ft_chair IS NOT NULL AND NOT EXISTS (
+               SELECT 1 FROM provider_package_furniture_prices
+               WHERE provider_id=@providerId AND package_id=@packageId AND furniture_type_id=@ft_chair
+            )
+              INSERT INTO provider_package_furniture_prices(provider_id,package_id,furniture_type_id,price)
+              VALUES(@providerId,@packageId,@ft_chair,800000);
+        END
+        ELSE
+            PRINT 'SKIP: furniture_types missing -> skip PPFP prices';
+    END
+    ELSE
+        PRINT 'SKIP: missing @packageId or @providerId -> skip PSP+PPFP seed';
+END
+ELSE
+BEGIN
+    PRINT 'SKIP: provider_service_packages does not exist -> seed step 3 skipped.';
+END
+GO
+
+
+
+BEGIN TRY
+    BEGIN TRAN;
+
+    -------------------------------------------------------
+    -- 1) Đảm bảo role PROVIDER tồn tại
+    -------------------------------------------------------
+    IF NOT EXISTS (SELECT 1 FROM roles WHERE role_name = 'PROVIDER')
+    BEGIN
+        INSERT INTO roles(role_name, description)
+        VALUES ('PROVIDER', 'Furniture transport provider');
+    END;
+
+    DECLARE @rid_provider INT = (
+        SELECT TOP 1 role_id FROM roles WHERE role_name = 'PROVIDER'
+    );
+
+    -------------------------------------------------------
+    -- 2) Đảm bảo user 'prov1' tồn tại và đang active
+    -------------------------------------------------------
+    IF NOT EXISTS (SELECT 1 FROM users WHERE username = 'prov1')
+    BEGIN
+        INSERT INTO users(username, email, first_name, last_name, phone, status, created_at, updated_at)
+        VALUES ('prov1', 'prov1@mail.com', 'Alice', 'Smith', '0900000003', 'active', SYSUTCDATETIME(), SYSUTCDATETIME());
+    END
+    ELSE
+    BEGIN
+        UPDATE users
+        SET status = 'active',
+            updated_at = SYSUTCDATETIME()
+        WHERE username = 'prov1';
+    END;
+
+    DECLARE @uid INT = (
+        SELECT TOP 1 user_id FROM users WHERE username = 'prov1'
+    );
+
+    -------------------------------------------------------
+    -- 3) Đảm bảo authentication cho prov1 với {noop}Prov@123
+    -------------------------------------------------------
+    IF NOT EXISTS (SELECT 1 FROM authentication WHERE user_id = @uid)
+    BEGIN
+        INSERT INTO authentication(user_id, password_hash, mfa_enabled, failed_attempts, account_locked_until, created_at, updated_at)
+        VALUES (@uid, '{noop}Prov@123', 0, 0, NULL, SYSUTCDATETIME(), SYSUTCDATETIME());
+    END
+    ELSE
+    BEGIN
+        UPDATE authentication
+        SET password_hash        = '{noop}Prov@123',
+            failed_attempts      = 0,
+            account_locked_until = NULL,
+            updated_at           = SYSUTCDATETIME()
+        WHERE user_id = @uid;
+    END;
+
+    -------------------------------------------------------
+    -- 4) Gán role PROVIDER cho prov1 (primary)
+    -------------------------------------------------------
+    IF NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = @uid AND role_id = @rid_provider)
+    BEGIN
+        INSERT INTO user_roles(user_id, role_id, is_primary, assigned_at)
+        VALUES (@uid, @rid_provider, 1, SYSUTCDATETIME());
+    END
+    ELSE
+    BEGIN
+        UPDATE user_roles
+        SET is_primary = 1
+        WHERE user_id = @uid AND role_id = @rid_provider;
+    END;
+
+    -------------------------------------------------------
+    -- 5) Đảm bảo có dòng trong bảng providers
+    -------------------------------------------------------
+    IF NOT EXISTS (SELECT 1 FROM providers WHERE user_id = @uid)
+    BEGIN
+        INSERT INTO providers(user_id, company_name, verification_status, rating, total_reviews)
+        VALUES (@uid, 'FastMove Co.', 'verified', 4.80, 25);
+    END
+    ELSE
+    BEGIN
+        UPDATE providers
+        SET company_name        = 'FastMove Co.',
+            verification_status = 'verified'
+        WHERE user_id = @uid;
+    END;
+
+    COMMIT TRAN;
+    PRINT 'OK: Provider account prov1 / {noop}Prov@123 đã được thiết lập.';
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+    PRINT 'ERROR: ' + ERROR_MESSAGE();
+END CATCH;
+GO
+
+-------------------------------------------------------
+-- 6) Kiểm tra lại đầy đủ 1 phát
+-------------------------------------------------------
+SELECT 
+    u.user_id,
+    u.username,
+    u.email,
+    u.status,
+    a.password_hash,
+    r.role_name,
+    ur.is_primary,
+    p.provider_id,
+    p.company_name,
+    p.verification_status
+FROM users u
+LEFT JOIN authentication a    ON a.user_id = u.user_id
+LEFT JOIN user_roles ur       ON ur.user_id = u.user_id
+LEFT JOIN roles r             ON r.role_id = ur.role_id
+LEFT JOIN providers p         ON p.user_id = u.user_id
+WHERE u.username = 'prov1';
+GO
