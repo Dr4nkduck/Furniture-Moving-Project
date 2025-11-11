@@ -172,25 +172,110 @@ function stripHouseNumber(addr) {
   return s.trim();
 }
 
+/* Cắt địa chỉ từ cấp thôn/xóm/ấp/tổ... trở về sau (VN-friendly) */
+function stripToHamletLevel(addr) {
+  if (!addr) return "";
+  // Chia theo dấu phẩy trước, nếu không có phẩy thì chia theo khoảng trắng nhiều
+  let parts = String(addr).split(",").map(s => s.trim()).filter(Boolean);
+  if (parts.length <= 1) {
+    // fallback: tách theo khoảng trắng, gom khối bằng cách phát hiện từ khóa hành chính
+    const tokens = String(addr).trim().split(/\s+/);
+    parts = [];
+    let buf = [];
+    for (const tk of tokens) {
+      buf.push(tk);
+      // heuristic: khi gặp tỉnh/thành/quận/huyện/phường/xã/…, chốt 1 “phần”
+      if (/(tỉnh|thành|thành phố|tp\.?|quận|huyện|thị xã|thị trấn|phường|xã|thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)/i.test(tk)) {
+        parts.push(buf.join(" "));
+        buf = [];
+      }
+    }
+    if (buf.length) parts.push(buf.join(" "));
+  }
+
+  // Từ khóa cấp thôn/xóm/ấp/tổ…
+  const hamletRx = /(thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)/i;
+
+  // Tìm phần tử đầu tiên chứa từ khóa hamlet
+  let startIdx = parts.findIndex(p => hamletRx.test(p));
+  if (startIdx === -1) {
+    // Nếu không có, thử tìm từ cấp xã/phường trở lên
+    startIdx = parts.findIndex(p => /(phường|xã|thị trấn)/i.test(p));
+  }
+  if (startIdx === -1) {
+    // Nếu vẫn không có, thử từ cấp quận/huyện
+    startIdx = parts.findIndex(p => /(quận|huyện|thị xã)/i.test(p));
+  }
+  if (startIdx === -1) {
+    // Cuối cùng thử từ cấp tỉnh/thành phố
+    startIdx = parts.findIndex(p => /(tỉnh|thành|thành phố|tp\.?)/i.test(p));
+  }
+
+  if (startIdx === -1) {
+    // Không nhận ra cấp hành chính nào → trả về chuỗi gốc (để caller tự quyết)
+    return String(addr).trim();
+  }
+  return parts.slice(startIdx).join(", ").trim();
+}
+
+
+
 /** geocode với fallback bỏ số nhà */
+/** geocode với fallback:
+ *  1) Dùng đầy đủ địa chỉ user nhập
+ *  2) Nếu fail → cắt từ cấp thôn/xóm/ấp/tổ... trở đi rồi geocode
+ *  3) Nếu vẫn fail → bỏ số nhà / phần đầu rồi geocode
+ */
 async function resolveAddressWithFallback(addr) {
   const raw = String(addr || "").trim();
   if (!raw) return { ok:false };
+
+  // 1) Thử với địa chỉ đầy đủ
   const primary = await geocodeAddress(raw);
   if (primary.ok) {
-    return { ok:true, ...primary, missingHouse: !primary.parts?.houseNumber, usedQuery: raw };
+    return {
+      ok: true,
+      ...primary,
+      missingHouse: !primary.parts?.houseNumber,
+      usedQuery: raw,
+      fallback: "none"   // dùng full địa chỉ
+    };
   }
+
+  // 2) Cắt thẳng xuống từ cấp thôn/xóm/ấp/tổ... trở đi
+  const hamletOnly = stripToHamletLevel(raw);
+  if (hamletOnly && hamletOnly !== raw) {
+    const hRes = await geocodeAddress(hamletOnly);
+    if (hRes.ok) {
+      return {
+        ok: true,
+        ...hRes,
+        missingHouse: true,      // chắc chắn không có số nhà
+        usedQuery: hamletOnly,
+        fallback: "hamlet"       // đang dùng địa chỉ từ thôn trở lên
+      };
+    }
+  }
+
+  // 3) Bỏ số nhà / phần đầu (ngõ, hẻm,...) rồi thử lại
   const stripped = stripHouseNumber(raw);
-  if (!stripped || stripped === raw) return { ok:false };
-  const fallback = await geocodeAddress(stripped);
-  if (!fallback.ok) return { ok:false };
-  return {
-    ok:true,
-    ...fallback,
-    missingHouse:true,
-    usedQuery: stripped
-  };
+  if (stripped && stripped !== raw && stripped !== hamletOnly) {
+    const fallback1 = await geocodeAddress(stripped);
+    if (fallback1.ok) {
+      return {
+        ok: true,
+        ...fallback1,
+        missingHouse: true,
+        usedQuery: stripped,
+        fallback: "strip"        // chỉ biết là đã cắt đầu chuỗi
+      };
+    }
+  }
+
+  // 4) Vẫn không tìm được
+  return { ok:false };
 }
+
 
 /* Tính khoảng cách lái xe bằng OSRM */
 async function calcDistance(orig, dest) {
@@ -207,7 +292,7 @@ async function calcDistance(orig, dest) {
     const seconds = route.duration || 0;
     const durationText = humanizeDuration(seconds);
     const routeText = `${km.toFixed(2)} km`;
-    return { ok: true, km, durationText, routeText };
+    return { ok: true, km, durationText, routeText, seconds };
   } catch {
     return { ok: false };
   }
@@ -219,6 +304,7 @@ async function calcDistance(orig, dest) {
     return `${h} giờ ${mm ? mm+" phút" : ""}`.trim();
   }
 }
+
 
 /* ========= Gemini ========= */
 const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // <-- Nên chuyển về BE/proxy
@@ -248,10 +334,16 @@ const SLOT = {
     fromPlace: null, toPlace: null,
     // parts địa chỉ tách cấp cho BE:
     fromParts: null, toParts: null,
-    date: null, time: null, datetime: null, _dateObj: null,
-    km: null, durationText: null, routeText: null
+    date: null, time: null, datetime: null,
+    _dateObj: null,        // chỉ ngày
+    _datetimeObj: null,    // ngày + giờ (Date đầy đủ)
+    km: null,
+    durationText: null,
+    routeText: null,
+    routeSeconds: null     // số giây OSRM trả về
   }
 };
+
 const SLOT_STEPS = ["name", "phone", "fromAddr", "toAddr", "date", "time"];
 
 function resetSlot() {
@@ -261,12 +353,14 @@ function resetSlot() {
     fromAddr:null, toAddr:null,
     fromPlace:null, toPlace:null,
     fromParts:null, toParts:null,
-    date:null, time:null, datetime:null, _dateObj:null,
-    km:null, durationText:null, routeText:null
+    date:null, time:null, datetime:null,
+    _dateObj:null, _datetimeObj:null,
+    km:null, durationText:null, routeText:null, routeSeconds:null
   };
   ASKING_DATE = false;
   updateSlotDateBarVisibility();
 }
+
 function nextMissingKey() {
   for (const k of SLOT_STEPS) if (!SLOT.data[k]) return k;
   return null;
@@ -289,32 +383,51 @@ function askSlotQuestion(key) {
 }
 
 /* ========= Cho phép SỬA GIỮA CHỪNG ========= */
+/* ========= Cho phép SỬA GIỮA CHỪNG ========= */
 function detectAndApplyCorrections(rawText){
   const t = (rawText||"").trim();
+  if (!t) return false;
+
+  let changed = false;
+  let updatedPhoneThisTurn = false;
+  let updatedNameThisTurn = false;
+  let updatedFromThisTurn = false;
+  let updatedToThisTurn = false;
+  let updatedDateThisTurn = false;
+  let updatedTimeThisTurn = false;
 
   // đổi/sửa tên
-  let m = t.match(/\b(?:đổi|sửa)\s*tên\s*(?:thành|lại)?\s*[:\-]?\s*(.+)$/i) || t.match(/\b(?:tên|họ\s*tên)\s*(của tôi|của em|là|:)\s*(.+)$/i);
+  let m =
+    t.match(/\b(?:đổi|sửa)\s*tên\s*(?:thành|lại)?\s*[:\-]?\s*(.+)$/i) ||
+    t.match(/\b(?:tên|họ\s*tên)\s*(của tôi|của em|của anh|của chị|là|:)\s*(.+)$/i);
   if (m) {
     const name = (m[2] || m[1] || "").trim();
     if (name) {
       SLOT.data.name = name.slice(0,80);
+      updatedNameThisTurn = true;
+      changed = true;
       renderSlotReply(`Đã cập nhật tên thành: <b>${escapeHTML(SLOT.data.name)}</b>.`);
     }
   }
 
-  // đổi/sửa số điện thoại
-  m = t.match(/\b(?:đổi|sửa)\s*(?:số\s*điện\s*thoại|sđt)\s*(?:thành|lại)?\s*[:\-]?\s*([+0-9()\s\.\-]+)/i) || t.match(/\b(?:sđt|số\s*điện\s*thoại)\s*(?:là|:)\s*([+0-9()\s\.\-]+)/i);
+  // đổi/sửa số điện thoại (có số mới)
+  m =
+    t.match(/\b(?:đổi|sửa)\s*(?:số\s*điện\s*thoại|sđt)\s*(?:thành|lại)?\s*[:\-]?\s*([+0-9()\s\.\-]+)/i) ||
+    t.match(/\b(?:sđt|số\s*điện\s*thoại)\s*(?:mới\s*|đúng\s*|là|:)\s*([+0-9()\s\.\-]+)/i);
   if (m) {
     const phone = normalizePhone(m[1]);
     if (phone) {
       SLOT.data.phone = phone;
+      updatedPhoneThisTurn = true;
+      changed = true;
       renderSlotReply(`Đã cập nhật SĐT: <b>${escapeHTML(phone)}</b>.`);
     } else {
       renderSlotReply("SĐT bạn cung cấp chưa hợp lệ, bạn nhập lại giúp mình nhé (vd: 0912345678 hoặc +84 912345678).");
     }
   }
 
-  // đổi ngày
+  // đổi ngày (có ngày mới)
+   // đổi ngày (có ngày mới)
   m = t.match(/\b(?:đổi|sửa)\s*ngày\s*(?:thành|sang)?\s*(.+)$/i);
   if (m) {
     const parsed = parseFlexibleDate(m[1]);
@@ -322,37 +435,49 @@ function detectAndApplyCorrections(rawText){
       const { dt } = parsed;
       SLOT.data._dateObj = dt;
       SLOT.data.date = formatDateOnlyVN(dt);
+      SLOT.data._datetimeObj = null;   // ngày mới → giờ cũ coi như bỏ
+      updatedDateThisTurn = true;
+      changed = true;
       renderSlotReply(`Đã cập nhật <b>ngày</b> thành: ${escapeHTML(SLOT.data.date)}.`);
     } else {
       renderSlotReply("Mình chưa đọc được ngày mới, bạn nhập dd/mm/yyyy hoặc 'ngày mai' nhé.");
     }
   }
 
-  // đổi giờ
+
+  // đổi giờ (có giờ mới)
+  // đổi giờ (có giờ mới)
   m = t.match(/\b(?:đổi|sửa)\s*giờ\s*(?:thành|sang)?\s*(.+)$/i);
   if (m) {
     const ti = parseTimeFromText(m[1]);
     if (ti) {
       if (!SLOT.data._dateObj) {
         SLOT.data.time = formatTimeVN(ti.hour, ti.minute);
-        renderSlotReply(`Đã cập nhật <b>giờ</b> thành: ${escapeHTML(SLOT.data.time)}.`);
+        SLOT.data.datetime = null;
+        SLOT.data._datetimeObj = null;
       } else {
         const dt = new Date(SLOT.data._dateObj.getTime());
         dt.setHours(ti.hour, ti.minute, 0, 0);
         SLOT.data.time = formatTimeVN(ti.hour, ti.minute);
         SLOT.data.datetime = formatDateTimeVN(dt);
-        renderSlotReply(`Đã cập nhật <b>giờ</b> thành: ${escapeHTML(SLOT.data.time)}.`);
+        SLOT.data._datetimeObj = dt;
       }
+      updatedTimeThisTurn = true;
+      changed = true;
+      renderSlotReply(`Đã cập nhật <b>giờ</b> thành: ${escapeHTML(SLOT.data.time)}.`);
     } else {
       renderSlotReply("Mình chưa đọc được giờ mới, bạn thử dạng '9h', '9:15', '5h chiều'…");
     }
   }
+
 
   // đổi địa chỉ đi
   m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*đi|địa\s*chỉ\s*lấy|đi|lấy)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
   if (m) {
     const addr = m[1].trim();
     if (addr.length >= 4) {
+      changed = true;
+      updatedFromThisTurn = true;
       renderSlotReply("Đang kiểm tra địa chỉ LẤY hàng mới…");
       resolveAddressWithFallback(addr).then(g=>{
         if (!g.ok) {
@@ -375,6 +500,8 @@ function detectAndApplyCorrections(rawText){
   if (m) {
     const addr = m[1].trim();
     if (addr.length >= 4) {
+      changed = true;
+      updatedToThisTurn = true;
       renderSlotReply("Đang kiểm tra địa chỉ GIAO hàng mới…");
       resolveAddressWithFallback(addr).then(g=>{
         if (!g.ok) {
@@ -391,7 +518,64 @@ function detectAndApplyCorrections(rawText){
       });
     }
   }
+
+  // ===== Các trường hợp "bị sai / nhầm" nhưng KHÔNG đưa giá trị mới =====
+
+  const hasWrongWord = /\b(sai|nhầm|nhập sai|nhập nhầm|bị nhầm|bị sai)\b/i.test(t);
+
+  // tên bị sai
+  if (!updatedNameThisTurn && hasWrongWord && /\b(tên|họ\s*tên)\b/i.test(t)) {
+    SLOT.data.name = null;
+    changed = true;
+    renderSlotReply("Không sao, bạn cho mình xin lại <b>HỌ TÊN chính xác</b> nhé.");
+  }
+
+  // SĐT bị sai
+  if (!updatedPhoneThisTurn && hasWrongWord && /\b(sđt|số\s*điện\s*thoại)\b/i.test(t)) {
+    SLOT.data.phone = null;
+    changed = true;
+    renderSlotReply("Không sao, bạn gửi lại giúp mình <b>SĐT đúng</b> nhé (vd: 0912345678 hoặc +84 912345678).");
+  }
+
+  // địa chỉ LẤY bị sai
+  if (!updatedFromThisTurn && hasWrongWord &&
+      /\b(địa\s*chỉ\s*(đi|lấy)|chỗ lấy|lấy hàng)\b/i.test(t)) {
+    SLOT.data.fromAddr = null;
+    SLOT.data.fromPlace = null;
+    SLOT.data.fromParts = null;
+    changed = true;
+    renderSlotReply("Bạn gửi lại giúp mình <b>địa chỉ LẤY hàng</b> mới (số nhà, thôn/xã/phường, huyện/quận, tỉnh/thành) nhé.");
+  }
+
+  // địa chỉ GIAO bị sai
+  if (!updatedToThisTurn && hasWrongWord &&
+      /\b(địa\s*chỉ\s*(đến|giao)|chỗ giao|giao hàng)\b/i.test(t)) {
+    SLOT.data.toAddr = null;
+    SLOT.data.toPlace = null;
+    SLOT.data.toParts = null;
+    changed = true;
+    renderSlotReply("Bạn gửi lại giúp mình <b>địa chỉ GIAO hàng</b> mới (số nhà, thôn/xã/phường, huyện/quận, tỉnh/thành) nhé.");
+  }
+
+  // ngày bị sai
+  if (!updatedDateThisTurn && hasWrongWord && /\b(ngày)\b/i.test(t)) {
+    SLOT.data.date = null;
+    SLOT.data._dateObj = null;
+    changed = true;
+    renderSlotReply("Không sao, bạn nhập lại giúp mình <b>NGÀY vận chuyển</b> (dd/mm/yyyy hoặc 'ngày mai', 'ngày 28 tháng này'...).");
+  }
+
+  // giờ bị sai
+  if (!updatedTimeThisTurn && hasWrongWord && /\b(giờ|time|thời gian)\b/i.test(t)) {
+    SLOT.data.time = null;
+    SLOT.data.datetime = null;
+    changed = true;
+    renderSlotReply("Không sao, bạn nhập lại giúp mình <b>GIỜ vận chuyển</b> (vd: '9h', '9:15', '5h chiều', '10 rưỡi'...).");
+  }
+
+  return changed;
 }
+
 
 /* ========= Date/Time helpers ========= */
 function parseDateOnlyFromText(text) {
@@ -1328,6 +1512,7 @@ function autofillSlotFromFreeText(text) {
     }
   }
 
+    // ===== NGÀY + GIỜ =====
   const existingDate = SLOT.data.date;
   const existingTime = SLOT.data.time;
   const dateParsed = parseFlexibleDate(raw);
@@ -1338,14 +1523,23 @@ function autofillSlotFromFreeText(text) {
     SLOT.data._dateObj = dt;
     SLOT.data.date = formatDateOnlyVN(dt);
   }
-  if (!existingTime && timeParsed && (SLOT.data._dateObj || dateParsed)) {
-    const baseDate = SLOT.data._dateObj || dateParsed.dt;
-    const dt = new Date(baseDate.getTime());
-    dt.setHours(timeParsed.hour, timeParsed.minute, 0, 0);
-    SLOT.data.time = formatTimeVN(timeParsed.hour, timeParsed.minute);
-    SLOT.data.datetime = formatDateTimeVN(dt);
+
+  if (!existingTime && timeParsed) {
+    const baseDate = SLOT.data._dateObj || (dateParsed && dateParsed.dt);
+    if (baseDate) {
+      const dt = new Date(baseDate.getTime());
+      dt.setHours(timeParsed.hour, timeParsed.minute, 0, 0);
+      SLOT.data.time = formatTimeVN(timeParsed.hour, timeParsed.minute);
+      SLOT.data.datetime = formatDateTimeVN(dt);
+      SLOT.data._datetimeObj = dt;
+    } else {
+      // chỉ có giờ, chưa có ngày ⇒ lưu giờ thôi
+      SLOT.data.time = formatTimeVN(timeParsed.hour, timeParsed.minute);
+      SLOT.data._datetimeObj = null;
+    }
   }
 }
+
 
 /* ========= AI call ========= */
 async function generateBotResponse(incomingMessageDiv, userText, opts = {}) {
@@ -1817,3 +2011,4 @@ document.querySelector("#mi-save")?.addEventListener("click", ()=>{
    - Nếu trùng tên thôn/ấp/khóm, dựa vào cấp xã; nếu xã trùng, dựa lên huyện/tỉnh để loại trừ.
 */
 window.AIQUOTE_SLOT = SLOT;
+
