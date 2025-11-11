@@ -41,7 +41,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean
+   @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
@@ -58,6 +58,7 @@ public class SecurityConfig {
                                  "/payment/css/**", "/payment/js/**", "/payment/images/**",
                                  "/services/**",
                                  "/orders/**"
+                                 "/provider-stats/**" //✅ static của superadmin (css/js)
                 ).permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

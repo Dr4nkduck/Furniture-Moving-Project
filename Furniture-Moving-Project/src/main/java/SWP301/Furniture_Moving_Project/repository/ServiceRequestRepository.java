@@ -133,3 +133,5 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     );
 
 }
+    long countByProviderIdAndPreferredDateAndStatusIn(Integer providerId, java.time.LocalDate preferredDate, java.util.Collection<String> status);
+}

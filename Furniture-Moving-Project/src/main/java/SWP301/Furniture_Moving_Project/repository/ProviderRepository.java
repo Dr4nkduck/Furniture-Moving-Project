@@ -12,4 +12,8 @@ public interface ProviderRepository extends JpaRepository<Provider, Integer> {
     // Provider.user.username -> providerId
     @Query("select p.providerId from Provider p where p.user.username = :username")
     Optional<Integer> findProviderIdByUsername(String username);
+import java.util.List;
+
+public interface ProviderRepository extends JpaRepository<Provider, Integer> {
+    List<Provider> findByCompanyNameContainingIgnoreCase(String companyName);
 }

@@ -70,6 +70,36 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Gửi email -->
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+  </dependency>
+
+  <!--Ctrl s reload web-->
+  <dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-devtools</artifactId>
+  <scope>runtime</scope>
+  <optional>true</optional>
+</dependency>
+
+<!-- Thymeleaf Security dialect (để sec:authorize)-->
+<dependency>
+  <groupId>org.thymeleaf.extras</groupId>
+  <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+</dependency>
+
+
+
+    <!-- Lombok -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.40</version>
+      <scope>provided</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -86,6 +116,8 @@
         <version>3.11.0</version>
         <configuration>
           <release>17</release>
+          <source>21</source>
+          <target>21</target>
         </configuration>
       </plugin>
 

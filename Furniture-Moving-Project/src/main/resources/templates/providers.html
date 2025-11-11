@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <meta charset="utf-8" />
     <title>Đơn vị vận chuyển - Furniture Moving</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -12,141 +12,442 @@
 
     <!-- Google Font -->
     <link
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
-            rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
     />
 
     <!-- CSS Libraries -->
     <link
-            href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-            rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      rel="stylesheet"
     />
     <link
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
-            rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
+      rel="stylesheet"
     />
     <link
-            th:href="@{/homepage/lib/flaticon/font/flaticon.css}"
-            rel="stylesheet"
+      th:href="@{/homepage/lib/flaticon/font/flaticon.css}"
+      rel="stylesheet"
     />
     <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet" />
     <link
-            th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}"
-            rel="stylesheet"
+      th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}"
+      rel="stylesheet"
     />
     <link
-            th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}"
-            rel="stylesheet"
+      th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}"
+      rel="stylesheet"
     />
     <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet" />
     <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet" />
 
     <!-- Template Stylesheet -->
     <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
-</head>
+    <style>
+      /* Providers page layout fixes */
+      .providers .service-item {
+        height: 100%;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .providers .service-img {
+        position: relative;
+        overflow: hidden;
+      }
+      .providers .service-img img {
+        display: block;
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+      }
+      .providers .service-overlay {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px 12px;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+        color: #fff;
+      }
+      .providers .service-text {
+        padding: 14px 16px;
+      }
+      .providers .rating i {
+        margin-right: 2px;
+      }
+      @media (min-width: 992px) {
+        .providers .container {
+          max-width: 1140px;
+        }
+      }
+      /* Avoid any horizontal overflow on this page */
+      body {
+        overflow-x: hidden;
+      }
+      /* Dropdown usability fixes */
+      .providers .service-item { overflow: visible; }
+      .providers .btn-group { position: relative; }
+      .providers .dropdown-menu {
+        z-index: 2000;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 4px;
+      }
+      .providers .btn-group > .btn.dropdown-toggle {
+        background-color: #007bff;
+        color: #fff;
+        border-color: #007bff;
+        padding: 6px 10px;
+        border-radius: 4px;
+      }
+      /* Reviews modal list: ensure multiple reviews are visible with scroll */
+      #reviewsList { max-height: 60vh; overflow-y: auto; }
+      #reviewsList .review-item { border-bottom: 1px solid #eee; padding: 8px 0; }
+      #reviewsList .review-item:last-child { border-bottom: 0; }
+      #reviewsList .comment { white-space: pre-line; }
+    </style>
+  </head>
 
-<body>
-<div class="wrapper">
-    <!-- Top Bar Start -->
-    <div th:replace="fragments/header :: topbar"></div>
+  <body>
+    <div class="wrapper">
+      <!-- Top Bar Start -->
+      <div th:replace="fragments/header :: topbar"></div>
 
-    <!-- Nav Bar -->
-    <div th:replace="fragments/navbar :: navbar"></div>
+      <!-- Nav Bar -->
+      <div th:replace="fragments/navbar :: navbar"></div>
 
-    <!-- Page Header Start -->
-    <div class="page-header">
+      <!-- Page Header Start -->
+      <div class="page-header">
         <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <h2>Đơn vị vận chuyển</h2>
-                </div>
-                <div class="col-12">
-                    <a href="/homepage">Trang chủ</a>
-                    <a href="/providers">Đơn vị vận chuyển</a>
-                </div>
+          <div class="row">
+            <div class="col-12">
+              <h2>Đơn vị vận chuyển</h2>
             </div>
+            <div class="col-12">
+              <a href="/homepage">Trang chủ</a>
+              <a href="/providers">Đơn vị vận chuyển</a>
+            </div>
+          </div>
         </div>
-    </div>
-    <!-- Page Header End -->
+      </div>
+      <!-- Page Header End -->
 
-    <!-- Providers Start -->
-    <div class="providers">
+      <!-- Providers Start -->
+      <div class="providers">
         <div class="container">
-            <div class="section-header text-center">
-                <p>Đối tác vận chuyển</p>
-                <h2>Danh sách đơn vị vận chuyển</h2>
-            </div>
+          <div class="section-header text-center">
+            <p>Đối tác vận chuyển</p>
+            <h2>Danh sách đơn vị vận chuyển</h2>
+          </div>
 
-            <div class="row" th:if="${providers != null and !providers.empty}">
-                <div
-                        class="col-lg-4 col-md-6 wow fadeInUp"
-                        th:each="provider : ${providers}"
-                        data-wow-delay="0.1s"
-                >
-                    <div class="service-item">
-                        <div class="service-img">
-                            <img
-                                    th:src="@{/homepage/img/service-remake-1.jpg}"
-                                    alt="Đơn vị vận chuyển"
-                            />
-                            <div class="service-overlay">
-                                <p th:text="'Đánh giá: ' + ${provider.rating} + '/5.0'">
-                                    Đánh giá
-                                </p>
-                            </div>
-                        </div>
-                        <div class="service-text">
-                            <h3 th:text="${provider.companyName}">Tên công ty</h3>
-                            <div class="rating mb-2">
+          <!-- Search and Date Filter (removed time as requested) -->
+          <div class="row mb-4">
+            <div class="col-md-6 mb-2">
+              <input
+                id="providerSearch"
+                type="text"
+                class="form-control"
+                placeholder="Tìm theo tên nhà vận chuyển..."
+              />
+            </div>
+            <div class="col-md-6 mb-2">
+              <input id="availabilityDate" type="date" class="form-control" />
+            </div>
+          </div>
+
+          <div class="row" th:if="${providers != null and !providers.empty}">
+            <div
+              class="col-lg-4 col-md-6 mb-4 wow fadeInUp provider-card"
+              th:each="provider : ${providers}"
+              th:attr="data-provider-id=${provider.providerId}"
+              data-wow-delay="0.1s"
+            >
+              <div class="service-item">
+                <div class="service-img">
+                  <img
+                    th:src="@{/homepage/img/service-remake-1.jpg}"
+                    alt="Đơn vị vận chuyển"
+                    class="img-fluid"
+                  />
+                </div>
+                <div class="service-text">
+                  <h3>
+                    <a th:href="@{'/providers/' + ${provider.providerId}}" th:text="${provider.companyName}">Tên công ty</a>
+                  </h3>
+                  <div class="rating mb-2">
                     <span class="text-warning">
                       <i
-                              class="fas fa-star"
-                              th:each="i : ${#numbers.sequence(1, 5)}"
-                              th:classappend="${i <= provider.rating} ? 'fas' : 'far'"
+                        th:each="i : ${#numbers.sequence(1, 5)}"
+                        th:class="${provider.rating >= i} ? 'fas fa-star' : (${provider.rating >= i - 0.5} ? 'fas fa-star-half-alt' : 'far fa-star')"
                       ></i>
                     </span>
-                                <span th:text="${provider.rating} + '/5.0'">4.8/5.0</span>
-                            </div>
-                            <a
-                                    class="btn"
-                                    th:href="@{/homepage/request(providerId=${provider.providerId})}"
-                            >Chọn dịch vụ</a
-                            >
-                        </div>
+                    <span th:text="${provider.rating} + '/5.0'"></span>
+                  <div class="mb-2">
+                    <span class="badge badge-success d-none avail-badge"
+                      >Rảnh ngày này</span
+                    >
+                    <span class="badge badge-danger d-none busy-badge"
+                      >Bận ngày này</span
+                    >
+                  </div>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="btn-group mr-2">
+                      <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Chọn dịch vụ
+                      </button>
+                      <div class="dropdown-menu">
+                        <a class="dropdown-item" th:href="@{/service/chuyen-nha(providerId=${provider.providerId})}">Chuyển nhà trọn gói</a>
+                        <a class="dropdown-item" th:href="@{/service/chuyen-van-phong(providerId=${provider.providerId})}">Chuyển văn phòng</a>
+                        <a class="dropdown-item" th:href="@{/service/cho-thue-xe-tai(providerId=${provider.providerId})}">Cho thuê xe tải</a>
+                        <a class="dropdown-item" th:href="@{/service/thao-lap-dong-goi(providerId=${provider.providerId})}">Tháo lắp &amp; đóng gói</a>
+                        <a class="dropdown-item" th:href="@{/service/van-chuyen-lien-tinh(providerId=${provider.providerId})}">Vận chuyển liên tỉnh</a>
+                        <a class="dropdown-item" th:href="@{/service/boc-xep-kho-bai(providerId=${provider.providerId})}">Bốc xếp &amp; kho bãi</a>
+                      </div>
                     </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm view-reviews" th:attr="data-provider-id=${provider.providerId},data-provider-name=${provider.companyName}">
+                      <i class="far fa-comments mr-1"></i> Xem đánh giá
+                    </button>
+                  </div>
                 </div>
+              </div>
             </div>
+          </div>
 
-            <!-- Empty state -->
-            <div class="row" th:if="${providers == null or providers.empty}">
-                <div class="col-12 text-center">
-                    <div class="alert alert-info">
-                        <h4>Chưa có đơn vị vận chuyển nào</h4>
-                        <p>Hiện tại chưa có đơn vị vận chuyển nào trong hệ thống.</p>
-                    </div>
-                </div>
+          <!-- Empty state -->
+          <div class="row" th:if="${providers == null or providers.empty}">
+            <div class="col-12 text-center">
+              <div class="alert alert-info">
+                <h4>Chưa có đơn vị vận chuyển nào</h4>
+                <p>Hiện tại chưa có đơn vị vận chuyển nào trong hệ thống.</p>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
+      <!-- Providers End -->
+
+      <!-- Footer -->
+      <div th:replace="fragments/footer :: footer"></div>
     </div>
-    <!-- Providers End -->
 
-    <!-- Footer -->
-    <div th:replace="fragments/footer :: footer"></div>
-</div>
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+    <script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+    <script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+    <script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+    <script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+    <script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+    <script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+    <script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
 
-<!-- JavaScript Libraries -->
-<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-<script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
-<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
-<script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
-<script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
-<script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
-<script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
-<script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
-<script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+    <!-- Template Javascript -->
+    <script th:src="@{/homepage/js/main.js}"></script>
 
-<!-- Template Javascript -->
-<script th:src="@{/homepage/js/main.js}"></script>
-</body>
+    <!-- Reviews Modal -->
+    <div class="modal fade" id="reviewsModal" tabindex="-1" role="dialog" aria-labelledby="reviewsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reviewsModalLabel">Đánh giá khách hàng</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="reviewsLoading" class="text-center py-3 d-none">
+              <div class="spinner-border text-primary" role="status"></div>
+              <div class="small mt-2">Đang tải đánh giá...</div>
+            </div>
+            <div id="reviewsEmpty" class="alert alert-light d-none">Chưa có đánh giá nào cho đơn vị này.</div>
+            <div id="reviewsError" class="alert alert-danger d-none">Không thể tải đánh giá. Vui lòng thử lại sau.</div>
+            <div id="reviewsList"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const $search = document.getElementById("providerSearch");
+        const $date = document.getElementById("availabilityDate");
+        const $reviewsModal = document.getElementById('reviewsModal');
+        const $reviewsList = document.getElementById('reviewsList');
+        const $reviewsLoading = document.getElementById('reviewsLoading');
+        const $reviewsEmpty = document.getElementById('reviewsEmpty');
+        const $reviewsError = document.getElementById('reviewsError');
+
+        function renderStars(rating) {
+          let html = '<span class="text-warning">';
+          for (let i = 1; i <= 5; i++) {
+            html += `<i class="${rating >= i ? 'fas fa-star' : (rating >= i - 0.5 ? 'fas fa-star-half-alt' : 'far fa-star')}"></i>`;
+          }
+          html += `</span> <small class="text-muted ml-1">${rating}/5</small>`;
+          return html;
+        }
+
+        async function openReviews(providerId, providerName) {
+          // Set title
+          const title = document.getElementById('reviewsModalLabel');
+          if (title) title.textContent = `Đánh giá – ${providerName}`;
+
+          // Reset states
+          $reviewsList.innerHTML = '';
+          $reviewsEmpty.classList.add('d-none');
+          $reviewsError.classList.add('d-none');
+          $reviewsLoading.classList.remove('d-none');
+
+          // Show modal
+          // jQuery is available because of Bootstrap 4
+          window.jQuery && window.jQuery('#reviewsModal').modal('show');
+
+          try {
+            const resp = await fetch(`/api/providers/${providerId}/reviews`);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            const items = Array.isArray(data) ? data : (data.data || []);
+
+            if (!items.length) {
+              $reviewsEmpty.classList.remove('d-none');
+              return;
+            }
+
+            const parts = items.map(it => {
+              const dt = it.createdAt ? new Date(it.createdAt) : null;
+              const when = dt ? dt.toLocaleString('vi-VN') : '';
+              return `<div class="review-item">
+                        <div class="d-flex align-items-center mb-1">
+                          ${renderStars(it.rating || 0)}
+                          <small class="text-muted ml-2">${when}</small>
+                        </div>
+                        <div class="comment">${(it.comment || '').replace(/</g, '&lt;')}</div>
+                      </div>`;
+            });
+            $reviewsList.innerHTML = parts.join('');
+          } catch (e) {
+            $reviewsError.classList.remove('d-none');
+          } finally {
+            $reviewsLoading.classList.add('d-none');
+          }
+        }
+
+        function renderSearch(results) {
+          const ids = new Set(results.map((p) => p.providerId));
+          document.querySelectorAll(".provider-card").forEach((card) => {
+            const id = parseInt(card.getAttribute("data-provider-id"));
+            card.style.display = ids.size === 0 || ids.has(id) ? "" : "none";
+          });
+        }
+
+        async function doSearch() {
+          const q = ($search.value || "").trim();
+          if (!q) {
+            // Show all if empty
+            document
+              .querySelectorAll(".provider-card")
+              .forEach((card) => (card.style.display = ""));
+            return;
+          }
+          try {
+            const resp = await fetch(
+              `/api/providers/search?name=${encodeURIComponent(q)}`
+            );
+            const data = await resp.json();
+            renderSearch(data.data || []);
+          } catch (e) {
+            /* noop */
+          }
+        }
+
+        function applyAvailability(availMap, hasTime) {
+          const labelAvail = hasTime ? 'Rảnh thời điểm này' : 'Rảnh ngày này';
+          const labelBusy = hasTime ? 'Bận thời điểm này' : 'Bận ngày này';
+          document.querySelectorAll(".provider-card").forEach((card) => {
+            const id = parseInt(card.getAttribute("data-provider-id"));
+            const m = availMap.get(id);
+            const avail = card.querySelector(".avail-badge");
+            const busy = card.querySelector(".busy-badge");
+            if (!m) {
+              avail.classList.add("d-none");
+              busy.classList.add("d-none");
+            } else if (m.available) {
+              avail.textContent = labelAvail;
+              avail.classList.remove("d-none");
+              busy.classList.add("d-none");
+            } else {
+              busy.textContent = labelBusy;
+              avail.classList.add("d-none");
+              busy.classList.remove("d-none");
+            }
+          });
+        }
+
+        async function checkAvailability() {
+          const d = $date && $date.value;
+          const t = $time && $time.value;
+          if (!d) {
+            // clear badges
+            applyAvailability(new Map(), false);
+            return;
+          }
+          try {
+            let url = `/api/providers/availability?date=${encodeURIComponent(d)}`;
+            if (t) {
+              url += `&time=${encodeURIComponent(t)}`;
+            }
+            const resp = await fetch(url);
+            const json = await resp.json();
+            const map = new Map();
+            (json.data || []).forEach((p) => map.set(p.providerId, p));
+            applyAvailability(map, Boolean(t));
+          } catch (e) {
+            /* noop */
+          }
+        }
+
+        $search &&
+          $search.addEventListener("input", () => {
+            // debounce slightly
+            if ($search._t) clearTimeout($search._t);
+            $search._t = setTimeout(doSearch, 250);
+          });
+
+        $date && $date.addEventListener("change", checkAvailability);
+        $time && $time.addEventListener("change", checkAvailability);
+
+        // click handler for view reviews buttons
+        document.addEventListener('click', function(e) {
+          const btn = e.target.closest && e.target.closest('.view-reviews');
+          if (!btn) return;
+          const providerId = btn.getAttribute('data-provider-id');
+          const providerName = btn.getAttribute('data-provider-name') || '';
+          if (providerId) {
+            openReviews(providerId, providerName);
+          }
+        });
+
+        // default date/time = now
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        const hh = String(today.getHours()).padStart(2, "0");
+        const mi = String(today.getMinutes()).padStart(2, "0");
+        if ($date) {
+          $date.value = `${yyyy}-${mm}-${dd}`;
+        }
+        if ($time) {
+          $time.value = `${hh}:${mi}`;
+        }
+        checkAvailability();
+      })();
+    </script>
+  </body>
 </html>

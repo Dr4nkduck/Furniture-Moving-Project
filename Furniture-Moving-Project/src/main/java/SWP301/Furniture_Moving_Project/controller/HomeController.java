@@ -59,4 +59,10 @@ public class HomeController {
         // View name khớp với templates/homepage/homepage.html
         return "homepage/homepage";
     }
+
+    // Convenience route used in carousel/linking
+    @GetMapping("/homepage/providers")
+    public String homepageProviders() {
+        return "redirect:/providers";
+    }
 }

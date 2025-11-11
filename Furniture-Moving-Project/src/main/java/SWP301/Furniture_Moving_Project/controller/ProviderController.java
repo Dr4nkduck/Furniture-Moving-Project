@@ -12,11 +12,17 @@ import java.util.Map;
 @RequestMapping("/api/providers")
 @CrossOrigin(origins = "*")
 public class ProviderController {
-
     private final ProviderRepository providerRepository;
 
     public ProviderController(ProviderRepository providerRepository) {
         this.providerRepository = providerRepository;
+    }
+    @GetMapping("")
+    public String providerHome() { return "provider";}  // => providers.html
+
+    @GetMapping("/provider/dashboard")
+    public String dashboard() {
+        return "provider/dashboard";
     }
 
         
@@ -28,6 +34,12 @@ public class ProviderController {
     @GetMapping("/provider/orders")
     public String orders() {
         return "provider/orders";
+    }
+
+    @GetMapping("/provider/orders/{id}")
+    public String orderDetail(@PathVariable Integer id, Model model) { // PV-004/005
+        model.addAttribute("orderId", id);
+        return "provider/order-detail";
     }
 }
 

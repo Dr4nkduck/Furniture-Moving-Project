@@ -1,0 +1,17 @@
+/* Minimal styles for the user profile page */
+:root{
+  --card-radius: 10px;
+}
+.page-header{background:#f8f9fa;padding:20px 0;border-bottom:1px solid #eee}
+.profile-summary .avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.profile-summary .card{border-radius:var(--card-radius)}
+.card{border-radius:var(--card-radius);box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f0f0f0}
+.card-header{border-bottom:1px solid #eee}
+.form-control{border-radius:8px}
+.avatar-wrapper{position:relative;display:inline-block}
+.avatar-wrapper::after{content:"";position:absolute;right:0;bottom:0;width:28px;height:28px;background:#007bff;border-radius:50%;display:none}
+.profile-section label{font-weight:500}
+
+@media (max-width: 767.98px){
+  .profile-summary .avatar{width:96px;height:96px}
+}
