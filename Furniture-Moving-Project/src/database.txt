@@ -70,7 +70,7 @@ IF OBJECT_ID('authentication','U') IS NOT NULL DROP TABLE authentication;
 CREATE TABLE authentication (
     auth_id               INT IDENTITY(1,1) PRIMARY KEY,
     user_id               INT NOT NULL,
-    password_hash         VARCHAR(255) NOT NULL,
+password_hash         VARCHAR(255) NOT NULL,
     mfa_enabled           BIT NOT NULL DEFAULT 0,
     mfa_method            VARCHAR(20),
     failed_attempts       INT NOT NULL DEFAULT 0,
@@ -202,7 +202,7 @@ IF OBJECT_ID('furniture_items','U') IS NOT NULL DROP TABLE furniture_items;
 CREATE TABLE furniture_items (
     item_id           INT IDENTITY(1,1) PRIMARY KEY,
     request_id        INT NOT NULL,
-    item_type         VARCHAR(50) NOT NULL,
+item_type         VARCHAR(50) NOT NULL,
     size              VARCHAR(50) NULL,
     quantity          INT NOT NULL DEFAULT 1,
     is_fragile        BIT NOT NULL DEFAULT 0,
@@ -265,7 +265,7 @@ CREATE UNIQUE INDEX UX_payments_paid_once ON payments(service_request_id) WHERE 
 -- REVIEWS
 IF OBJECT_ID('reviews','U') IS NOT NULL DROP TABLE reviews;
 CREATE TABLE reviews (
-    review_id     INT IDENTITY(1,1) PRIMARY KEY,
+review_id     INT IDENTITY(1,1) PRIMARY KEY,
     request_id    INT NOT NULL UNIQUE,
     customer_id   INT NOT NULL,
     provider_id   INT NOT NULL,
@@ -409,7 +409,7 @@ SELECT
     u.status, u.email_verified, u.phone_verified, u.created_at, u.updated_at,
     a.failed_attempts, a.account_locked_until, a.mfa_enabled, a.mfa_method,
     MAX(CASE WHEN ur.is_primary = 1 THEN r.role_name END) AS primary_role,
-    MAX(CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 1 ELSE 0 END) AS has_super_admin,
+MAX(CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 1 ELSE 0 END) AS has_super_admin,
     CASE 
       WHEN MAX(CASE WHEN r.role_name = 'SUPER_ADMIN' THEN 1 ELSE 0 END) = 1 THEN 'SUPER_ADMIN'
       WHEN MAX(CASE WHEN r.role_name = 'ADMIN'       THEN 1 ELSE 0 END) = 1 THEN 'ADMIN'
@@ -470,7 +470,7 @@ BEGIN TRY
         UPDATE admins SET access_level='super' WHERE user_id=@uid;
 
     -- Hạ quyền SUPER_ADMIN của admin1 nếu lỡ có
-    DECLARE @uid_admin1 INT = (SELECT user_id FROM users WHERE username='admin1');
+DECLARE @uid_admin1 INT = (SELECT user_id FROM users WHERE username='admin1');
     IF @uid_admin1 IS NOT NULL
     BEGIN
         DELETE ur
@@ -540,7 +540,7 @@ BEGIN TRY
     IF OBJECT_ID('dbo.service_providers','U') IS NOT NULL
        AND OBJECT_ID('dbo.providers','U') IS NULL
     BEGIN
-        EXEC sp_rename 'dbo.service_providers', 'providers';
+EXEC sp_rename 'dbo.service_providers', 'providers';
     END
 
     ;WITH c AS (
@@ -609,8 +609,7 @@ BEGIN
         ALTER TABLE provider_service_packages DROP COLUMN surcharge_narrow_alley;
     IF COL_LENGTH('provider_service_packages','surcharge_weekend') IS NOT NULL
         ALTER TABLE provider_service_packages DROP COLUMN surcharge_weekend;
-
-    IF COL_LENGTH('provider_service_packages','per_km') IS NULL
+IF COL_LENGTH('provider_service_packages','per_km') IS NULL
         ALTER TABLE provider_service_packages ADD per_km DECIMAL(12,2) NULL;
 
     IF COL_LENGTH('provider_service_packages','package_name_snapshot') IS NULL
@@ -675,7 +674,7 @@ BEGIN
   -- package FK
   IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_ppfp_package')
   BEGIN
-      IF OBJECT_ID('service_packages','U') IS NOT NULL
+IF OBJECT_ID('service_packages','U') IS NOT NULL
           ALTER TABLE provider_package_furniture_prices
             ADD CONSTRAINT FK_ppfp_package FOREIGN KEY (package_id)
             REFERENCES service_packages(package_id);
@@ -740,7 +739,7 @@ BEGIN
         IF OBJECT_ID('furniture_types','U') IS NOT NULL
         BEGIN
             DECLARE @ft_sofa INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Sofa');
-            DECLARE @ft_bed  INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Giường');
+DECLARE @ft_bed  INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Giường');
             DECLARE @ft_chair INT = (SELECT furniture_type_id FROM furniture_types WHERE name=N'Ghế');
 
             IF @ft_sofa IS NOT NULL AND NOT EXISTS (
@@ -813,8 +812,7 @@ BEGIN TRY
     DECLARE @uid INT = (
         SELECT TOP 1 user_id FROM users WHERE username = 'prov1'
     );
-
-    -------------------------------------------------------
+-------------------------------------------------------
     -- 3) Đảm bảo authentication cho prov1 với {noop}Prov@123
     -------------------------------------------------------
     IF NOT EXISTS (SELECT 1 FROM authentication WHERE user_id = @uid)
