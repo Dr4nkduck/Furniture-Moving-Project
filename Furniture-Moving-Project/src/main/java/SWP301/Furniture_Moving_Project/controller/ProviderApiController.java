@@ -1,6 +1,12 @@
 // src/main/java/SWP301/Furniture_Moving_Project/controller/ProviderApiController.java
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderPricingDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderPackagePricingDTO;
+import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
+import SWP301.Furniture_Moving_Project.model.Provider;
+import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderPackageSnapshotDTO;
 import SWP301.Furniture_Moving_Project.dto.ServicePackageListItemDTO;
