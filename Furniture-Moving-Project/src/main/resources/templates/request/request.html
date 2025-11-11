@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <title>Yêu cầu dịch vụ • Furniture Moving</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <!-- ====== CSS: dùng chung với homepage ====== -->
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libs của homepage (để navbar/header/footer hiển thị đúng) -->
+    <link th:href="@{/homepage/lib/flaticon/font/flaticon.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet">
+
+    <!-- Style tổng của homepage -->
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
+
+    <!-- Style riêng của trang request -->
+    <link rel="stylesheet" th:href="@{/request/css/request.css}" />
+
+    <!-- Patch tránh navbar chồng topbar (chỉ trang này) -->
+    <style>
+      .page-request .nav-bar{margin-top:0!important;position:relative!important;top:0!important;}
+    </style>
+  </head>
+
+  <body class="page-request">
+    <div class="wrapper">
+      <!-- Header / Topbar -->
+      <div th:replace="fragments/header :: topbar"></div>
+
+      <!-- Navbar -->
+      <div th:replace="fragments/navbar :: navbar"></div>
+
+      <!-- ====== CONTENT ====== -->
+      <main class="container page-request__scope" style="padding: var(--space, 24px) 0;">
+        <!-- Steps -->
+        <div class="card" style="margin-bottom:var(--space, 24px)">
+          <div class="bd steps">
+            <span class="chip active">1. Thông tin dịch vụ</span>
+            <span class="chip">2. Địa chỉ</span>
+            <span class="chip">3. Đồ đạc</span>
+            <span class="chip">4. Lịch hẹn</span>
+            <span class="chip">5. Xem lại & Gửi</span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <!-- LEFT: FORM -->
+          <form id="reqForm" class="stack" style="display:grid; gap: var(--space, 24px);">
+
+            <!-- 1) SERVICE BASICS -->
+            <section class="card" id="step-service">
+              <div class="hd"><div class="eyebrow">Dịch vụ</div><strong>Thông tin cơ bản</strong></div>
+              <div class="bd">
+                <div class="row">
+                  <div class="col-6">
+                    <label for="servicePackage">Gói dịch vụ</label>
+                    <select id="servicePackage" name="servicePackageCode" required>
+                      <option value="" disabled selected>— Chọn gói —</option>
+                      <option value="HOME_FULL">Chuyển nhà trọn gói</option>
+                      <option value="OFFICE">Chuyển văn phòng</option>
+                      <option value="LOADING">Bốc xếp & kho bãi</option>
+                      <option value="INSTALL">Tháo lắp & đóng gói</option>
+                      <option value="INTERCITY">Vận chuyển liên tỉnh</option>
+                      <option value="TRUCK_RENT">Cho thuê xe tải</option>
+                    </select>
+                    <div class="hint">Có thể map với bảng <code>service_packages</code>.</div>
+                  </div>
+                  <div class="col-6">
+                    <label for="providerId">Nhà cung cấp (tuỳ chọn)</label>
+                    <select id="providerId" name="providerId">
+                      <option value="">— Hệ thống tự gợi ý —</option>
+                    </select>
+                    <div class="hint">Để trống nếu chưa chọn; backend có thể assign tự động.</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-6">
+                    <label for="notes">Ghi chú</label>
+                    <textarea id="notes" name="notes" placeholder="Yêu cầu thêm, đồ đặc biệt, khung giờ liên hệ..."></textarea>
+                  </div>
+                  <div class="col-6">
+                    <label for="images">Ảnh đồ đạc (tuỳ chọn)</label>
+                    <input id="images" name="images" type="file" accept="image/*" multiple />
+                    <div class="thumbs" id="thumbs"></div>
+                    <div class="hint">Bạn có thể tải nhiều ảnh để phía nhà cung cấp ước lượng.</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 2) ADDRESSES -->
+            <section class="card" id="step-addresses">
+              <div class="hd"><div class="eyebrow">Địa chỉ</div><strong>Lấy hàng & Giao hàng</strong></div>
+              <div class="bd">
+                <div class="row">
+                  <div class="col-6">
+                    <h3 style="margin:0 0 6px">Điểm lấy hàng</h3>
+                    <div class="row">
+                      <div class="col-12">
+                        <label for="pickupLine1">Địa chỉ</label>
+                        <input id="pickupLine1" name="pickup.addressLine1" type="text" placeholder="Số nhà, đường..." required />
+                      </div>
+                      <div class="col-6">
+                        <label for="pickupDistrict">Quận/Huyện</label>
+                        <input id="pickupDistrict" name="pickup.district" type="text" />
+                      </div>
+                      <div class="col-6">
+                        <label for="pickupCity">Tỉnh/Thành</label>
+                        <input id="pickupCity" name="pickup.city" type="text" />
+                      </div>
+                      <div class="col-6 inline">
+                        <label for="pickupFloor">Tầng</label>
+                        <input id="pickupFloor" name="pickup.floor" type="number" min="0" placeholder="0" />
+                      </div>
+                      <div class="col-6 switch">
+                        <input id="pickupElevator" name="pickup.hasElevator" type="checkbox" />
+                        <label for="pickupElevator">Chung cư có thang máy</label>
+                      </div>
+                      <div class="col-6">
+                        <label for="pickupContact">Người liên hệ</label>
+                        <input id="pickupContact" name="pickup.contactName" type="text" />
+                      </div>
+                      <div class="col-6">
+                        <label for="pickupPhone">Số điện thoại</label>
+                        <input id="pickupPhone" name="pickup.contactPhone" type="tel" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-6">
+                    <h3 style="margin:0 0 6px">Điểm giao hàng</h3>
+                    <div class="row">
+                      <div class="col-12">
+                        <label for="dropLine1">Địa chỉ</label>
+                        <input id="dropLine1" name="drop.addressLine1" type="text" placeholder="Số nhà, đường..." required />
+                      </div>
+                      <div class="col-6">
+                        <label for="dropDistrict">Quận/Huyện</label>
+                        <input id="dropDistrict" name="drop.district" type="text" />
+                      </div>
+                      <div class="col-6">
+                        <label for="dropCity">Tỉnh/Thành</label>
+                        <input id="dropCity" name="drop.city" type="text" />
+                      </div>
+                      <div class="col-6 inline">
+                        <label for="dropFloor">Tầng</label>
+                        <input id="dropFloor" name="drop.floor" type="number" min="0" placeholder="0" />
+                      </div>
+                      <div class="col-6 switch">
+                        <input id="dropElevator" name="drop.hasElevator" type="checkbox" />
+                        <label for="dropElevator">Chung cư có thang máy</label>
+                      </div>
+                      <div class="col-6">
+                        <label for="dropContact">Người liên hệ</label>
+                        <input id="dropContact" name="drop.contactName" type="text" />
+                      </div>
+                      <div class="col-6">
+                        <label for="dropPhone">Số điện thoại</label>
+                        <input id="dropPhone" name="drop.contactPhone" type="tel" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 3) ITEMS -->
+            <section class="card" id="step-items">
+              <div class="hd"><div class="eyebrow">Đồ đạc</div><strong>Danh sách đồ cần chuyển</strong></div>
+              <div class="bd">
+                <div class="hint">Thêm từng món đồ, số lượng và kích thước/khối lượng (nếu biết). Có thể đánh dấu dễ vỡ.</div>
+                <div style="overflow-x:auto;">
+                  <table class="items" id="itemsTable" aria-label="Bảng đồ đạc">
+                    <thead>
+                      <tr>
+                        <th>Tên đồ</th>
+                        <th>Số lượng</th>
+                        <th>Dài (cm)</th>
+                        <th>Rộng (cm)</th>
+                        <th>Cao (cm)</th>
+                        <th>Nặng (kg)</th>
+                        <th>Dễ vỡ</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="itemsBody"></tbody>
+                  </table>
+                </div>
+                <div class="item-actions">
+                  <button class="btn" type="button" id="addItem">+ Thêm đồ</button>
+                  <button class="btn" type="button" id="clearItems">Xoá tất cả</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 4) SCHEDULE -->
+            <section class="card" id="step-schedule">
+              <div class="hd"><div class="eyebrow">Lịch hẹn</div><strong>Chọn ngày & giờ</strong></div>
+              <div class="bd row">
+                <div class="col-6">
+                  <label for="preferredDate">Ngày ưu tiên</label>
+                  <input id="preferredDate" name="preferredDate" type="date" required />
+                </div>
+                <div class="col-6">
+                  <label for="preferredTime">Giờ ưu tiên</label>
+                  <input id="preferredTime" name="preferredTime" type="time" />
+                </div>
+              </div>
+            </section>
+
+            <!-- 5) SUBMIT -->
+            <section class="card" id="submit">
+              <div class="bd" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btn" type="button" id="saveDraft">Lưu nháp</button>
+                <button class="btn primary" type="submit">Gửi yêu cầu</button>
+              </div>
+            </section>
+
+          </form>
+
+          <!-- RIGHT: SUMMARY -->
+          <aside class="summary">
+            <section class="card">
+              <div class="hd"><div class="eyebrow">Tổng quan</div><strong>Tóm tắt & Ước tính</strong></div>
+              <div class="bd">
+                <div class="kv"><span>Gói:</span> <strong id="sumPkg">—</strong></div>
+                <div class="kv"><span>Đồ đạc:</span> <strong id="sumItems">0 món</strong></div>
+                <div class="kv"><span>Ảnh tải lên:</span> <strong id="sumImgs">0</strong></div>
+                <div class="kv"><span>Ngày:</span> <strong id="sumDate">—</strong></div>
+                <div class="sep"></div>
+                <div class="kv"><span>Ước tính (tham khảo):</span> <strong id="sumCost">—</strong></div>
+                <div class="hint">Chi phí ước tính để tham khảo. Giá cuối cùng phụ thuộc quãng đường, đồ đạc, nhà cung cấp.</div>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="hd"><div class="eyebrow">Lưu ý</div><strong>Trạng thái & Quy định</strong></div>
+              <div class="bd" style="font-size:14px; color:var(--muted)">
+                <ul style="margin:0 0 0 18px; display:grid; gap:8px;">
+                  <li>Yêu cầu mới tạo sẽ ở trạng thái <strong>pending</strong>.</li>
+                  <li>Chỉ có thể sửa/xoá khi trạng thái còn pending.</li>
+                  <li>Ảnh chỉ dùng để nhà cung cấp ước lượng – không bắt buộc.</li>
+                </ul>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <div th:replace="fragments/footer :: footer"></div>
+    </div>
+
+    <!-- ====== JS: dùng chung với homepage ====== -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+
+    <script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+    <script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+    <script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+    <script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+    <script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+    <script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+    <script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+    <script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+
+    <!-- JS tổng của homepage -->
+    <script th:src="@{/homepage/js/main.js}"></script>
+
+    <!-- JS riêng của trang request -->
+    <script th:src="@{/request/js/request.js}" defer></script>
+  </body>
+</html>

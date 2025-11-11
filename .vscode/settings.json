@@ -2,5 +2,6 @@
   "java.autobuild.enabled": true,
   "java.configuration.updateBuildConfiguration": "automatic",
   "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 500
+  "files.autoSaveDelay": 500,
+  "java.compile.nullAnalysis.mode": "automatic"
 }

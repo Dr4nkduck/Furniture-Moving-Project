@@ -1,0 +1,223 @@
+/* ===== Provider Layout: navbar + sidebar + dark mode ===== */
+
+:root {
+    --bg: #ffffff;
+    --text: #0f172a;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --surface: #ffffff;
+    --brand: #3b82f6;
+}
+
+.dark {
+    --bg: #0b1020;
+    --text: #e5e7eb;
+    --muted: #9aa3b2;
+    --border: #1f2737;
+    --surface: #0f172a;
+}
+
+/* Base */
+html, body {
+    height: 100%
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Layout grid */
+.page-app {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    z-index: 1030;
+    padding: 14px;
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.content {
+    flex: 1;
+    margin-left: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 992px) {
+    .sidebar {
+        transform: none;
+    }
+
+    .content {
+        margin-left: 260px;
+    }
+}
+
+/* Backdrop for mobile */
+#sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .25);
+    backdrop-filter: blur(1px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: 1029;
+}
+
+#sidebar-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Sidebar nav */
+.sidebar .brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin: 6px 6px 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.sidebar .avatar {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .6rem .8rem;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    margin: 0 6px 14px;
+}
+
+.sidebar .nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sidebar .nav a {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem .8rem;
+    border-radius: .7rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+
+.sidebar .nav a:hover {
+    background: rgba(148, 163, 184, .14);
+    color: var(--text);
+}
+
+.sidebar .nav a.active {
+    color: #e5e7eb;
+    background: linear-gradient(90deg, rgba(59, 130, 246, .18), rgba(59, 130, 246, .06));
+    box-shadow: inset 3px 0 0 var(--brand);
+}
+
+/* Topbar */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1028;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: .6rem .9rem;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+}
+
+.topbar .sidebar-toggler {
+    border: 0;
+    background: transparent;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.topbar .search {
+    flex: 1;
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .topbar .search {
+        display: block;
+    }
+}
+
+.topbar input[type=search] {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 10px;
+    padding: .45rem .7rem;
+}
+
+/* Dark toggle button */
+#theme-toggle {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    padding: .35rem .6rem;
+    border-radius: 10px;
+}
+
+/* Utility card style to match dashboard */
+.card-dark {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px;
+}
+
+/* Table / badge colors (common) */
+.badge {
+    border-radius: 999px;
+    padding: .3rem .6rem;
+    font-size: .75rem;
+}
+
+.badge[data-status="pending"] {
+    background: #f5b301;
+    color: #111827;
+}
+
+.badge[data-status="accepted"] {
+    background: #0dcaf0;
+}
+
+.badge[data-status="in_progress"] {
+    background: #6f42c1;
+}
+
+.badge[data-status="completed"] {
+    background: #198754;
+}
+
+.badge[data-status="declined"], .badge[data-status="cancelled"] {
+    background: #dc3545;
+}

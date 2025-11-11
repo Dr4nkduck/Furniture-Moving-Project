@@ -7,10 +7,7 @@ public class ProviderPricingDTO {
     @NotNull private BigDecimal baseFee;
     @NotNull private BigDecimal perKm;
     @NotNull private BigDecimal perMinute;
-    @NotNull private BigDecimal surchargeStairs;
-    @NotNull private BigDecimal surchargeNoElevator;
-    @NotNull private BigDecimal surchargeNarrowAlley;
-    @NotNull private BigDecimal surchargeWeekend;
+
 
     // getters/setters
 
@@ -39,35 +36,5 @@ public class ProviderPricingDTO {
         this.perMinute = perMinute;
     }
 
-    public BigDecimal getSurchargeNoElevator() {
-        return surchargeNoElevator;
-    }
 
-    public void setSurchargeNoElevator(BigDecimal surchargeNoElevator) {
-        this.surchargeNoElevator = surchargeNoElevator;
-    }
-
-    public BigDecimal getSurchargeStairs() {
-        return surchargeStairs;
-    }
-
-    public void setSurchargeStairs(BigDecimal surchargeStairs) {
-        this.surchargeStairs = surchargeStairs;
-    }
-
-    public BigDecimal getSurchargeNarrowAlley() {
-        return surchargeNarrowAlley;
-    }
-
-    public void setSurchargeNarrowAlley(BigDecimal surchargeNarrowAlley) {
-        this.surchargeNarrowAlley = surchargeNarrowAlley;
-    }
-
-    public BigDecimal getSurchargeWeekend() {
-        return surchargeWeekend;
-    }
-
-    public void setSurchargeWeekend(BigDecimal surchargeWeekend) {
-        this.surchargeWeekend = surchargeWeekend;
-    }
 }

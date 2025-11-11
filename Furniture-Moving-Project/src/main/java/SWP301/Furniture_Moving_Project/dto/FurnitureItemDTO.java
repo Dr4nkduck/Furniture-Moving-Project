@@ -1,23 +1,21 @@
 package SWP301.Furniture_Moving_Project.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 public class FurnitureItemDTO {
-
-    @NotBlank(message = "itemType is required")
+    @NotBlank
     private String itemType;
 
     private String size;
 
-    @NotNull(message = "quantity is required")
-    @Min(value = 1, message = "quantity must be >= 1")
+    @Min(1)
     private Integer quantity;
 
-    @NotNull(message = "isFragile is required")
     private Boolean isFragile;
-
     private String specialHandling;
 
+    // getters/setters
     public String getItemType() { return itemType; }
     public void setItemType(String itemType) { this.itemType = itemType; }
     public String getSize() { return size; }

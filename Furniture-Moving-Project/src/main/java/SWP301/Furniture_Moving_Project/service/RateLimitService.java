@@ -1,7 +1,7 @@
 package SWP301.Furniture_Moving_Project.service;
 
-import SWP301.Furniture_Moving_Project.DTO.RateLimitConfigDto;
-import SWP301.Furniture_Moving_Project.DTO.RateLimitStatusDto;
+import SWP301.Furniture_Moving_Project.dto.RateLimitConfigDto;   // ✅ dto (chữ thường)
+import SWP301.Furniture_Moving_Project.dto.RateLimitStatusDto;  // ✅ dto (chữ thường)
 import SWP301.Furniture_Moving_Project.model.User;
 import SWP301.Furniture_Moving_Project.model.UserRateLimit;
 import SWP301.Furniture_Moving_Project.model.UserRateLimitLog;
@@ -24,19 +24,16 @@ public class RateLimitService {
     private final UserRepository userRepository;
 
     public RateLimitService(UserRateLimitRepository rateLimitRepository,
-                           UserRateLimitLogRepository logRepository,
-                           UserRepository userRepository) {
+                            UserRateLimitLogRepository logRepository,
+                            UserRepository userRepository) {
         this.rateLimitRepository = rateLimitRepository;
         this.logRepository = logRepository;
         this.userRepository = userRepository;
     }
 
-    /**
-     * Check if user has exceeded rate limit
-     */
+    /** Check if user has exceeded rate limit */
     public boolean isRateLimitExceeded(Integer userId) {
         Optional<UserRateLimit> limitOpt = rateLimitRepository.findByUserIdAndStatus(userId, "enabled");
-
         if (limitOpt.isEmpty()) {
             return false; // No rate limit configured
         }
@@ -44,13 +41,10 @@ public class RateLimitService {
         UserRateLimit limit = limitOpt.get();
         OffsetDateTime since = OffsetDateTime.now().minusSeconds(limit.getTimeWindowSeconds());
         long requestCount = logRepository.countByUserIdAndRequestTimestampAfter(userId, since);
-
         return requestCount >= limit.getMaxRequests();
     }
 
-    /**
-     * Log user request
-     */
+    /** Log user request */
     @Transactional
     public void logRequest(Integer userId, String requestPath, String requestMethod, String ipAddress, boolean wasBlocked) {
         UserRateLimitLog log = new UserRateLimitLog();
@@ -62,9 +56,7 @@ public class RateLimitService {
         logRepository.save(log);
     }
 
-    /**
-     * Create or update rate limit for user
-     */
+    /** Create or update rate limit for user */
     @Transactional
     public UserRateLimit setRateLimit(RateLimitConfigDto configDto, Integer adminId) {
         Optional<UserRateLimit> existingOpt = rateLimitRepository.findByUserId(configDto.getUserId());
@@ -86,9 +78,7 @@ public class RateLimitService {
         return rateLimitRepository.save(rateLimit);
     }
 
-    /**
-     * Get rate limit status for user
-     */
+    /** Get rate limit status for user */
     public RateLimitStatusDto getRateLimitStatus(Integer userId) {
         Optional<UserRateLimit> limitOpt = rateLimitRepository.findByUserId(userId);
         Optional<User> userOpt = userRepository.findById(userId);
@@ -96,9 +86,7 @@ public class RateLimitService {
         RateLimitStatusDto dto = new RateLimitStatusDto();
         dto.setUserId(userId);
 
-        if (userOpt.isPresent()) {
-            dto.setUsername(userOpt.get().getUsername());
-        }
+        userOpt.ifPresent(u -> dto.setUsername(u.getUsername()));
 
         if (limitOpt.isPresent()) {
             UserRateLimit limit = limitOpt.get();
@@ -124,24 +112,18 @@ public class RateLimitService {
         return dto;
     }
 
-    /**
-     * Get all rate limits
-     */
+    /** Get all rate limits */
     public List<UserRateLimit> getAllRateLimits() {
         return rateLimitRepository.findAll();
     }
 
-    /**
-     * Delete rate limit for user
-     */
+    /** Delete rate limit for user */
     @Transactional
     public void deleteRateLimit(Integer userId) {
         rateLimitRepository.findByUserId(userId).ifPresent(rateLimitRepository::delete);
     }
 
-    /**
-     * Clean up old logs (scheduled task - runs daily)
-     */
+    /** Clean up old logs (scheduled task - runs daily) */
     @Scheduled(cron = "0 0 2 * * ?") // Run at 2 AM every day
     @Transactional
     public void cleanupOldLogs() {
@@ -149,9 +131,7 @@ public class RateLimitService {
         logRepository.deleteByRequestTimestampBefore(threshold);
     }
 
-    /**
-     * Get recent logs for user
-     */
+    /** Get recent logs for user */
     public List<UserRateLimitLog> getRecentLogs(Integer userId, int hours) {
         OffsetDateTime since = OffsetDateTime.now().minusHours(hours);
         return logRepository.findByUserIdAndRequestTimestampAfterOrderByRequestTimestampDesc(userId, since);

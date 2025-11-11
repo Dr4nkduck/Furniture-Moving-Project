@@ -1,15 +1,22 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
+import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
+@RequestMapping("/api/providers")
+@CrossOrigin(origins = "*")
 public class ProviderController {
+    private final ProviderRepository providerRepository;
 
+    public ProviderController(ProviderRepository providerRepository) {
+        this.providerRepository = providerRepository;
+    }
     @GetMapping("")
     public String providerHome() { return "provider";}  // => providers.html
 
@@ -18,13 +25,14 @@ public class ProviderController {
         return "provider/dashboard";
     }
 
+        
     @GetMapping("/provider/services")
-    public String services() {                    // PV-002
+    public String services() {
         return "provider/services";
     }
 
     @GetMapping("/provider/orders")
-    public String orders() {                      // PV-003
+    public String orders() {
         return "provider/orders";
     }
 

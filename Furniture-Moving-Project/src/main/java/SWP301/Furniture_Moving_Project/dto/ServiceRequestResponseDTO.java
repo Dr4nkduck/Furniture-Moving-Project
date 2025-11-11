@@ -11,6 +11,11 @@ public class ServiceRequestResponseDTO {
         this.requestId = requestId;
     }
 
-    public Integer getRequestId() { return requestId; }
-    public void setRequestId(Integer requestId) { this.requestId = requestId; }
+    public Integer getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(Integer requestId) {
+        this.requestId = requestId;
+    }
 }

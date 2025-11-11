@@ -1,0 +1,183 @@
+/* ===================================================
+   PV-002 Provider Services — Themeable UI
+   =================================================== */
+
+/* ---------- THEME TOKENS ---------- */
+:root{
+    --bg: #f8fafc;            /* light background */
+    --surface: #ffffff;       /* light card */
+    --text: #0f172a;          /* slate-900 */
+    --muted: #475569;         /* slate-600 */
+    --border: #e2e8f0;        /* slate-200 */
+    --accent: #3b82f6;        /* blue-500 */
+    --accent-2: #2563eb;      /* blue-600 */
+    --shadow: 0 8px 24px rgba(2,6,23,.08);
+    --shadow-hover: 0 14px 34px rgba(2,6,23,.14);
+    --stripe: rgba(2,6,23,.04);
+}
+
+.dark{
+    --bg: #0b1220;            /* deep night */
+    --surface: #0f172a;       /* slate-900 card */
+    --text: #e5e7eb;          /* slate-200 */
+    --muted: #94a3b8;         /* slate-400 */
+    --border: #1f2937;        /* slate-800 */
+    --accent: #3b82f6;        /* blue-500 */
+    --accent-2: #2563eb;      /* blue-600 */
+    --shadow: 0 8px 22px rgba(0,0,0,.30);
+    --shadow-hover: 0 16px 38px rgba(0,0,0,.42);
+    --stripe: rgba(59,130,246,.08);
+}
+
+/* ---------- BASE ---------- */
+html, body{ height:100%; }
+body{ background:var(--bg); color:var(--text); }
+
+/* Override bootstrap “bg-light” areas in dark mode */
+.dark .navbar.bg-light,
+.dark .dropdown-menu.bg-light{
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+.dark .dropdown-menu{ color: var(--text); }
+.dark .dropdown-item{ color: var(--text); }
+.dark .dropdown-item:hover{ background: rgba(148,163,184,.12); }
+
+/* ---------- SIDEBAR OVERLAY (unchanged behavior) ---------- */
+.sidebar{
+    position:fixed; top:0; left:0; bottom:0; width:250px; z-index:1030;
+    transform:translateX(-100%); transition:transform .2s ease;
+}
+.sidebar.open{ transform:translateX(0); }
+.content, .content.open{ margin-left:0 !important; }
+
+.dark .sidebar{ background:var(--surface) !important; }
+.sidebar .nav-link{
+    display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; border-radius:.6rem;
+    color: var(--muted) !important;
+    transition: background-color .15s, color .15s, transform .12s;
+}
+.sidebar .nav-link:hover{ transform: translateX(4px); }
+.sidebar .nav-link .fa, .sidebar .nav-link .bi{ color: currentColor !important; opacity:.95; }
+.dark .sidebar .nav-link:hover{ color: var(--text) !important; background: rgba(148,163,184,.14); }
+.sidebar .nav-link.active{
+    color:#e5e7eb !important;
+    background: linear-gradient(90deg, rgba(59,130,246,.18) 0%, rgba(59,130,246,.12) 40%, rgba(59,130,246,.06) 100%);
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Backdrop */
+#sidebar-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.25); backdrop-filter: blur(1px);
+    opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:1029;
+}
+#sidebar-backdrop.show{ opacity:1; pointer-events:auto; }
+
+/* ---------- CARDS ---------- */
+.card-dark{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    transition: box-shadow .25s ease, transform .08s ease;
+}
+.card-dark:hover{ box-shadow: var(--shadow-hover); }
+
+/* ---------- TEXT ---------- */
+.muted{ color: var(--muted); }
+.fw-semibold{ font-weight:600; color: var(--text); }
+.text-shadow{ text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+
+/* ---------- LIST (left column) ---------- */
+.list-hover .list-group-item{
+    background: transparent; color: var(--text); border-color: var(--border);
+    transition: all .18s ease; cursor:pointer; position:relative; overflow:hidden;
+}
+.list-hover .list-group-item::before{
+    content:''; position:absolute; left:0; top:0; height:100%; width:3px;
+    background: var(--accent); transform: scaleY(0); transition: transform .2s ease;
+}
+.list-hover .list-group-item:hover{ background: rgba(148,163,184,.10); transform: translateX(4px); }
+.list-hover .list-group-item:hover::before{ transform: scaleY(1); }
+.list-hover .list-group-item.active{
+    background: linear-gradient(90deg, rgba(59,130,246,.15) 0%, rgba(59,130,246,.05) 100%);
+    border-color: #334155;
+    transform: translateX(4px);
+}
+.list-hover .list-group-item.active::before{ transform: scaleY(1); }
+
+/* ---------- TABLE ---------- */
+.table thead th{
+    position: sticky; top:0; background: var(--bg); z-index:1;
+    font-weight: 600; text-transform: uppercase; font-size:.75rem; letter-spacing:.05em;
+    color: var(--muted); border-bottom: 2px solid var(--border);
+}
+.table-dark { --bs-table-bg: transparent; --bs-table-striped-bg: var(--stripe); }
+.table-dark tbody tr{ transition: background-color .2s ease; }
+.table-dark tbody tr:hover{ background-color: rgba(59,130,246,.08) !important; }
+
+/* ---------- FORMS ---------- */
+.form-control, .form-select, .input-group-text{
+    background-color: rgba(15,23,42,.04);
+    border-color: var(--border);
+    color: var(--text);
+    transition: all .2s ease;
+}
+.form-control:focus, .form-select:focus{
+    background-color: rgba(15,23,42,.08);
+    border-color: var(--accent);
+    color: var(--text);
+    box-shadow: 0 0 0 .2rem rgba(59,130,246,.15);
+}
+.form-control::placeholder{ color: #64748b; }
+.form-text.muted{ font-size: .8rem; color: #64748b; }
+
+/* ---------- BUTTONS ---------- */
+.btn{ transition: all .18s ease; font-weight: 500; }
+.btn:hover{ transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,.25); }
+.btn:active{ transform: translateY(0); }
+.btn-primary{ background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); border: none; }
+.btn-primary:hover{ filter: brightness(.98); }
+.btn-success{ background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; }
+.btn-success:hover{ filter: brightness(.98); }
+
+/* ---------- BADGE ---------- */
+.badge-dim{
+    background: #1f2937; color: #cbd5e1; border: 1px solid #334155;
+    padding: .35rem .65rem; font-weight: 600; border-radius: .5rem;
+}
+
+/* ---------- TOASTS ---------- */
+.toast-box{
+    position: fixed; right: 16px; bottom: 16px; z-index: 1080; min-width: 320px; max-width: 400px;
+}
+.toast-box .alert{ animation: slideInRight .25s ease; margin-bottom: .5rem; }
+@keyframes slideInRight{ from{ transform: translateX(360px); opacity:0; } to{ transform: translateX(0); opacity:1; } }
+
+/* ---------- UTIL ---------- */
+#configuredList::-webkit-scrollbar, .table-responsive::-webkit-scrollbar{ width:8px; height:8px; }
+#configuredList::-webkit-scrollbar-track, .table-responsive::-webkit-scrollbar-track{
+    background: rgba(15,23,42,.08); border-radius: 4px;
+}
+#configuredList::-webkit-scrollbar-thumb, .table-responsive::-webkit-scrollbar-thumb{
+    background: #334155; border-radius: 4px;
+}
+#configuredList::-webkit-scrollbar-thumb:hover, .table-responsive::-webkit-scrollbar-thumb:hover{ background: #475569; }
+
+/* Alert empty state */
+#emptyHint{
+    text-align: center; padding: 2rem;
+    background: linear-gradient(135deg, rgba(59,130,246,.05) 0%, rgba(59,130,246,.02) 100%);
+}
+
+/* Sticky chevron micro-interaction */
+.bi-chevron-right{ transition: transform .2s ease; }
+.list-group-item:hover .bi-chevron-right{ transform: translateX(4px); }
+
+/* Dark friendly navbar inputs */
+.dark .navbar .form-control{ background: rgba(15,23,42,.18); color: var(--text); border-color: var(--border); }
+.dark .navbar .form-control:focus{ background: rgba(15,23,42,.28); }
+
+/* Validation helpers (optional use) */
+.form-control.is-invalid, .form-select.is-invalid{ border-color: #ef4444; }
+.form-control.is-valid, .form-select.is-valid{ border-color: #10b981; }

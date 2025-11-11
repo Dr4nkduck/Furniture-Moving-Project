@@ -12,6 +12,7 @@ import SWP301.Furniture_Moving_Project.model.User;
 public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
 
     @Query(value = """
         SELECT r.role_name
@@ -20,10 +21,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
         WHERE ur.user_id = :userId
         """, nativeQuery = true)
     List<String> findRoleNamesByUserId(Integer userId);
+    
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
-    Optional<User> findByEmail(String email);
 
     /* ========= Admins (ADMIN + SUPER_ADMIN) =========
        LƯU Ý: Đây là native query nên tự ORDER BY theo cột DB (created_at).

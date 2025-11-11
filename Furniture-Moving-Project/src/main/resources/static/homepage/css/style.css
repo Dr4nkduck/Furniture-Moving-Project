@@ -2233,3 +2233,61 @@ a:focus {
         text-align: center;
     }
 }
+
+
+/* ==== User Actions (scoped) ==== */
+.user-actions { padding: 45px 0; }
+
+.user-actions .action-card {
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+  background: #fff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.user-actions .action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+
+.user-actions .action-header {
+  background: #030f27;
+  color: #fdbe33;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.user-actions .action-header i { font-size: 22px; }
+
+.user-actions .action-body { padding: 18px 20px; flex: 1; }
+.user-actions .action-body ul { margin: 0 0 12px 18px; }
+
+.user-actions .action-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(0,0,0,.06);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Chỉ áp dụng style button trong khu vực user-actions */
+.user-actions .btn-outline-dark { border-radius: 0; }
+.user-actions .btn-primary {
+  background: #fdbe33;
+  border-color: #fdbe33;
+  color: #030f27;
+  border-radius: 0;
+}
+.user-actions .btn-primary:hover {
+  background: #030f27;
+  color: #fdbe33;
+  border-color: #030f27;
+}
+
+/* Nếu từng set .page-header { margin-bottom:0 } ở CSS user,
+   HÃY BỎ rule đó hoặc chuyển thành lớp riêng, tránh ảnh hưởng toàn site. */
+
