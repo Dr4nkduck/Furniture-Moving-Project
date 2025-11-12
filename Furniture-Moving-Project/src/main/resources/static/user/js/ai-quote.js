@@ -1747,24 +1747,57 @@ renderSlotReply(
 document.querySelector('#btn-confirm-shipment')?.classList.add('ready');
 
   // Lưu nháp để /contract đọc
-  const exportedItems = (window.AIQUOTE?.exportItems?.() || []);
-  const draft = {
-    customerName: d.name || "",
-    phone: d.phone || "",
-    from: d.fromPlace || { formatted: d.fromAddr || "" },
-    to:   d.toPlace   || { formatted: d.toAddr   || "" },
-    date: d.date, time: d.time, datetime: d.datetime,
-    km: d.km, durationText: d.durationText, routeText: d.routeText, routeSeconds: d.routeSeconds,
-    items: exportedItems,
-    totals: (window.AIQUOTE?.getTotals?.() || { qty: 0, amount: 0 }),
-    currency: currency()
-  };
+// ... (đoạn trên giữ nguyên: đã có itemsAmount, shipFee, grandTotal, d.km, etc.)
+
+// ---- GÓI DỮ LIỆU DRAFT THỐNG NHẤT (để Request đọc)
+const exportedItems = (window.AIQUOTE?.exportItems?.() || []);
+
+const draft = {
+  customer: { name: d.name || "", phone: d.phone || "" },
+  pickup:   { raw: d.fromAddr || "", formatted: d.fromPlace?.formatted || "", lat: d.fromPlace?.lat, lng: d.fromPlace?.lng, parts: d.fromParts || null },
+  dropoff:  { raw: d.toAddr   || "", formatted: d.toPlace?.formatted   || "", lat: d.toPlace?.lat, lng: d.toPlace?.lng, parts: d.toParts  || null },
+
+  schedule: { date: d.date, time: d.time, datetime: d.datetime },
+
+  route: {
+    km: d.km,
+    distanceKm: d.km,              // alias để phía Request đọc
+    durationText: d.durationText,
+    routeText: d.routeText,
+    seconds: d.routeSeconds
+  },
+
+  cart: {
+    totalQty: (window.AIQUOTE?.getTotals?.() || { qty:0 }).qty,
+    itemsAmount: itemsAmount,       // tiền hàng tạm tính
+    items: exportedItems
+  },
+
+  // **** QUAN TRỌNG: Giá đã tính cuối cùng (để Request hiển thị)
+  pricing: {
+    moveAmount: itemsAmount,        // phí vận chuyển đồ (tiền hàng tạm tính)
+    shipFee: shipFee,               // phí ship theo km
+    grandTotal: grandTotal          // tổng cuối cùng
+  },
+
+  // alias top-level (tuỳ bạn có thể bỏ, nhưng để dễ đọc ở nơi khác)
+  itemsAmount: itemsAmount,
+  shipFee: shipFee,
+  grandTotal: grandTotal,
+
+  currency: (loadSettings().currency || "VND"),
+  createdAt: new Date().toISOString()
+};
+
+// LƯU 1 LẦN vào sessionStorage
+try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
+SLOT.data.draftReady = true;
+window.AIQUOTE_DRAFT_READY = true;
+
   try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
   window.AIQUOTE_DRAFT_READY = true;
 
   renderSlotReply(html);
-
-
 
 }
 
@@ -2137,6 +2170,10 @@ document.querySelector("#mi-save")?.addEventListener("click", ()=>{
   document.querySelector("#mi-qty").value = "1";
   $('#manualItemModal').modal('hide');
 });
+
+
+
+
 
 /* ========= Expose for BE validation hints ========= */
 /* Gợi ý cho BE:

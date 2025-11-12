@@ -1121,3 +1121,7 @@ BEGIN
         ADD CONSTRAINT FK_contracts_provider
             FOREIGN KEY (provider_id) REFERENCES providers(provider_id);
 END
+
+
+IF COL_LENGTH('dbo.service_requests','contract_id') IS NULL
+    ALTER TABLE dbo.service_requests ADD contract_id INT NULL;
