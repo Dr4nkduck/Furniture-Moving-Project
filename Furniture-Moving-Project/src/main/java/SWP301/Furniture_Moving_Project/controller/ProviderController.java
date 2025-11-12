@@ -16,8 +16,10 @@ public class ProviderController {
         this.providerRepository = providerRepository;
     }
 
-    @GetMapping("")
-    public String providerHome() { return "provider"; }
+    @GetMapping({"", "/", "/home"})
+    public String home() {
+        return "provider/home"; // đổi theo tên template của bạn (templates/provider/home.html)
+    }
 
     @GetMapping("/dashboard")
     public String dashboard() {
@@ -39,4 +41,6 @@ public class ProviderController {
         model.addAttribute("orderId", id);
         return "provider/order-detail";
     }
+
+    
 }

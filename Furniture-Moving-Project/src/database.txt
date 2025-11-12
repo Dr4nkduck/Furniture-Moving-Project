@@ -891,3 +891,20 @@ LEFT JOIN roles r             ON r.role_id = ur.role_id
 LEFT JOIN providers p         ON p.user_id = u.user_id
 WHERE u.username = 'prov1';
 GO
+
+
+-- Tạo bảng contracts nếu chưa có
+IF OBJECT_ID('contracts','U') IS NULL
+BEGIN
+    CREATE TABLE contracts (
+        contract_id INT IDENTITY(1,1) PRIMARY KEY,
+        user_id     INT          NOT NULL,
+        status      VARCHAR(20)  NOT NULL,             -- ví dụ: 'accepted'
+        signed_at   DATETIME2    NULL,
+        created_at  DATETIME2    NOT NULL DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_contracts_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+    );
+    CREATE INDEX IX_contracts_user ON contracts(user_id);
+    CREATE INDEX IX_contracts_user_status ON contracts(user_id, status);
+END
+GO

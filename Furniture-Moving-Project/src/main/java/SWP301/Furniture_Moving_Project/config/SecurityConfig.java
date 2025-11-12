@@ -1,3 +1,4 @@
+// src/main/java/SWP301/Furniture_Moving_Project/config/SecurityConfig.java
 package SWP301.Furniture_Moving_Project.config;
 
 import SWP301.Furniture_Moving_Project.service.CustomUserDetailsService;
@@ -41,31 +42,32 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-   @Bean
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/register",
-                                 "/forgot/**",
-                                 "/css/**", "/js/**", "/images/**",
-                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
-                                 "/superadmin/**",
-                                 "/dashbooard/**","/customer-trends/**",
-                                 "/provider-stats/**",
-                                 "/userdashboard",
-                                    // ⬇⬇⬇ CHỈ THÊM 2 DÒNG NÀY CHO PAYMENT
-                                 "/payment/css/**", "/payment/js/**", "/payment/images/**",
-                                 "/services/**",
-                                 "/orders/**",
-                                 "/provider-stats/**" //✅ static của superadmin (css/js)
+                .requestMatchers(
+                    "/", "/homepage", "/login", "/register",
+                    "/forgot/**",
+                    "/css/**", "/js/**", "/images/**",
+                    "/accountmanage/**", "/homepage/**", "/chatbot/**",
+                    "/superadmin/**",
+                    "/dashbooard/**", "/customer-trends/**",
+                    "/provider-stats/**",
+                    "/userdashboard",
+                    "/payment/css/**", "/payment/js/**", "/payment/images/**",
+                    "/services/**",
+                    "/orders/**",
+                    "/provider-stats/**",
+                    "/request/**"
                 ).permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers/**").permitAll()
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login
@@ -82,5 +84,4 @@ public class SecurityConfig {
                 .permitAll());
         return http.build();
     }
-
 }

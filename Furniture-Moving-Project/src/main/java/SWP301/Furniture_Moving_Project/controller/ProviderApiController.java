@@ -1,128 +1,93 @@
 // src/main/java/SWP301/Furniture_Moving_Project/controller/ProviderApiController.java
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
-import SWP301.Furniture_Moving_Project.dto.ProviderPackageSnapshotDTO;
-import SWP301.Furniture_Moving_Project.dto.ServicePackageListItemDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderUpdateStatusDTO;
 import SWP301.Furniture_Moving_Project.model.Provider;
-import SWP301.Furniture_Moving_Project.model.Review;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
-import SWP301.Furniture_Moving_Project.repository.ReviewRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
-import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/providers")
+@CrossOrigin(origins = "*")
 public class ProviderApiController {
 
     private final ProviderRepository providerRepository;
     private final ServiceRequestRepository serviceRequestRepository;
-    private final ReviewRepository reviewRepository;
-    private final ProviderPricingService providerPricingService;
     private final ProviderOrderService providerOrderService;
 
     public ProviderApiController(ProviderRepository providerRepository,
                                  ServiceRequestRepository serviceRequestRepository,
-                                 ReviewRepository reviewRepository,
-                                 ProviderPricingService providerPricingService,
                                  ProviderOrderService providerOrderService) {
         this.providerRepository = providerRepository;
         this.serviceRequestRepository = serviceRequestRepository;
-        this.reviewRepository = reviewRepository;
-        this.providerPricingService = providerPricingService;
         this.providerOrderService = providerOrderService;
     }
 
-    // --- Pricing packages snapshot ---
-    @GetMapping("/{pid}/service-packages")
-    public List<ServicePackageListItemDTO> listPackages(@PathVariable("pid") Integer providerId) {
-        return providerPricingService.listPackages(providerId);
-    }
-
-    @GetMapping("/{pid}/service-packages/{packageId}")
-    public ProviderPackageSnapshotDTO getPackage(@PathVariable("pid") Integer providerId,
-                                                 @PathVariable Integer packageId) {
-        return providerPricingService.getPackage(providerId, packageId);
-    }
-
-    @PutMapping("/{pid}/service-packages/{packageId}")
-    public ResponseEntity<?> savePackage(@PathVariable("pid") Integer providerId,
-                                         @PathVariable Integer packageId,
-                                         @RequestBody SaveSnapshotCommand body) {
-        if (body == null) body = new SaveSnapshotCommand();
-        ProviderPackageSnapshotDTO dto = new ProviderPackageSnapshotDTO();
-        dto.packageNameSnapshot = (body.packageNameSnapshot != null && !body.packageNameSnapshot.isBlank())
-                ? body.packageNameSnapshot
-                : (body.packageName != null && !body.packageName.isBlank() ? body.packageName : null);
-        dto.pricePerKm = body.pricePerKm;
-        dto.furniturePrices = (body.furniturePrices != null) ? body.furniturePrices : new ArrayList<>();
-        providerPricingService.saveSnapshot(providerId, packageId, dto);
-        return ResponseEntity.ok(Map.of("ok", true));
-    }
-
-    @DeleteMapping("/{pid}/service-packages/{packageId}")
-    public ResponseEntity<?> deleteSnapshot(@PathVariable("pid") Integer providerId,
-                                            @PathVariable Integer packageId) {
-        providerPricingService.clearSnapshot(providerId, packageId);
-        return ResponseEntity.ok(Map.of("ok", true));
-    }
-
-    @DeleteMapping("/{pid}/service-packages/{packageId}/items/{furnitureTypeId}")
-    public ResponseEntity<?> deleteItem(@PathVariable("pid") Integer providerId,
-                                        @PathVariable Integer packageId,
-                                        @PathVariable Integer furnitureTypeId) {
-        providerPricingService.deleteItem(providerId, packageId, furnitureTypeId);
-        return ResponseEntity.ok(Map.of("ok", true));
-    }
-
-    // --- Search providers (for UI) ---
+    // ---------------------------------------------------------------------
+    // SEARCH PROVIDERS
+    // GET /api/providers/search?name=...
+    // Trả về list Map để không phụ thuộc constructor của ProviderDTO.
+    // ---------------------------------------------------------------------
     @GetMapping("/search")
-    public Map<String, Object> search(@RequestParam(value = "name", required = false) String name) {
-        List<Provider> entities = (name == null || name.isBlank())
+    public ResponseEntity<Map<String, Object>> search(@RequestParam(required = false) String name) {
+        var list = (name == null || name.isBlank())
                 ? providerRepository.findAll()
                 : providerRepository.findByCompanyNameContainingIgnoreCase(name.trim());
-        List<Map<String, Object>> data = new ArrayList<>();
-        for (Provider p : entities) {
-            data.add(Map.of(
-                    "providerId", p.getProviderId(),
-                    "companyName", p.getCompanyName(),
-                    "rating", p.getRating()
-            ));
-        }
-        return Map.of("success", true, "data", data);
+
+        var data = list.stream().map(p -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("providerId", p.getProviderId());
+            m.put("companyName", p.getCompanyName());
+            m.put("rating", p.getRating()); // BigDecimal hoặc null
+            return m;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
-    // --- Availability by date ---
+    // ---------------------------------------------------------------------
+    // AVAILABILITY
+    // GET /api/providers/availability?date=YYYY-MM-DD
+    // ---------------------------------------------------------------------
     @GetMapping("/availability")
-    public Map<String, Object> availability(@RequestParam("date") String dateStr) {
+    public ResponseEntity<Map<String, Object>> availability(@RequestParam("date") String dateStr) {
         LocalDate date = LocalDate.parse(dateStr);
-        List<Provider> providers = providerRepository.findAll();
         List<String> busyStatuses = Arrays.asList("assigned", "in_progress");
-        List<Map<String, Object>> data = new ArrayList<>();
-        for (Provider p : providers) {
+
+        var data = new ArrayList<Map<String, Object>>();
+        for (Provider p : providerRepository.findAll()) {
             long busyCount = serviceRequestRepository
-                    .countByProviderIdAndPreferredDateAndStatusIn(p.getProviderId(), date, busyStatuses);
-            data.add(Map.of(
-                    "providerId", p.getProviderId(),
-                    "companyName", p.getCompanyName(),
-                    "rating", p.getRating(),
-                    "available", busyCount == 0,
-                    "busyCount", busyCount
-            ));
+                    .countByProviderIdAndPreferredDateAndStatusIn(
+                            p.getProviderId(), date, busyStatuses);
+
+            Map<String, Object> m = new HashMap<>();
+            m.put("providerId", p.getProviderId());
+            m.put("companyName", p.getCompanyName());
+            m.put("rating", p.getRating());
+            m.put("available", busyCount == 0);
+            m.put("busyCount", busyCount);
+            data.add(m);
         }
-        return Map.of("success", true, "data", data);
+
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
-    // --- Orders (PV-003/004) ---
+    // ---------------------------------------------------------------------
+    // ORDERS (PV-003/004)
+    // ---------------------------------------------------------------------
+
+    // GET /api/providers/{providerId}/orders?status=...&q=...
     @GetMapping("/{providerId}/orders")
     public List<ProviderOrderSummaryDTO> listOrders(@PathVariable Integer providerId,
                                                     @RequestParam(required = false) String status,
@@ -130,25 +95,19 @@ public class ProviderApiController {
         return providerOrderService.listOrders(providerId, status, q);
     }
 
+    // GET /api/providers/{providerId}/orders/{orderId}
     @GetMapping("/{providerId}/orders/{orderId}")
     public ProviderOrderDetailDTO getOrderDetail(@PathVariable Integer providerId,
                                                  @PathVariable Integer orderId) {
         return providerOrderService.getOrderDetail(providerId, orderId);
     }
 
+    // PUT /api/providers/{providerId}/orders/{orderId}/status
     @PutMapping("/{providerId}/orders/{orderId}/status")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateOrderStatus(@PathVariable Integer providerId,
                                   @PathVariable Integer orderId,
-                                  @RequestBody SWP301.Furniture_Moving_Project.dto.ProviderOrderUpdateStatusDTO body) {
+                                  @RequestBody ProviderOrderUpdateStatusDTO body) {
         providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
-    }
-
-    // ----- Command object -----
-    public static class SaveSnapshotCommand {
-        public String packageName;
-        public String packageNameSnapshot;
-        public Double pricePerKm;
-        public List<FurniturePriceDTO> furniturePrices;
     }
 }
