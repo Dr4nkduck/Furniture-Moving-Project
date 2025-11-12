@@ -43,4 +43,32 @@ public class EmailService {
             // throw new IllegalStateException("Không gửi được email OTP. Vui lòng thử lại sau.");
         }
     }
+
+    public void notifyProviderPaymentSuccess(String providerEmail, Integer requestId, String paymentType, String amount) {
+        tlog.think("Chuẩn bị gửi thông báo thanh toán thành công tới provider {}", providerEmail);
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(from);
+            msg.setTo(providerEmail);
+            msg.setSubject("Thông báo: Khách hàng đã thanh toán đơn #" + requestId);
+            msg.setText("""
+                    Xin chào,
+
+                    Khách hàng đã thanh toán thành công cho đơn hàng #%d.
+
+                    Loại thanh toán: %s
+                    Số tiền: %s VNĐ
+
+                    Vui lòng kiểm tra và bắt đầu thực hiện dịch vụ.
+
+                    Trân trọng,
+                    Furniture Moving Team
+                    """.formatted(requestId, paymentType.equals("DEPOSIT") ? "Đặt cọc (20%%)" : "Thanh toán đầy đủ (100%%)", amount));
+
+            mailSender.send(msg);
+            tlog.step("Đã gửi thông báo thanh toán thành công tới provider {}", providerEmail);
+        } catch (Exception ex) {
+            tlog.err("Gửi mail thất bại: {}", ex.getMessage());
+        }
+    }
 }

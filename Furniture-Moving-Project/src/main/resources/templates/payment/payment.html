@@ -108,6 +108,21 @@
           <h2 id="qrTitle">Thanh toán qua VietQR</h2>
         </div>
         <div class="bd">
+          <!-- Payment Type Selection -->
+          <div class="payment-type-selection" style="margin-bottom: 20px;">
+            <h3 style="margin-bottom: 10px; font-size: 16px;">Chọn phương thức thanh toán:</h3>
+            <div style="display: flex; gap: 15px;">
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="radio" name="paymentType" value="DEPOSIT" id="paymentTypeDeposit" style="margin-right: 8px;">
+                <span>Đặt cọc (20%)</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="radio" name="paymentType" value="FULL" id="paymentTypeFull" checked style="margin-right: 8px;">
+                <span>Thanh toán đầy đủ (100%)</span>
+              </label>
+            </div>
+          </div>
+
           <div class="qr-wrapper">
             <div id="qrBox" class="qr-box" aria-live="polite">
               <!-- JS sẽ thay nội dung; giữ fallback noscript -->

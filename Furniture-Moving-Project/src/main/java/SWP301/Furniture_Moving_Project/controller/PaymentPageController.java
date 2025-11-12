@@ -3,7 +3,6 @@ package SWP301.Furniture_Moving_Project.controller;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.UserRepository;
-import SWP301.Furniture_Moving_Project.model.User;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;

@@ -17,10 +17,16 @@ public class Contract {
     private User user;
 
     @Column(nullable = false, length = 20)
-    private String status; // pending | accepted
+    private String status; // pending | signed | acknowledged
 
     @Column(name = "signed_at")
     private OffsetDateTime signedAt;
+
+    @Column(name = "provider_id", nullable = true)
+    private Integer providerId;
+
+    @Column(name = "acknowledged_at", nullable = true)
+    private OffsetDateTime acknowledgedAt;
 
     // ----- Getters & Setters -----
     public Integer getContractId() {
@@ -53,5 +59,21 @@ public class Contract {
 
     public void setSignedAt(OffsetDateTime signedAt) {
         this.signedAt = signedAt;
+    }
+
+    public Integer getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
+    }
+
+    public OffsetDateTime getAcknowledgedAt() {
+        return acknowledgedAt;
+    }
+
+    public void setAcknowledgedAt(OffsetDateTime acknowledgedAt) {
+        this.acknowledgedAt = acknowledgedAt;
     }
 }

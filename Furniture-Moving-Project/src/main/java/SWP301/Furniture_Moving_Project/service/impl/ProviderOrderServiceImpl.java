@@ -3,6 +3,9 @@ package SWP301.Furniture_Moving_Project.service.impl;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderItemDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
+import SWP301.Furniture_Moving_Project.model.Contract;
+import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderDetailProjection;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderItemProjection;
@@ -12,6 +15,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,9 +24,11 @@ import java.util.stream.Collectors;
 public class ProviderOrderServiceImpl implements ProviderOrderService {
 
     private final ServiceRequestRepository srRepo;
+    private final ContractRepository contractRepo;
 
-    public ProviderOrderServiceImpl(ServiceRequestRepository srRepo) {
+    public ProviderOrderServiceImpl(ServiceRequestRepository srRepo, ContractRepository contractRepo) {
         this.srRepo = srRepo;
+        this.contractRepo = contractRepo;
     }
 
     @Override
@@ -78,14 +84,33 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
         }
         String ns = newStatus.toLowerCase();
 
+        // Get the request to check contract
+        ServiceRequest request = srRepo.findById(requestId)
+            .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        // Handle acknowledgment: when provider accepts, acknowledge contract and set request to ready_to_pay
+        if ("accepted".equals(ns)) {
+            // Update contract to acknowledged if exists
+            if (request.getContractId() != null) {
+                Contract contract = contractRepo.findById(request.getContractId())
+                    .orElse(null);
+                if (contract != null && "signed".equals(contract.getStatus())) {
+                    contract.setStatus("acknowledged");
+                    contract.setAcknowledgedAt(OffsetDateTime.now());
+                    contractRepo.save(contract);
+                }
+            }
+            // Set request status to ready_to_pay instead of accepted
+            ns = "ready_to_pay";
+        }
+
         // transition rules (map theo yêu cầu PV-004)
-        // pending -> accepted/declined/cancelled
-        // accepted -> in_progress/cancelled
+        // pending -> ready_to_pay (via accepted)/declined/cancelled
+        // ready_to_pay -> in_progress/cancelled (after payment)
         // in_progress -> completed/cancelled
         // completed/declined/cancelled -> only allow cancelled (idempotent) else reject
-        // (ở đây kiểm tra mức tối thiểu phía service; có thể mở rộng bằng cách đọc current status trước)
         switch (ns) {
-            case "pending", "accepted", "declined", "in_progress", "completed", "cancelled" -> {}
+            case "pending", "ready_to_pay", "declined", "in_progress", "completed", "cancelled" -> {}
             default -> throw new IllegalArgumentException("Unsupported status: " + ns);
         }
 

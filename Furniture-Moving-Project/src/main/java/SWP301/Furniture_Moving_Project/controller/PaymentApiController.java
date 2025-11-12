@@ -16,7 +16,12 @@ public class PaymentApiController {
     }
 
     @PostMapping("/{requestId}/init")
-    public ResponseEntity<PaymentInitResponse> init(@PathVariable Integer requestId) {
+    public ResponseEntity<PaymentInitResponse> init(@PathVariable Integer requestId,
+                                                    @RequestParam(required = false, defaultValue = "FULL") String paymentType) {
+        if (paymentService instanceof SWP301.Furniture_Moving_Project.service.impl.PaymentServiceImpl) {
+            return ResponseEntity.ok(((SWP301.Furniture_Moving_Project.service.impl.PaymentServiceImpl) paymentService)
+                .initPayment(requestId, paymentType));
+        }
         return ResponseEntity.ok(paymentService.initPayment(requestId));
     }
 

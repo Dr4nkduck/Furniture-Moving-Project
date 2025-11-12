@@ -47,6 +47,9 @@ public class ServiceRequest {
     @Column(name = "created_at", columnDefinition = "datetime2")
     private LocalDateTime createdAt;
 
+    @Column(name = "contract_id")
+    private Integer contractId;
+
     @Transient
     private String cancelReason;
 
@@ -141,6 +144,14 @@ public class ServiceRequest {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getContractId() {
+        return contractId;
+    }
+
+    public void setContractId(Integer contractId) {
+        this.contractId = contractId;
     }
 
     public String getCancelReason() {
