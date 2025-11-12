@@ -28,10 +28,7 @@ public class ContractController {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
 
-        if (contracts.hasAccepted(userId)) {
-            return "redirect:/request";
-        }
-
+        // ✅ LUÔN cho vào trang hợp đồng (không chặn khi đã có accepted)
         User u = users.findById(userId).orElse(null);
         model.addAttribute("customerName", buildName(u));
         return "contract/contract";
@@ -41,9 +38,8 @@ public class ContractController {
     public String acceptContract() {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
-
-        contracts.accept(userId);
-        return "redirect:/request";
+        contracts.accept(userId);                // mỗi lần bấm → tạo 1 contract mới
+        return "redirect:/request";              // điều hướng tiếp sang tạo request
     }
 
     // ===== helpers =====
@@ -53,10 +49,8 @@ public class ContractController {
 
         Object p = auth.getPrincipal();
 
-        // Entity User làm principal
         if (p instanceof User) return ((User) p).getUserId();
 
-        // Spring Security UserDetails mặc định
         if (p instanceof org.springframework.security.core.userdetails.User su) {
             String username = su.getUsername();
 

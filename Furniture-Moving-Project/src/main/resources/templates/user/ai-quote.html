@@ -189,6 +189,11 @@
     <script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
 
     <script th:src="@{/homepage/js/main.js}"></script>
+
+    <script th:inline="javascript">
+  const CONTRACT_URL = /*[[@{/contract}]]*/ "/contract";  // fallback khi chạy ngoài Thymeleaf
+</script>
+
     <script th:src="@{/user/js/ai-quote.js}"></script>
   </body>
 </html>

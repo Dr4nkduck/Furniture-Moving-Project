@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Hợp đồng dịch vụ</title>
 
-  <!-- CSRF (nếu bật) -->
+  <!-- CSRF (nếu Spring Security bật CSRF) -->
   <th:block th:if="${_csrf != null}">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
@@ -78,8 +78,6 @@
           <a class="btn ghost" th:href="@{/}">Hủy</a>
           <button id="btnAccept" class="btn primary" type="submit" disabled>📝 Tôi đồng ý</button>
         </div>
-
-        <!-- Fallback không-JS: nếu người dùng submit khi chưa tick, trình duyệt sẽ báo required -->
       </form>
     </section>
 

@@ -317,6 +317,54 @@ const chatHistory = [];
 const userUploads = [];
 const initialInputHeight = messageInput ? messageInput.scrollHeight : 0;
 
+
+
+
+// Cờ và util
+function hasAtLeastOneItem() {
+  const t = (window.AIQUOTE?.getTotals?.() || { qty:0 }).qty;
+  return t > 0;
+}
+function hasAllRequiredSlots() {
+  const d = SLOT.data || {};
+  // bắt buộc phải có họ tên, SĐT, from/to đã geocode, ngày & giờ
+  return !!(d.name && d.phone && d.fromPlace && d.toPlace && d.date && d.time);
+}
+function isDraftReady() {
+  return !!SLOT.data?.draftReady;
+}
+
+// Tạo payload hợp đồng nháp (lưu sang sessionStorage để contract.html đọc)
+function buildDraftPayload() {
+  const d = SLOT.data;
+  const totals = (window.AIQUOTE?.getTotals?.() || { qty:0, amount:0 });
+  const weight = (window.AIQUOTE?.getWeightSummary?.() || []);
+  return {
+    customer: { name: d.name, phone: d.phone },
+    pickup: {
+      raw: d.fromAddr, formatted: d.fromPlace?.formatted,
+      lat: d.fromPlace?.lat, lng: d.fromPlace?.lng, parts: d.fromParts
+    },
+    dropoff: {
+      raw: d.toAddr, formatted: d.toPlace?.formatted,
+      lat: d.toPlace?.lat, lng: d.toPlace?.lng, parts: d.toParts
+    },
+    schedule: { date: d.date, time: d.time, datetime: d.datetime },
+    route: {
+      km: d.km, durationText: d.durationText, routeText: d.routeText, seconds: d.routeSeconds
+    },
+    cart: {
+      totalQty: totals.qty,
+      itemsAmount: totals.amount,
+      weightSummary: weight // để BE hiển thị/memo nếu cần
+    },
+    currency: (loadSettings().currency || "VND"),
+    createdAt: new Date().toISOString()
+  };
+}
+
+
+
 /* ========= Business guard ========= */
 const DOMAIN_ONLY_MESSAGE =
   "Mình chỉ hỗ trợ nghiệp vụ vận chuyển (báo giá, thêm/xoá đồ, xác nhận và hỏi thông tin giao nhận). Bạn hãy mô tả đồ đạc hoặc cung cấp thông tin cần thiết nhé.";
@@ -572,6 +620,11 @@ function detectAndApplyCorrections(rawText){
     changed = true;
     renderSlotReply("Không sao, bạn nhập lại giúp mình <b>GIỜ vận chuyển</b> (vd: '9h', '9:15', '5h chiều', '10 rưỡi'...).");
   }
+
+  // ngay đầu hàm hoặc sau khi lấy t:
+SLOT.data.draftReady = false;
+try { sessionStorage.removeItem('aiquote_draft'); } catch {}
+
 
   return changed;
 }
@@ -1092,6 +1145,15 @@ function parseItemsFromAiText(text) {
 
   const fmt = (n) => Number(n || 0).toLocaleString() + " " + currency();
 
+  // Tính phí ship theo quãng đường đã có trong SLOT (OSRM)
+function computeShipFee() {
+  const km = Number(window?.AIQUOTE_SLOT?.data?.km || 0);
+  const cfg = loadSettings();
+  if (!km) return 0;
+  return Math.max(cfg.minFare, Math.round(km * (cfg.pricePerKm || 0)));
+}
+
+
   function normalizeNameForCompare(name) {
     if (!name) return "";
     let t = String(name).toLowerCase().trim();
@@ -1101,64 +1163,71 @@ function parseItemsFromAiText(text) {
   }
 
   function render() {
-    itemsTbody.innerHTML = "";
-    if (!items.length) {
+  itemsTbody.innerHTML = "";
+
+  if (!items.length) {
+    const tr = document.createElement("tr");
+    tr.className = "empty-row";
+    tr.innerHTML = `
+      <td colspan="4" class="text-muted text-center py-3">
+        Chưa có sản phẩm. Gửi ảnh để AI nhận diện hoặc thêm thủ công.
+      </td>`;
+    itemsTbody.appendChild(tr);
+  } else {
+    for (const it of items) {
+      const hasPrice = Number(it.price) > 0;
+      const priceHtml = hasPrice
+        ? `${fmt(it.price)}`
+        : `<span class="text-muted font-italic">báo giá sau</span>`;
+      const subHtml = hasPrice
+        ? `Tạm tính: ${fmt(it.price * it.qty)}`
+        : `<span class="text-muted">Tạm tính: —</span>`;
+
+      let weightExtraHtml = "";
+      const rule = findWeightRuleForName(it.name);
+      if (rule) {
+        const qty = Number(it.qty) || 0;
+        const totalKg = qty * rule.kgPerUnit;
+        weightExtraHtml = `<br><small class="text-muted">≈ ${totalKg.toFixed(1)} kg, ${fmt(rule.pricePerKg)} / kg</small>`;
+      }
+
       const tr = document.createElement("tr");
-      tr.className = "empty-row";
+      tr.dataset.id = it.id;
       tr.innerHTML = `
-        <td colspan="4" class="text-muted text-center py-3">
-          Chưa có sản phẩm. Gửi ảnh để AI nhận diện hoặc thêm thủ công.
+        <td>${escapeHTML(it.name)}</td>
+        <td class="text-center">
+          <div class="qty-group">
+            <button class="btn-minus" type="button" aria-label="Giảm">−</button>
+            <input class="qty-input" value="${it.qty}" inputmode="numeric">
+            <button class="btn-plus" type="button" aria-label="Tăng">+</button>
+          </div>
+        </td>
+        <td class="text-right">
+          <div>${priceHtml}${weightExtraHtml}</div>
+          <small class="text-muted">${subHtml}</small>
+        </td>
+        <td class="text-right">
+          <button class="btn btn-sm btn-outline-danger btn-del" title="Xoá">
+            <i class="fas fa-trash"></i>
+          </button>
         </td>`;
       itemsTbody.appendChild(tr);
-    } else {
-      for (const it of items) {
-        const hasPrice = Number(it.price) > 0;
-        const priceHtml = hasPrice
-          ? `${fmt(it.price)}`
-          : `<span class="text-muted font-italic">báo giá sau</span>`;
-        const subHtml = hasPrice
-          ? `Tạm tính: ${fmt(it.price * it.qty)}`
-          : `<span class="text-muted">Tạm tính: —</span>`;
-
-        let weightExtraHtml = "";
-        const rule = findWeightRuleForName(it.name);
-        if (rule) {
-          const qty = Number(it.qty) || 0;
-          const totalKg = qty * rule.kgPerUnit;
-          weightExtraHtml = `<br><small class="text-muted">≈ ${totalKg.toFixed(1)} kg, ${fmt(rule.pricePerKg)} / kg</small>`;
-        }
-
-        const tr = document.createElement("tr");
-        tr.dataset.id = it.id;
-        tr.innerHTML = `
-          <td>${escapeHTML(it.name)}</td>
-          <td class="text-center">
-            <div class="qty-group">
-              <button class="btn-minus" type="button" aria-label="Giảm">−</button>
-              <input class="qty-input" value="${it.qty}" inputmode="numeric">
-              <button class="btn-plus" type="button" aria-label="Tăng">+</button>
-            </div>
-          </td>
-          <td class="text-right">
-            <div>${priceHtml}${weightExtraHtml}</div>
-            <small class="text-muted">${subHtml}</small>
-          </td>
-          <td class="text-right">
-            <button class="btn btn-sm btn-outline-danger btn-del" title="Xoá">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>`;
-        itemsTbody.appendChild(tr);
-      }
     }
-
-    const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
-    const totalAmount = items
-      .filter(i => Number(i.price) > 0)
-      .reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);
-    sumQtyEl.textContent = String(totalQty);
-    sumAmountEl.textContent = Number(totalAmount).toLocaleString() + " " + currency();
   }
+
+  // ===== Tổng bên phải: TIỀN HÀNG + PHÍ SHIP (khớp với tóm tắt chat) =====
+  const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
+  const itemsAmount = items
+    .filter(i => Number(i.price) > 0)
+    .reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);
+
+  const shipFee    = computeShipFee();       // phí ship từ SLOT.data.km
+  const grandTotal = itemsAmount + shipFee;  // tổng cuối cùng
+
+  sumQtyEl.textContent = String(totalQty);
+  sumAmountEl.textContent = Number(grandTotal).toLocaleString() + " " + currency();
+}
+
 
   function setItems(list) {
     items = (list || []).map(it => {
@@ -1172,6 +1241,8 @@ function parseItemsFromAiText(text) {
       };
     }).filter(it => it.name);
     render();
+    window.AIQUOTE.rerender = render;
+
   }
 
   function appendItemsFromAi(list) {
@@ -1245,6 +1316,7 @@ function parseItemsFromAiText(text) {
   }
 
   window.AIQUOTE = window.AIQUOTE || {};
+  window.AIQUOTE.rerender = render; 
   window.AIQUOTE.setItems = setItems;
   window.AIQUOTE.appendItemsFromAi = appendItemsFromAi;
   window.AIQUOTE.upsertItem = upsertItem;
@@ -1305,6 +1377,10 @@ function parseItemsFromAiText(text) {
   });
 
   render();
+
+    window.AIQUOTE.exportItems = () =>
+    items.map(it => ({ name: it.name, qty: Number(it.qty||0), price: Number(it.price||0) }));
+
 })();
 
 /* ========= Parse lệnh thêm/xoá ========= */
@@ -1622,6 +1698,9 @@ async function renderFinalCombinedSummary() {
     d.km = dist.km;
     d.durationText = dist.durationText;
     d.routeText = dist.routeText;
+    // Tính xong km thì cập nhật lại panel tổng tiền bên phải
+window.AIQUOTE?.rerender?.();
+
   }
 
   const { amount: itemsAmount } = (window.AIQUOTE?.getTotals?.() || { amount: 0 });
@@ -1650,7 +1729,43 @@ async function renderFinalCombinedSummary() {
       Nếu không phát sinh thêm đồ hoặc thay đổi địa chỉ/tuyến, giá sẽ không thay đổi.
     </small>
   `;
+
+  // Sau khi đã render tóm tắt và tính phí/route
+const payload = buildDraftPayload();
+try {
+  sessionStorage.setItem('aiquote_draft', JSON.stringify(payload));
+} catch {}
+SLOT.data.draftReady = true;
+
+// Gợi ý người dùng: giờ có thể sang trang hợp đồng
+renderSlotReply(
+  '<i class="far fa-file-alt mr-1"></i> Hợp đồng nháp đã sẵn sàng. ' +
+  'Bạn có thể bấm nút <b>Xác nhận vận chuyển</b> ở khung bên phải để xem chi tiết và in/chia sẻ.'
+);
+
+// (tuỳ chọn) bật trạng thái nút bên card phải
+document.querySelector('#btn-confirm-shipment')?.classList.add('ready');
+
+  // Lưu nháp để /contract đọc
+  const exportedItems = (window.AIQUOTE?.exportItems?.() || []);
+  const draft = {
+    customerName: d.name || "",
+    phone: d.phone || "",
+    from: d.fromPlace || { formatted: d.fromAddr || "" },
+    to:   d.toPlace   || { formatted: d.toAddr   || "" },
+    date: d.date, time: d.time, datetime: d.datetime,
+    km: d.km, durationText: d.durationText, routeText: d.routeText, routeSeconds: d.routeSeconds,
+    items: exportedItems,
+    totals: (window.AIQUOTE?.getTotals?.() || { qty: 0, amount: 0 }),
+    currency: currency()
+  };
+  try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
+  window.AIQUOTE_DRAFT_READY = true;
+
   renderSlotReply(html);
+
+
+
 }
 
 /* ========= Handle send ========= */
@@ -1980,12 +2095,30 @@ if (chatBody) {
 }
 
 /* ========= Wire nút bên card phải ========= */
-document.querySelector("#btn-confirm-shipment")?.addEventListener("click", ()=>{
+document.querySelector("#btn-confirm-shipment")?.addEventListener("click", () => {
+  // Nếu đã có hợp đồng nháp -> chuyển qua trang contract
+  if (isDraftReady()) {
+    const url = (typeof CONTRACT_URL !== "undefined" && CONTRACT_URL) ? CONTRACT_URL : "/contract";
+    window.location.href = url;
+    return;
+  }
+
+  // Chưa có nháp -> nếu chưa có món nào thì nhắc người dùng
+  if (!hasAtLeastOneItem()) {
+    renderSlotReply("Bạn chưa có hạng mục nào trong danh sách. Gửi ảnh để AI nhận diện hoặc thêm thủ công nhé.");
+    return;
+  }
+
+  // Bắt đầu flow hỏi thông tin để tạo nháp
   clearChatCTA();
-  SLOT.mode="collect"; SLOT.step=0;
-  renderSlotReply("Cảm ơn bạn đã xác nhận. Mình sẽ hỏi vài thông tin để tạo Hợp đồng nháp.");
-  askSlotQuestion(nextMissingKey()||"name");
+  SLOT.mode = "collect"; 
+  SLOT.step = 0;
+  renderSlotReply("Cảm ơn bạn. Mình sẽ hỏi vài thông tin để tạo Hợp đồng nháp.");
+  askSlotQuestion(nextMissingKey() || "name");
 });
+
+
+
 document.querySelector("#btn-open-manual")?.addEventListener("click", ()=>{
   $('#manualItemModal').modal('show');
 });
@@ -2011,4 +2144,3 @@ document.querySelector("#mi-save")?.addEventListener("click", ()=>{
    - Nếu trùng tên thôn/ấp/khóm, dựa vào cấp xã; nếu xã trùng, dựa lên huyện/tỉnh để loại trừ.
 */
 window.AIQUOTE_SLOT = SLOT;
-

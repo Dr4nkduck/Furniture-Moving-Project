@@ -142,18 +142,20 @@ function addItemRow(data = {}) {
     <td style="text-align:center"><input type="checkbox" name="items.fragile"></td>
     <td style="text-align:right"><button class="btn" type="button" aria-label="Xoá">Xoá</button></td>
   `;
-  // preset theo data
-  $$('input', tr).forEach(inp => {
+
+  $$('.item-row:last-child input', itemsBody).forEach(inp => {
     const key = inp.name.split('.').pop();
     if (data[key] != null) {
       if (inp.type === 'checkbox') inp.checked = !!data[key];
       else inp.value = data[key];
     }
   });
+
   tr.querySelector('button')?.addEventListener('click', () => {
     tr.remove();
     updateSummary();
   });
+
   itemsBody.appendChild(tr);
   updateSummary();
 }
@@ -209,10 +211,174 @@ $('#saveDraft')?.addEventListener('click', () => {
   notify('Đã lưu nháp trên trình duyệt.', 'success');
 });
 
-// ========= Load draft if any + init =========
+/* =======================
+   Prefill từ ai-quote (sessionStorage)
+   ======================= */
+
+// chỉ điền khi input đang trống (tránh ghi đè nếu user đã chỉnh)
+function prefillIfEmpty(el, val) {
+  if (!el) return;
+  const v = String(val ?? '').trim();
+  if (!v) return;
+  if (!el.value || el.value.trim() === '') {
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+function firstNonEmpty(...vals) {
+  for (const v of vals) {
+    const s = (v == null) ? '' : String(v).trim();
+    if (s) return s;
+  }
+  return '';
+}
+function toIsoDateFromVN(ddmmyyyy) {
+  if (!ddmmyyyy) return '';
+  const m = String(ddmmyyyy).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (!m) return '';
+  let d = +m[1], mo = +m[2], y = +m[3];
+  if (y < 100) y += 2000;
+  return `${String(y)}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function toTimeHHMM(s) {
+  if (!s) return '';
+  let t = String(s).trim().toLowerCase().replace(/\s+/g,' ');
+  t = t.replace(/giờ/g,'h');
+  let m;
+  m = t.match(/(\d{1,2})\s*h\s*kém\s*(\d{1,2})/i);
+  if (m) {
+    let h = +m[1], minus = +m[2];
+    let mm = (60 - minus) % 60;
+    h = (h - 1 + 24) % 24;
+    return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  }
+  m = t.match(/(\d{1,2})[:\.](\d{1,2})/);
+  if (m) {
+    const h = +m[1], mm = +m[2];
+    if (h>23||mm>59) return '';
+    return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  }
+  m = t.match(/(\d{1,2})\s*h\s*rưỡi/);
+  if (m) {
+    const h = +m[1];
+    if (h>23) return '';
+    return `${String(h).padStart(2,'0')}:30`;
+  }
+  m = t.match(/(\d{1,2})\s*h(?:\s*(sáng|trưa|chiều|tối|pm|am))?/i);
+  if (m) {
+    let h = +m[1], desc = (m[2]||'').toLowerCase();
+    if (desc === 'chiều' || desc === 'tối' || desc === 'pm') { if (h < 12) h += 12; }
+    else if (desc === 'sáng' || desc === 'am') { if (h === 12) h = 0; }
+    else if (desc === 'trưa') { if (h < 10) h += 12; }
+    return `${String(h%24).padStart(2,'0')}:00`;
+  }
+  m = t.match(/^(\d{1,2})$/);
+  if (m) {
+    const h = +m[1];
+    if (h>23) return '';
+    return `${String(h).padStart(2,'0')}:00`;
+  }
+  return '';
+}
+function normalizeAiquoteDraft(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const name  = firstNonEmpty(raw?.customer?.name, raw?.customerName);
+  const phone = firstNonEmpty(raw?.customer?.phone, raw?.phone);
+
+  const pickup = raw.pickup || raw.from || {};
+  const drop   = raw.dropoff || raw.to   || {};
+
+  const pickupLine = firstNonEmpty(pickup.formatted, pickup.raw);
+  const dropLine   = firstNonEmpty(drop.formatted, drop.raw);
+
+  const pickupParts = pickup.parts || raw.fromParts || {};
+  const dropParts   = drop.parts   || raw.toParts   || {};
+
+  const pickupDistrict = firstNonEmpty(pickupParts.district, pickup.district);
+  const pickupCity     = firstNonEmpty(pickupParts.city, pickupParts.province, pickup.city);
+  const dropDistrict   = firstNonEmpty(dropParts.district, drop.district);
+  const dropCity       = firstNonEmpty(dropParts.city, dropParts.province, drop.city);
+
+  const dateVN = firstNonEmpty(raw?.schedule?.date, raw?.date);
+  const timeAny = firstNonEmpty(raw?.schedule?.time, raw?.time);
+
+  return {
+    name, phone,
+    pickupLine, pickupDistrict, pickupCity,
+    dropLine, dropDistrict, dropCity,
+    dateVN, timeAny,
+    items: Array.isArray(raw.items) ? raw.items : []
+  };
+}
+function prefillFromAiquoteDraft() {
+  let draft = null;
+  try {
+    draft = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
+  } catch(_) {}
+
+  if (!draft) return;
+
+  const d = normalizeAiquoteDraft(draft);
+  if (!d) return;
+
+  // Lấy hàng
+  prefillIfEmpty($('#pickupLine1'),  d.pickupLine);
+  prefillIfEmpty($('#pickupDistrict'), d.pickupDistrict);
+  prefillIfEmpty($('#pickupCity'),     d.pickupCity);
+  prefillIfEmpty($('#pickupContact'),  d.name);
+  prefillIfEmpty($('#pickupPhone'),    d.phone);
+
+  // Giao hàng
+  prefillIfEmpty($('#dropLine1'),   d.dropLine);
+  prefillIfEmpty($('#dropDistrict'), d.dropDistrict);
+  prefillIfEmpty($('#dropCity'),     d.dropCity);
+  prefillIfEmpty($('#dropContact'),  d.name);
+  prefillIfEmpty($('#dropPhone'),    d.phone);
+
+  // Lịch hẹn
+  const isoDate = toIsoDateFromVN(d.dateVN);
+  const hhmm    = toTimeHHMM(d.timeAny);
+  prefillIfEmpty($('#preferredDate'), isoDate);
+  prefillIfEmpty($('#preferredTime'), hhmm);
+
+  // Summary nhanh
+  const sumDate = $('#sumDate');
+  if (sumDate && isoDate) {
+    const [y, m, dd] = isoDate.split('-');
+    sumDate.textContent = `${dd}/${m}/${y}`;
+  }
+
+  // Không tự đổ items vào bảng theo yêu cầu; nếu muốn:
+  // if (d.items.length && itemsBody && !itemsBody.children.length) {
+  //   d.items.forEach(it => addItemRow({ name: it.name, qty: Math.max(1, Number(it.qty)||1) }));
+  // }
+}
+
+// ========= Load draft/bridge + init =========
 document.addEventListener('DOMContentLoaded', async () => {
   await loadProviders(); // nạp providers trước để có option
 
+  // Prefill từ ai-quote (ưu tiên ngay sau khi vào trang)
+  prefillFromAiquoteDraft();
+
+  // === Hydrate từ AI Quote (bridge qua localStorage) ===
+  const bridgeKey = 'aiquote_payload_v1';
+  let bridged = null;
+  try { bridged = JSON.parse(localStorage.getItem(bridgeKey) || 'null'); } catch(_) {}
+
+  if (bridged && Array.isArray(bridged.items) && bridged.items.length && itemsBody) {
+    itemsBody.innerHTML = '';
+    bridged.items.forEach(it => {
+      addItemRow({ name: it.name, qty: Math.max(1, Number(it.qty)||1) });
+    });
+    localStorage.removeItem(bridgeKey);
+    updateSummary();
+    return; // ưu tiên bridge hơn draft reqDraft_v1
+  }
+
+  // === Không có bridge → thử nháp request riêng
   const raw = localStorage.getItem(draftKey);
   if (!raw) {
     addItemRow({ name: 'Bàn làm việc', qty: 1 });
