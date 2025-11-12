@@ -54,6 +54,7 @@ public class SecurityConfig {
                                  "/superadmin/**",
                                  "/dashbooard/**","/customer-trends/**",
                                  "/provider-stats/**",
+                                 "/userdashboard",
                                     // ⬇⬇⬇ CHỈ THÊM 2 DÒNG NÀY CHO PAYMENT
                                  "/payment/css/**", "/payment/js/**", "/payment/images/**",
                                  "/services/**",
