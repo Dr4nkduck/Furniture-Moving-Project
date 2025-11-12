@@ -12,6 +12,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,11 +36,31 @@ public class PaymentPageController {
 
     @GetMapping("/payment/{id}")
     public String viewPayment(@PathVariable("id") Integer requestId, Model model) {
-        // ✅ Thêm thông tin đăng nhập trước
+        // ✅ (0) Thêm thông tin đăng nhập cho navbar/template
         addLoginInfo(model);
 
+        // ✅ (1) Lấy username từ SecurityContext
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để truy cập thanh toán.");
+        }
+        String username = auth.getName();
+
+        // ✅ (2) Chặn nếu đơn không thuộc user hoặc chưa có provider nhận
+        boolean allowed = serviceRequestRepository.canAccessPayment(requestId, username) == 1;
+        if (!allowed) {
+            // Có thể đổi thành redirect nếu muốn UI thân thiện:
+            // return "redirect:/orders?error=not-eligible";
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Bạn chưa đủ điều kiện để thanh toán: đơn không thuộc bạn hoặc chưa được nhà vận chuyển ghi nhận."
+            );
+        }
+
+        // ✅ (3) Hợp lệ rồi mới load dữ liệu đơn
         ServiceRequest sr = serviceRequestRepository.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn vận chuyển #" + requestId));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Không tìm thấy đơn vận chuyển #" + requestId));
 
         // ---- Thông tin cơ bản khớp HTML
         BigDecimal amount = sr.getTotalCost();
