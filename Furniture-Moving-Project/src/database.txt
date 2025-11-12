@@ -908,3 +908,174 @@ BEGIN
     CREATE INDEX IX_contracts_user_status ON contracts(user_id, status);
 END
 GO
+
+
+
+
+-- ----------------
+-- add provier 
+/* ============================================================
+   Seed 10 diverse providers (idempotent)
+   - Tạo users, authentication, gán role PROVIDER (primary)
+   - Thêm vào providers với dữ liệu đa dạng
+   - Thêm địa chỉ văn phòng (addresses) cho mỗi provider
+   ============================================================ */
+SET NOCOUNT ON;
+
+BEGIN TRY
+    BEGIN TRAN;
+
+    /* 0) Đảm bảo role PROVIDER tồn tại */
+    IF NOT EXISTS (SELECT 1 FROM roles WHERE role_name = 'PROVIDER')
+        INSERT INTO roles(role_name, description) VALUES ('PROVIDER','Furniture transport provider');
+
+    DECLARE @rid_provider INT = (SELECT role_id FROM roles WHERE role_name='PROVIDER');
+
+    /* 1) Danh sách 10 provider đa dạng */
+    DECLARE @P TABLE(
+        idx INT IDENTITY(1,1) PRIMARY KEY,
+        username VARCHAR(50),
+        email    VARCHAR(255),
+        phone    VARCHAR(20),
+        first_name VARCHAR(50),
+        last_name  VARCHAR(50),
+        company_name VARCHAR(255),
+        verification_status VARCHAR(20), -- pending/verified/rejected
+        rating DECIMAL(3,2),
+        total_reviews INT,
+        street_address NVARCHAR(255),
+        city NVARCHAR(100),
+        state NVARCHAR(50),
+        zip_code NVARCHAR(10)
+    );
+
+    INSERT INTO @P(username,email,phone,first_name,last_name,company_name,verification_status,rating,total_reviews,street_address,city,state,zip_code)
+    VALUES
+    -- HN
+    ('provx01','provx01@mail.com','0911000001','Provider','HN-SH',  N'SteelHand Movers Co.','verified', 4.92,138, N'12 Phan Dinh Phung', N'Hanoi',  N'HN',  N'10000'),
+    -- HCMC
+    ('provx02','provx02@mail.com','0911000002','Provider','HCM-LL', N'Lotus Logistics',     'verified', 4.65,212, N'88 Nguyen Hue',     N'HCMC',   N'HCM', N'70000'),
+    -- Da Nang
+    ('provx03','provx03@mail.com','0911000003','Provider','DN-DF',  N'Dragonfly Transport',  'pending',  4.10, 47, N'05 Bach Dang',      N'Da Nang',N'DN',  N'55000'),
+    -- Nha Trang
+    ('provx04','provx04@mail.com','0911000004','Provider','NT-OB',  N'OceanBear Relocation','verified', 4.78, 89, N'19 Tran Phu',       N'Nha Trang',N'KH', N'65000'),
+    -- Da Lat
+    ('provx05','provx05@mail.com','0911000005','Provider','DL-HH',  N'Highland Haulers',    'verified', 4.33, 56, N'21 Nguyen Chi Thanh',N'Da Lat', N'LD',  N'67000'),
+    -- Can Tho
+    ('provx06','provx06@mail.com','0911000006','Provider','CT-MM',  N'Mekong Movers',       'verified', 4.55,132, N'101 Hoa Binh',      N'Can Tho',N'CT',  N'90000'),
+    -- Hai Phong
+    ('provx07','provx07@mail.com','0911000007','Provider','HP-BS',  N'BlueSky Shift',       'rejected', 3.80, 23, N'7 Le Loi',          N'Hai Phong',N'HP', N'18000'),
+    -- Hue
+    ('provx08','provx08@mail.com','0911000008','Provider','HUE-IC', N'Imperial Carry Svcs', 'pending',  4.20, 34, N'15 Le Loi',         N'Hue',    N'TT',  N'53000'),
+    -- Bien Hoa
+    ('provx09','provx09@mail.com','0911000009','Provider','BH-EE',  N'Evergreen Express',   'verified', 4.70,101, N'39 Pham Van Thuan', N'Bien Hoa',N'DN',  N'81000'),
+    -- Vinh
+    ('provx10','provx10@mail.com','0911000010','Provider','VIN-PP', N'Pioneer Porters',     'verified', 4.25, 67, N'2 Le Loi',          N'Vinh',   N'NA',  N'46000');
+
+    /* 2) Vòng lặp upsert cho từng provider */
+    DECLARE
+        @username VARCHAR(50),
+        @email    VARCHAR(255),
+        @phone    VARCHAR(20),
+        @first    VARCHAR(50),
+        @last     VARCHAR(50),
+        @company  VARCHAR(255),
+        @vstatus  VARCHAR(20),
+        @rating   DECIMAL(3,2),
+        @reviews  INT,
+        @street   NVARCHAR(255),
+        @city     NVARCHAR(100),
+        @state    NVARCHAR(50),
+        @zip      NVARCHAR(10),
+        @uid      INT,
+        @provider_id INT,
+        @i INT = 1, @n INT = (SELECT COUNT(*) FROM @P);
+
+    WHILE @i <= @n
+    BEGIN
+        SELECT @username=username,@email=email,@phone=phone,@first=first_name,@last=last_name,
+               @company=company_name,@vstatus=verification_status,@rating=rating,@reviews=total_reviews,
+               @street=street_address,@city=city,@state=state,@zip=zip_code
+        FROM @P WHERE idx=@i;
+
+        /* 2a) USERS */
+        IF NOT EXISTS (SELECT 1 FROM users WHERE username=@username)
+        BEGIN
+            INSERT INTO users(username,email,phone,first_name,last_name,status)
+            VALUES(@username,@email,@phone,@first,@last,'active');
+            SET @uid = SCOPE_IDENTITY();
+        END
+        ELSE
+        BEGIN
+            SELECT @uid = user_id FROM users WHERE username=@username;
+            UPDATE users
+               SET email=@email, phone=@phone, first_name=@first, last_name=@last,
+                   status='active', updated_at=SYSUTCDATETIME()
+             WHERE user_id=@uid;
+        END
+
+        /* 2b) AUTHENTICATION (mật khẩu demo chung) */
+        IF NOT EXISTS (SELECT 1 FROM authentication WHERE user_id=@uid)
+            INSERT INTO authentication(user_id,password_hash,mfa_enabled,failed_attempts,account_locked_until)
+            VALUES(@uid,'{noop}Prov@123',0,0,NULL);
+        ELSE
+            UPDATE authentication
+               SET password_hash='{noop}Prov@123',
+                   failed_attempts=0,
+                   account_locked_until=NULL,
+                   updated_at=SYSUTCDATETIME()
+             WHERE user_id=@uid;
+
+        /* 2c) USER_ROLES -> PROVIDER primary */
+        IF NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id=@uid AND role_id=@rid_provider)
+            INSERT INTO user_roles(user_id,role_id,is_primary) VALUES(@uid,@rid_provider,1);
+        ELSE
+            UPDATE user_roles SET is_primary=1 WHERE user_id=@uid AND role_id=@rid_provider;
+
+        /* 2d) PROVIDERS */
+        IF NOT EXISTS (SELECT 1 FROM providers WHERE user_id=@uid)
+        BEGIN
+            INSERT INTO providers(user_id,company_name,verification_status,rating,total_reviews)
+            VALUES(@uid,@company,@vstatus,@rating,@reviews);
+        END
+        ELSE
+        BEGIN
+            UPDATE providers
+               SET company_name=@company,
+                   verification_status=@vstatus,
+                   rating=@rating,
+                   total_reviews=@reviews
+             WHERE user_id=@uid;
+        END
+
+        /* 2e) ĐỊA CHỈ (office, default) – nếu chưa có thì thêm 1 dòng */
+        IF NOT EXISTS (
+            SELECT 1 FROM addresses
+            WHERE user_id=@uid AND address_type='office'
+        )
+        BEGIN
+            INSERT INTO addresses(user_id,address_type,street_address,city,state,zip_code,is_default)
+            VALUES(@uid,'office',@street,@city,@state,@zip,1);
+        END
+
+        SET @i += 1;
+    END
+
+    COMMIT TRAN;
+    PRINT 'OK: Đã thêm/đồng bộ 10 provider đa dạng (provx01..provx10).';
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+    PRINT 'ERROR: ' + ERROR_MESSAGE();
+END CATCH;
+
+-- Kiểm tra nhanh
+SELECT
+    u.user_id, u.username, u.email, u.phone,
+    p.provider_id, p.company_name, p.verification_status, p.rating, p.total_reviews,
+    a2.street_address, a2.city, a2.state, a2.zip_code
+FROM users u
+JOIN providers p ON p.user_id = u.user_id
+LEFT JOIN addresses a2 ON a2.user_id = u.user_id AND a2.address_type='office'
+WHERE u.username LIKE 'provx%'
+ORDER BY u.username;

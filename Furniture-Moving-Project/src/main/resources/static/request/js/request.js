@@ -1,8 +1,8 @@
-// ========= Helpers =========
+/* ========= Helpers ========= */
 const $  = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
-// ========= Toast helpers =========
+/* ========= Toast helpers ========= */
 function ensureToastContainer() {
   if (!document.getElementById('toastContainer')) {
     const c = document.createElement('div');
@@ -24,10 +24,9 @@ function notify(msg, type = 'success', ms = 2500) {
   }, ms);
 }
 
-// ========= Providers: load once on page load =========
+/* ========= Providers: load once on page load ========= */
 let providerMarkupSnapshot = null;
 
-// /request/js/request.js
 async function loadProviders() {
   const sel = document.getElementById('providerId');
   if (!sel) return;
@@ -44,6 +43,7 @@ async function loadProviders() {
       opt.textContent = p.companyName;
       sel.appendChild(opt);
     });
+    providerMarkupSnapshot = sel.innerHTML;
   } catch (e) {
     sel.innerHTML = '<option value="">— Không tải được danh sách —</option>';
     console.error('Load providers failed:', e);
@@ -51,13 +51,11 @@ async function loadProviders() {
 }
 document.addEventListener('DOMContentLoaded', loadProviders);
 
-
-// ========= Images preview (multi + remove) =========
+/* ========= Images preview (multi + remove) ========= */
 const fileInput = $('#images');
 const thumbs = $('#thumbs');
 
 let selectedFiles = []; // giữ danh sách ảnh đã chọn
-
 const fileKey = (f) => `${f.name}::${f.size}::${f.lastModified}`;
 
 function renderThumbs() {
@@ -118,7 +116,7 @@ fileInput?.addEventListener('change', (e) => {
   fileInput.value = '';
 });
 
-// ========= Items table =========
+/* ========= Items table ========= */
 const itemsBody = $('#itemsBody');
 const addItemBtn = $('#addItem');
 const clearItemsBtn = $('#clearItems');
@@ -138,7 +136,9 @@ function addItemRow(data = {}) {
     <td style="text-align:right"><button class="btn" type="button" aria-label="Xoá">Xoá</button></td>
   `;
 
-  $$('.item-row:last-child input', itemsBody).forEach(inp => {
+  // gán data nếu có
+  const inputs = $$('input', tr);
+  inputs.forEach(inp => {
     const key = inp.name.split('.').pop();
     if (data[key] != null) {
       if (inp.type === 'checkbox') inp.checked = !!data[key];
@@ -162,10 +162,15 @@ clearItemsBtn?.addEventListener('click', () => {
   updateSummary();
 });
 
-// ========= Summary & estimate =========
-function calcEstimate() {
+/* ========= Summary & estimate ========= */
+
+// hiển thị tiền
+function money(n){ return n ? n.toLocaleString('vi-VN') + '₫' : '—'; }
+
+// tách riêng 2 loại chi phí: vận chuyển đồ (nhân công, không thang máy, số món…)
+function calcMovingEstimate() {
   const base = 200_000;     // VND
-  const perItem = 50_000;   // VND
+  const perItem = 50_000;   // VND / món
   const items = $$('#itemsBody tr');
   let total = base + perItem * items.length;
 
@@ -181,7 +186,37 @@ function calcEstimate() {
 
   return total;
 }
-function money(n){ return n ? n.toLocaleString('vi-VN') + '₫' : '—'; }
+
+// lấy khoảng cách do AI tính nếu có
+function getDistanceFromAIQuote() {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
+    if (!raw) return null;
+    const candidates = [
+      Number(raw?.route?.distanceKm),
+      Number(raw?.distanceKm),
+      Number(raw?.meta?.distanceKm)
+    ].filter(v => Number.isFinite(v) && v > 0);
+    return candidates.length ? candidates[0] : null;
+  } catch { return null; }
+}
+
+// Ước tính phí ship theo quãng đường (ưu tiên số km từ AI)
+function calcShippingEstimate() {
+  const aiKm = getDistanceFromAIQuote();
+  let km = aiKm;
+
+  if (!Number.isFinite(km)) {
+    const pc = ($('#pickupCity')?.value || '').trim().toLowerCase();
+    const dc = ($('#dropCity')?.value || '').trim().toLowerCase();
+    if (pc && dc) km = (pc === dc) ? 10 : 120; // ước lượng nội thành vs liên tỉnh
+    else km = 10;
+  }
+
+  const perKm = 12_000; // đơn giá
+  const fee = Math.max(0, Math.round(km) * perKm);
+  return { fee, km, perKm };
+}
 
 function updateSummary() {
   const pkgEl   = $('#servicePackage');
@@ -189,16 +224,27 @@ function updateSummary() {
   const sumPkg   = $('#sumPkg');
   const sumItems = $('#sumItems');
   const sumDate  = $('#sumDate');
-  const sumCost  = $('#sumCost');
+  const sumMove  = $('#sumMoveCost');
+  const sumShip  = $('#sumShipCost');
+  const sumShipMeta = $('#sumShipMeta');
+  const sumTotal = $('#sumCost');
 
   if (sumPkg)   sumPkg.textContent   = pkgEl?.selectedOptions?.[0]?.textContent || '—';
   if (sumItems) sumItems.textContent = `${$('#itemsBody')?.querySelectorAll('tr').length || 0} món`;
   if (sumDate)  sumDate.textContent  = dateEl?.value || '—';
-  if (sumCost)  sumCost.textContent  = money(calcEstimate());
-}
-['change','keyup'].forEach(ev => document.addEventListener(ev, updateSummary));
 
-// ========= Save draft (localStorage) =========
+  const move = calcMovingEstimate();
+  const { fee: ship, km, perKm } = calcShippingEstimate();
+
+  if (sumMove) sumMove.textContent = money(move);
+  if (sumShip) sumShip.textContent = money(ship);
+  if (sumShipMeta) sumShipMeta.textContent = `(~${km} km × ${perKm.toLocaleString('vi-VN')}đ/km)`;
+
+  if (sumTotal) sumTotal.textContent = money(move + ship);
+}
+['change','keyup','input'].forEach(ev => document.addEventListener(ev, updateSummary));
+
+/* ========= Save draft (localStorage) ========= */
 const draftKey = 'reqDraft_v1';
 $('#saveDraft')?.addEventListener('click', () => {
   const data = serialize();
@@ -276,6 +322,7 @@ function toTimeHHMM(s) {
   }
   return '';
 }
+
 function normalizeAiquoteDraft(raw) {
   if (!raw || typeof raw !== 'object') return null;
 
@@ -299,14 +346,22 @@ function normalizeAiquoteDraft(raw) {
   const dateVN = firstNonEmpty(raw?.schedule?.date, raw?.date);
   const timeAny = firstNonEmpty(raw?.schedule?.time, raw?.time);
 
+  // items: [{ name, qty, len, wid, hgt, wgt, fragile }]
+  const items = Array.isArray(raw.items) ? raw.items : [];
+
+  // distance
+  const distanceKm = getDistanceFromAIQuote();
+
   return {
     name, phone,
     pickupLine, pickupDistrict, pickupCity,
     dropLine, dropDistrict, dropCity,
     dateVN, timeAny,
-    items: Array.isArray(raw.items) ? raw.items : []
+    items,
+    distanceKm
   };
 }
+
 function prefillFromAiquoteDraft() {
   let draft = null;
   try {
@@ -345,13 +400,24 @@ function prefillFromAiquoteDraft() {
     sumDate.textContent = `${dd}/${m}/${y}`;
   }
 
-  // Không tự đổ items vào bảng theo yêu cầu; nếu muốn:
-  // if (d.items.length && itemsBody && !itemsBody.children.length) {
-  //   d.items.forEach(it => addItemRow({ name: it.name, qty: Math.max(1, Number(it.qty)||1) }));
-  // }
+  // ✅ TỰ FILL đồ đạc từ AI nếu bảng đang trống
+  if (d.items.length && itemsBody && !itemsBody.children.length) {
+    d.items.forEach(it => addItemRow({
+      name: it.name ?? it.item ?? '',
+      qty:  Math.max(1, Number(it.qty || it.quantity) || 1),
+      len:  Number(it.len || it.lengthCm || 0),
+      wid:  Number(it.wid || it.widthCm  || 0),
+      hgt:  Number(it.hgt || it.heightCm || 0),
+      wgt:  Number(it.wgt || it.weightKg || 0),
+      fragile: !!it.fragile
+    }));
+  }
+
+  // sau khi prefill, cập nhật lại tổng
+  updateSummary();
 }
 
-// ========= Load draft/bridge + init =========
+/* ========= Load draft/bridge + init ========= */
 document.addEventListener('DOMContentLoaded', async () => {
   await loadProviders(); // nạp providers trước để có option
 
@@ -370,50 +436,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     localStorage.removeItem(bridgeKey);
     updateSummary();
-    return; // ưu tiên bridge hơn draft reqDraft_v1
-  }
+  } else {
+    // === Không có bridge → thử nháp request riêng
+    const raw = localStorage.getItem(draftKey);
+    if (!raw) {
+      addItemRow({ name: 'Bàn làm việc', qty: 1 });
+      updateSummary();
+    } else {
+      try {
+        const data = JSON.parse(raw);
+        if (data.servicePackageCode) $('#servicePackage').value = data.servicePackageCode;
+        if (data.notes) $('#notes').value = data.notes;
 
-  // === Không có bridge → thử nháp request riêng
-  const raw = localStorage.getItem(draftKey);
-  if (!raw) {
-    addItemRow({ name: 'Bàn làm việc', qty: 1 });
-    updateSummary();
-    return;
-  }
-  try {
-    const data = JSON.parse(raw);
-    if (data.servicePackageCode) $('#servicePackage').value = data.servicePackageCode;
-    if (data.notes) $('#notes').value = data.notes;
+        if (data.pickup) {
+          for (const k in data.pickup) {
+            const el = document.querySelector(`[name="pickup.${k}"]`);
+            if (el) { if (el.type === 'checkbox') el.checked = !!data.pickup[k]; else el.value = data.pickup[k]; }
+          }
+        }
+        if (data.drop) {
+          for (const k in data.drop) {
+            const el = document.querySelector(`[name="drop.${k}"]`);
+            if (el) { if (el.type === 'checkbox') el.checked = !!data.drop[k]; else el.value = data.drop[k]; }
+          }
+        }
+        if (Array.isArray(data.items) && itemsBody) {
+          itemsBody.innerHTML = '';
+          data.items.forEach(it => addItemRow(it));
+        }
+        if (data.preferredDate) $('#preferredDate').value = data.preferredDate;
+        if (data.preferredTime) $('#preferredTime').value = data.preferredTime;
 
-    if (data.pickup) {
-      for (const k in data.pickup) {
-        const el = document.querySelector(`[name="pickup.${k}"]`);
-        if (el) { if (el.type === 'checkbox') el.checked = !!data.pickup[k]; else el.value = data.pickup[k]; }
+        // Nếu nháp có providerId, set sau khi đã loadProviders xong
+        if (data.providerId && providerMarkupSnapshot) {
+          const sel = $('#providerId');
+          if (sel) sel.value = String(data.providerId);
+        }
+        updateSummary();
+      } catch (_) {
+        addItemRow({ name: 'Bàn làm việc', qty: 1 });
+        updateSummary();
       }
     }
-    if (data.drop) {
-      for (const k in data.drop) {
-        const el = document.querySelector(`[name="drop.${k}"]`);
-        if (el) { if (el.type === 'checkbox') el.checked = !!data.drop[k]; else el.value = data.drop[k]; }
-      }
-    }
-    if (Array.isArray(data.items) && itemsBody) {
-      itemsBody.innerHTML = '';
-      data.items.forEach(it => addItemRow(it));
-    }
-    if (data.preferredDate) $('#preferredDate').value = data.preferredDate;
-    if (data.preferredTime) $('#preferredTime').value = data.preferredTime;
-
-    // Nếu nháp có providerId, set sau khi đã loadProviders xong
-    if (data.providerId && providerMarkupSnapshot) {
-      const sel = $('#providerId');
-      if (sel) sel.value = String(data.providerId);
-    }
-  } catch (_) { /* ignore */ }
-  updateSummary();
+  }
 });
 
-// ========= Serialize to JSON cho API =========
+/* ========= Serialize to JSON cho API ========= */
 function serialize(){
   const fd = new FormData($('#reqForm'));
   const items = [];
@@ -451,11 +519,16 @@ function serialize(){
     items,
     preferredDate: fd.get('preferredDate') || '',
     preferredTime: fd.get('preferredTime') || '',
-    estimate: calcEstimate()
+    // tổng tạm tính (để hiển thị; BE vẫn nên tự tính lại)
+    estimate: (function(){
+      const move = calcMovingEstimate();
+      const { fee: ship } = calcShippingEstimate();
+      return move + ship;
+    })()
   };
 }
 
-// ===== CSRF helper (tuỳ chọn, chỉ thêm header nếu có token trong DOM) =====
+/* ===== CSRF helper (tuỳ chọn, chỉ thêm header nếu có token trong DOM) ===== */
 function getCsrfHeaders() {
   const meta = document.querySelector('meta[name="_csrf"]');
   const input = document.querySelector('input[name="_csrf"]');
@@ -463,7 +536,7 @@ function getCsrfHeaders() {
   return token ? { 'X-CSRF-TOKEN': token } : {};
 }
 
-// ===== Submit/reset helpers =====
+/* ===== Submit/reset helpers ===== */
 const form = $('#reqForm');
 const submitBtn = form?.querySelector('[type="submit"]');
 
@@ -535,7 +608,7 @@ function buildFullRequestPayload(viewPayload){
   };
 }
 
-// ===== Upload images API =====
+/* ===== Upload images API ===== */
 async function uploadImagesForRequest(requestId) {
   if (!selectedFiles?.length) return { ok: true, saved: 0 };
 
@@ -558,7 +631,7 @@ async function uploadImagesForRequest(requestId) {
   return { ok: true, saved: json.data?.saved ?? 0 };
 }
 
-// ========= Submit handler =========
+/* ========= Submit handler ========= */
 $('#reqForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -633,7 +706,7 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
   }
 });
 
-// ===== Focus input theo tên field BE trả về
+/* ===== Focus input theo tên field BE trả về ===== */
 function focusByField(field){
   if (!field) return;
   const map = {
