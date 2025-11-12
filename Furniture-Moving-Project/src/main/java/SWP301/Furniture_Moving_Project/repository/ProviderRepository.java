@@ -9,6 +9,6 @@ import java.util.Optional;
 
 public interface ProviderRepository extends JpaRepository<Provider, Integer> {
     // Provider.user.username -> providerId
-    @Query("select p.providerId from Provider p where p.user.username = :username")
-    Optional<Integer> findProviderIdByUsername(String username);
+//    @Query("select p.providerId from Provider p where p.user.username = :username")
+    Optional<Provider> findByUser_Username(String username);
 }

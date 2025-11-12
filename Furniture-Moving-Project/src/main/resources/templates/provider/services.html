@@ -7,6 +7,8 @@
 
     <!-- Inject từ controller nếu có -->
     <meta th:if="${providerId != null}" name="provider-id" th:content="${providerId}"/>
+    <meta th:if="${companyName != null}" name="company-name" th:content="${companyName}"/>
+
 
     <!-- Early theme boot -->
     <script>

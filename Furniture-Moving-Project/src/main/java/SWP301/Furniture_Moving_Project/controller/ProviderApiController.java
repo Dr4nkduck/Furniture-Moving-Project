@@ -4,8 +4,11 @@ package SWP301.Furniture_Moving_Project.controller;
 import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderPackageSnapshotDTO;
 import SWP301.Furniture_Moving_Project.dto.ServicePackageListItemDTO;
+import SWP301.Furniture_Moving_Project.model.Provider;
+import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
@@ -15,6 +18,7 @@ import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -31,9 +35,11 @@ import java.util.*;
 public class ProviderApiController {
 
     private final ProviderPricingService providerPricingService;
+    private final ProviderRepository providerRepository;
 
-    public ProviderApiController(ProviderPricingService providerPricingService) {
+    public ProviderApiController(ProviderPricingService providerPricingService, ProviderRepository providerRepository) {
         this.providerPricingService = providerPricingService;
+        this.providerRepository = providerRepository;
     }
 
     // ============================================================
@@ -45,6 +51,17 @@ public class ProviderApiController {
     public List<ServicePackageListItemDTO> listPackages(@PathVariable("pid") Integer providerId) {
         return providerPricingService.listPackages(providerId);
     }
+
+
+    @GetMapping("/api/providers/me")
+    public Map<String, Object> me(Authentication auth) {
+        String username = auth.getName();
+        Provider p = providerRepository.findByUser_Username(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Provider not found"));
+        return Map.of("providerId", p.getProviderId(), "companyName", p.getCompanyName());
+    }
+
+
 
     // ============================================================
     // PV-002: GET one package snapshot (right panel)

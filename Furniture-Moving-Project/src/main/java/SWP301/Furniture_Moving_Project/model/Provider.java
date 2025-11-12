@@ -30,12 +30,6 @@ public class Provider {
     private Integer totalReviews;
 
 
-    // Pricing
-    @Column(name = "base_fee")
-    private BigDecimal baseFee;
-    @Column(name = "per_km")
-    private BigDecimal perKm;
-
 
 
 
@@ -97,24 +91,7 @@ public class Provider {
     public void setTotalReviews(Integer totalReviews) {
         this.totalReviews = totalReviews;
     }
-
-    public BigDecimal getBaseFee() {
-        return baseFee;
-    }
-
-    public void setBaseFee(BigDecimal baseFee) {
-        this.baseFee = baseFee;
-    }
-
-    public BigDecimal getPerKm() {
-        return perKm;
-    }
-
-    public void setPerKm(BigDecimal perKm) {
-        this.perKm = perKm;
-    }
-
-
+    
     public User getUser() {
         return user;
     }
