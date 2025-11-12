@@ -34,6 +34,20 @@ public class ProviderApiController {
         this.providerOrderService = providerOrderService;
     }
 
+    @GetMapping
+    public Map<String, Object> list(@RequestParam(defaultValue = "verified") String status) {
+        var data = providerRepository
+                .findByVerificationStatusOrderByCompanyNameAsc(status)
+                .stream()
+                .map(p -> Map.of(
+                        "providerId", p.getProviderId(),
+                        "companyName", p.getCompanyName(),
+                        "rating", p.getRating()
+                ))
+                .collect(Collectors.toList());
+        return Map.of("success", true, "data", data);
+    }
+
     // ---------------------------------------------------------------------
     // SEARCH PROVIDERS
     // GET /api/providers/search?name=...

@@ -27,35 +27,30 @@ function notify(msg, type = 'success', ms = 2500) {
 // ========= Providers: load once on page load =========
 let providerMarkupSnapshot = null;
 
+// /request/js/request.js
 async function loadProviders() {
   const sel = document.getElementById('providerId');
   if (!sel) return;
-
-  sel.innerHTML = '<option value="">— Đang tải nhà cung cấp… —</option>';
-
   try {
-    const res = await fetch('/api/providers/available');
-    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
-    const json = await res.json();
-    const arr  = Array.isArray(json) ? json : (json.data || []);
+    const res = await fetch('/api/providers'); // mặc định ?status=verified
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const payload = await res.json();
+    const list = payload.data || [];
 
-    sel.innerHTML = '<option value="">— Không chọn —</option>';
-    arr.forEach(p => {
+    sel.innerHTML = '<option value="">— Hệ thống tự gợi ý —</option>';
+    list.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.providerId;
-      const rating = (p.rating != null) ? ` · ⭐ ${p.rating}` : '';
-      opt.textContent = `${p.companyName}${rating}`;
+      opt.textContent = p.companyName;
       sel.appendChild(opt);
     });
-
-    // Lưu snapshot để dùng lại khi reset (không cần re-fetch)
-    providerMarkupSnapshot = sel.innerHTML;
-  } catch (err) {
-    console.error('loadProviders error:', err);
+  } catch (e) {
     sel.innerHTML = '<option value="">— Không tải được danh sách —</option>';
-    providerMarkupSnapshot = sel.innerHTML;
+    console.error('Load providers failed:', e);
   }
 }
+document.addEventListener('DOMContentLoaded', loadProviders);
+
 
 // ========= Images preview (multi + remove) =========
 const fileInput = $('#images');

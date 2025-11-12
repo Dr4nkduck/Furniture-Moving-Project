@@ -13,5 +13,7 @@ public interface ProviderRepository extends JpaRepository<Provider, Integer> {
     @Query("select p.providerId from Provider p where p.user.username = :username")
     Optional<Integer> findProviderIdByUsername(String username);
 
+    List<Provider> findByVerificationStatusOrderByCompanyNameAsc(String verificationStatus);
+
     List<Provider> findByCompanyNameContainingIgnoreCase(String companyName);
 }
