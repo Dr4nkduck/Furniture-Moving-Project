@@ -44,6 +44,9 @@ public class Payment {
     @Column(name = "add_info")
     private String addInfo;
 
+    @Column(name = "payment_type", length = 20)
+    private String paymentType; // DEPOSIT (20%) or FULL (100%)
+
     public Payment() {}
 
     public Integer getPaymentId() {
@@ -132,5 +135,13 @@ public class Payment {
 
     public void setAddInfo(String addInfo) {
         this.addInfo = addInfo;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
     }
 }

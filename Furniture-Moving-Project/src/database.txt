@@ -1079,3 +1079,27 @@ JOIN providers p ON p.user_id = u.user_id
 LEFT JOIN addresses a2 ON a2.user_id = u.user_id AND a2.address_type='office'
 WHERE u.username LIKE 'provx%'
 ORDER BY u.username;
+
+
+-- thêm cột acknowledged_at nếu chưa có
+IF COL_LENGTH('contracts','acknowledged_at') IS NULL
+    ALTER TABLE contracts
+    ADD acknowledged_at DATETIME2 NULL;
+
+-- thêm cột provider_id nếu chưa có
+IF COL_LENGTH('contracts','provider_id') IS NULL
+    ALTER TABLE contracts
+    ADD provider_id INT NULL;
+
+-- tạo FK/Index cho provider_id nếu chưa có
+IF COL_LENGTH('contracts','provider_id') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_contracts_provider')
+        CREATE INDEX IX_contracts_provider ON contracts(provider_id);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name='FK_contracts_provider')
+       AND OBJECT_ID('providers','U') IS NOT NULL
+        ALTER TABLE contracts
+        ADD CONSTRAINT FK_contracts_provider
+            FOREIGN KEY (provider_id) REFERENCES providers(provider_id);
+END

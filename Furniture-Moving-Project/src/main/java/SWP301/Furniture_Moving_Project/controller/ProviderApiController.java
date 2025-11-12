@@ -1,4 +1,3 @@
-// src/main/java/SWP301/Furniture_Moving_Project/controller/ProviderApiController.java
 package SWP301.Furniture_Moving_Project.controller;
 
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
@@ -34,6 +33,12 @@ public class ProviderApiController {
         this.providerOrderService = providerOrderService;
     }
 
+    /** (Tuỳ chọn) Endpoint nhẹ cho dropdown: /api/providers/available */
+    @GetMapping("/available")
+    public List<Map<String, Object>> getAvailableProvidersLight() {
+        return providerRepository.findAvailableProvidersLight();
+    }
+
     @GetMapping
     public Map<String, Object> list(@RequestParam(defaultValue = "verified") String status) {
         var data = providerRepository
@@ -48,11 +53,7 @@ public class ProviderApiController {
         return Map.of("success", true, "data", data);
     }
 
-    // ---------------------------------------------------------------------
-    // SEARCH PROVIDERS
-    // GET /api/providers/search?name=...
-    // Trả về list Map để không phụ thuộc constructor của ProviderDTO.
-    // ---------------------------------------------------------------------
+    // SEARCH: GET /api/providers/search?name=...
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> search(@RequestParam(required = false) String name) {
         var list = (name == null || name.isBlank())
@@ -63,17 +64,14 @@ public class ProviderApiController {
             Map<String, Object> m = new HashMap<>();
             m.put("providerId", p.getProviderId());
             m.put("companyName", p.getCompanyName());
-            m.put("rating", p.getRating()); // BigDecimal hoặc null
+            m.put("rating", p.getRating());
             return m;
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
-    // ---------------------------------------------------------------------
-    // AVAILABILITY
-    // GET /api/providers/availability?date=YYYY-MM-DD
-    // ---------------------------------------------------------------------
+    // AVAILABILITY: GET /api/providers/availability?date=YYYY-MM-DD
     @GetMapping("/availability")
     public ResponseEntity<Map<String, Object>> availability(@RequestParam("date") String dateStr) {
         LocalDate date = LocalDate.parse(dateStr);
@@ -97,10 +95,7 @@ public class ProviderApiController {
         return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
-    // ---------------------------------------------------------------------
-    // ORDERS (PV-003/004)
-    // ---------------------------------------------------------------------
-
+    // PV-003: List/Search orders của provider
     // GET /api/providers/{providerId}/orders?status=...&q=...
     @GetMapping("/{providerId}/orders")
     public List<ProviderOrderSummaryDTO> listOrders(@PathVariable Integer providerId,
@@ -116,7 +111,7 @@ public class ProviderApiController {
         return providerOrderService.getOrderDetail(providerId, orderId);
     }
 
-    // PUT /api/providers/{providerId}/orders/{orderId}/status
+    // PV-004: Cập nhật trạng thái đơn
     @PutMapping("/{providerId}/orders/{orderId}/status")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateOrderStatus(@PathVariable Integer providerId,

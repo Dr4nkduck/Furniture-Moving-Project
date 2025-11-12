@@ -52,6 +52,8 @@
                 return 'Chờ xác nhận';
             case 'accepted':
                 return 'Ghi nhận hợp đồng';
+            case 'ready_to_pay':
+                return 'Sẵn sàng thanh toán';
             case 'in_progress':
                 return 'Đang vận chuyển';
             case 'completed':

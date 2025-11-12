@@ -60,13 +60,11 @@ const fileKey = (f) => `${f.name}::${f.size}::${f.lastModified}`;
 
 function renderThumbs() {
   if (!thumbs) return;
-  // revoke URL cũ để tránh leak
   thumbs.querySelectorAll('img[data-url]').forEach(img => {
     try { URL.revokeObjectURL(img.dataset.url); } catch {}
   });
   thumbs.innerHTML = '';
 
-  // chỉ preview tối đa 12 ảnh cho nhẹ, vẫn upload đủ
   const toShow = selectedFiles.slice(0, 12);
   for (const f of toShow) {
     const url = URL.createObjectURL(f);
@@ -84,7 +82,6 @@ function renderThumbs() {
     rm.setAttribute('aria-label', 'Xoá ảnh');
     rm.textContent = '×';
     rm.addEventListener('click', () => {
-      // xoá file khỏi danh sách và render lại
       selectedFiles = selectedFiles.filter(x => fileKey(x) !== fileKey(f));
       try { URL.revokeObjectURL(url); } catch {}
       renderThumbs();
@@ -101,7 +98,6 @@ function renderThumbs() {
 }
 
 function addFiles(files) {
-  // gộp + loại trùng (theo name+size+lastModified)
   const map = new Map(selectedFiles.map(x => [fileKey(x), x]));
   for (const f of files) map.set(fileKey(f), f);
   selectedFiles = Array.from(map.values());
@@ -112,7 +108,6 @@ fileInput?.addEventListener('change', (e) => {
   const files = Array.from(e.target.files || []);
   if (!files.length) return;
   addFiles(files);
-  // clear để lần sau có thể chọn lại cùng tên
   fileInput.value = '';
 });
 
@@ -136,9 +131,7 @@ function addItemRow(data = {}) {
     <td style="text-align:right"><button class="btn" type="button" aria-label="Xoá">Xoá</button></td>
   `;
 
-  // gán data nếu có
-  const inputs = $$('input', tr);
-  inputs.forEach(inp => {
+  $$('input', tr).forEach(inp => {
     const key = inp.name.split('.').pop();
     if (data[key] != null) {
       if (inp.type === 'checkbox') inp.checked = !!data[key];
@@ -163,14 +156,12 @@ clearItemsBtn?.addEventListener('click', () => {
 });
 
 /* ========= Summary & estimate ========= */
-
-// hiển thị tiền
 function money(n){ return n ? n.toLocaleString('vi-VN') + '₫' : '—'; }
 
-// tách riêng 2 loại chi phí: vận chuyển đồ (nhân công, không thang máy, số món…)
+// phí nhân công/đồ
 function calcMovingEstimate() {
-  const base = 200_000;     // VND
-  const perItem = 50_000;   // VND / món
+  const base = 200_000;
+  const perItem = 50_000;
   const items = $$('#itemsBody tr');
   let total = base + perItem * items.length;
 
@@ -187,7 +178,6 @@ function calcMovingEstimate() {
   return total;
 }
 
-// lấy khoảng cách do AI tính nếu có
 function getDistanceFromAIQuote() {
   try {
     const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
@@ -201,7 +191,7 @@ function getDistanceFromAIQuote() {
   } catch { return null; }
 }
 
-// Ước tính phí ship theo quãng đường (ưu tiên số km từ AI)
+// phí ship theo quãng đường
 function calcShippingEstimate() {
   const aiKm = getDistanceFromAIQuote();
   let km = aiKm;
@@ -209,13 +199,20 @@ function calcShippingEstimate() {
   if (!Number.isFinite(km)) {
     const pc = ($('#pickupCity')?.value || '').trim().toLowerCase();
     const dc = ($('#dropCity')?.value || '').trim().toLowerCase();
-    if (pc && dc) km = (pc === dc) ? 10 : 120; // ước lượng nội thành vs liên tỉnh
+    if (pc && dc) km = (pc === dc) ? 10 : 120;
     else km = 10;
   }
 
-  const perKm = 12_000; // đơn giá
+  const perKm = 12_000;
   const fee = Math.max(0, Math.round(km) * perKm);
   return { fee, km, perKm };
+}
+
+// tổng tạm tính
+function calcEstimate() {
+  const move = calcMovingEstimate();
+  const { fee: ship } = calcShippingEstimate();
+  return move + ship;
 }
 
 function updateSummary() {
@@ -255,8 +252,6 @@ $('#saveDraft')?.addEventListener('click', () => {
 /* =======================
    Prefill từ ai-quote (sessionStorage)
    ======================= */
-
-// chỉ điền khi input đang trống (tránh ghi đè nếu user đã chỉnh)
 function prefillIfEmpty(el, val) {
   if (!el) return;
   const v = String(val ?? '').trim();
@@ -346,10 +341,8 @@ function normalizeAiquoteDraft(raw) {
   const dateVN = firstNonEmpty(raw?.schedule?.date, raw?.date);
   const timeAny = firstNonEmpty(raw?.schedule?.time, raw?.time);
 
-  // items: [{ name, qty, len, wid, hgt, wgt, fragile }]
   const items = Array.isArray(raw.items) ? raw.items : [];
 
-  // distance
   const distanceKm = getDistanceFromAIQuote();
 
   return {
@@ -373,34 +366,29 @@ function prefillFromAiquoteDraft() {
   const d = normalizeAiquoteDraft(draft);
   if (!d) return;
 
-  // Lấy hàng
   prefillIfEmpty($('#pickupLine1'),  d.pickupLine);
   prefillIfEmpty($('#pickupDistrict'), d.pickupDistrict);
   prefillIfEmpty($('#pickupCity'),     d.pickupCity);
   prefillIfEmpty($('#pickupContact'),  d.name);
   prefillIfEmpty($('#pickupPhone'),    d.phone);
 
-  // Giao hàng
   prefillIfEmpty($('#dropLine1'),   d.dropLine);
   prefillIfEmpty($('#dropDistrict'), d.dropDistrict);
   prefillIfEmpty($('#dropCity'),     d.dropCity);
   prefillIfEmpty($('#dropContact'),  d.name);
   prefillIfEmpty($('#dropPhone'),    d.phone);
 
-  // Lịch hẹn
   const isoDate = toIsoDateFromVN(d.dateVN);
   const hhmm    = toTimeHHMM(d.timeAny);
   prefillIfEmpty($('#preferredDate'), isoDate);
   prefillIfEmpty($('#preferredTime'), hhmm);
 
-  // Summary nhanh
   const sumDate = $('#sumDate');
   if (sumDate && isoDate) {
     const [y, m, dd] = isoDate.split('-');
     sumDate.textContent = `${dd}/${m}/${y}`;
   }
 
-  // ✅ TỰ FILL đồ đạc từ AI nếu bảng đang trống
   if (d.items.length && itemsBody && !itemsBody.children.length) {
     d.items.forEach(it => addItemRow({
       name: it.name ?? it.item ?? '',
@@ -413,18 +401,14 @@ function prefillFromAiquoteDraft() {
     }));
   }
 
-  // sau khi prefill, cập nhật lại tổng
   updateSummary();
 }
 
 /* ========= Load draft/bridge + init ========= */
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadProviders(); // nạp providers trước để có option
-
-  // Prefill từ ai-quote (ưu tiên ngay sau khi vào trang)
+  await loadProviders();
   prefillFromAiquoteDraft();
 
-  // === Hydrate từ AI Quote (bridge qua localStorage) ===
   const bridgeKey = 'aiquote_payload_v1';
   let bridged = null;
   try { bridged = JSON.parse(localStorage.getItem(bridgeKey) || 'null'); } catch(_) {}
@@ -437,7 +421,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     localStorage.removeItem(bridgeKey);
     updateSummary();
   } else {
-    // === Không có bridge → thử nháp request riêng
     const raw = localStorage.getItem(draftKey);
     if (!raw) {
       addItemRow({ name: 'Bàn làm việc', qty: 1 });
@@ -467,7 +450,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.preferredDate) $('#preferredDate').value = data.preferredDate;
         if (data.preferredTime) $('#preferredTime').value = data.preferredTime;
 
-        // Nếu nháp có providerId, set sau khi đã loadProviders xong
         if (data.providerId && providerMarkupSnapshot) {
           const sel = $('#providerId');
           if (sel) sel.value = String(data.providerId);
@@ -519,16 +501,12 @@ function serialize(){
     items,
     preferredDate: fd.get('preferredDate') || '',
     preferredTime: fd.get('preferredTime') || '',
-    // tổng tạm tính (để hiển thị; BE vẫn nên tự tính lại)
-    estimate: (function(){
-      const move = calcMovingEstimate();
-      const { fee: ship } = calcShippingEstimate();
-      return move + ship;
-    })()
+    // GỬI ĐÚNG TÊN FIELD BE (RequestMetaDTO.estimatedCost)
+    estimatedCost: Number(calcEstimate())
   };
 }
 
-/* ===== CSRF helper (tuỳ chọn, chỉ thêm header nếu có token trong DOM) ===== */
+/* ===== CSRF helper (tuỳ chọn) ===== */
 function getCsrfHeaders() {
   const meta = document.querySelector('meta[name="_csrf"]');
   const input = document.querySelector('input[name="_csrf"]');
@@ -556,15 +534,14 @@ function resetFormUI(){
   }
   if (fileInput) fileInput.value = '';
   if (thumbs) thumbs.innerHTML = '';
-  selectedFiles = []; // <<< đảm bảo xoá danh sách ảnh đã chọn
+  selectedFiles = [];
   const sumImgs = $('#sumImgs');
   if (sumImgs) sumImgs.textContent = '0';
 
-  // Dùng lại providers đã nạp (không re-fetch)
   const providerSel = $('#providerId');
   if (providerSel && providerMarkupSnapshot) {
     providerSel.innerHTML = providerMarkupSnapshot;
-    providerSel.selectedIndex = 0; // “— Không chọn —”
+    providerSel.selectedIndex = 0;
   }
   updateSummary();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -591,10 +568,11 @@ function buildFullRequestPayload(viewPayload){
       contactPhone: viewPayload.drop.contactPhone
     },
     request: {
-      customerId: Number($('#customerId')?.value || 1), // thay bằng session nếu có
+      customerId: Number($('#customerId')?.value || 1),
       providerId: ($('#providerId')?.value ? Number($('#providerId').value) : null),
       preferredDate: viewPayload.preferredDate,
-      notes: viewPayload.notes || ''
+      notes: viewPayload.notes || '',
+      estimatedCost: Number(viewPayload.estimatedCost ?? calcEstimate())
     },
     furnitureItems: (viewPayload.items || []).map(it => ({
       name: it.name,
@@ -613,11 +591,11 @@ async function uploadImagesForRequest(requestId) {
   if (!selectedFiles?.length) return { ok: true, saved: 0 };
 
   const fd = new FormData();
-  selectedFiles.forEach(f => fd.append('images', f)); // name="images" khớp BE
+  selectedFiles.forEach(f => fd.append('images', f));
 
   const res = await fetch(`/api/requests/${requestId}/images`, {
     method: 'POST',
-    headers: { ...getCsrfHeaders() }, // KHÔNG set Content-Type khi dùng FormData
+    headers: { ...getCsrfHeaders() },
     body: fd
   });
 
@@ -638,7 +616,6 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
   const payload = serialize();
   const body = buildFullRequestPayload(payload);
 
-  // Pre-check tối thiểu
   const errs = [];
   if (!body.request.preferredDate) errs.push('Chọn ngày dự kiến (preferredDate)');
   ['addressLine1','district','city'].forEach(k => {
@@ -669,7 +646,6 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
     if (res.ok && json?.success) {
       const id = json.data.requestId;
 
-      // 1) Thử upload ảnh (nếu có)
       try {
         const up = await uploadImagesForRequest(id);
         if (up.saved > 0) {
@@ -682,7 +658,6 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
         notify('Upload ảnh bị lỗi. Bạn có thể thử lại trong trang chi tiết đơn.', 'error', 4000);
       }
 
-      // 2) Reset UI
       clearDraft();
       resetFormUI();
       return;
@@ -706,7 +681,7 @@ $('#reqForm')?.addEventListener('submit', async (e) => {
   }
 });
 
-/* ===== Focus input theo tên field BE trả về ===== */
+/* ===== Focus helpers ===== */
 function focusByField(field){
   if (!field) return;
   const map = {
@@ -732,8 +707,6 @@ function focusByField(field){
     }
   }
 }
-
-// Chọn field gợi ý để focus khi chỉ có pre-check FE
 function preferField(errs){
   if (!errs?.length) return null;
   if (errs.some(x => x.includes('preferredDate'))) return 'request.preferredDate';
