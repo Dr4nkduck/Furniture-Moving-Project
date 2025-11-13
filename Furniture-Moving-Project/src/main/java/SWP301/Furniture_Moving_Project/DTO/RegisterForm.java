@@ -8,10 +8,9 @@ public class RegisterForm {
     private String lastName;
     private String phone;
 
-    // NEW: role = CUSTOMER | PROVIDER
+    // NEW: CUSTOMER | PROVIDER
     private String role;
 
-    // getters & setters
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 

@@ -29,4 +29,14 @@ public interface ProviderServicePackageRepository extends JpaRepository<Provider
                        @Param("pkgId") Integer packageId,
                        @Param("perKm") Double perKm,
                        @Param("snap") String packageNameSnapshot);
+
+
+   @Modifying
+@Query("""
+       delete from ProviderServicePackage p
+       where p.providerId = :pid and p.packageId = :pkgId
+       """)
+int deleteByProviderIdAndPackageId(@Param("pid") Integer providerId,
+                                   @Param("pkgId") Integer packageId);
+
 }
