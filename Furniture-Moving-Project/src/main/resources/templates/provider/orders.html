@@ -5,6 +5,10 @@
     <title>PV-003 • Đơn vận chuyển</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- CSRF cho các request POST/PUT/DELETE (nếu có _csrf) -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+
     <!-- (tuỳ) inject providerId nếu bạn đã có từ backend -->
     <meta name="provider-id" th:content="${providerId}"/>
 
@@ -121,7 +125,14 @@
                         <h3 class="h6 mt-4 mb-2">Nội thất vận chuyển</h3>
                         <div class="table-responsive">
                             <table class="table table-sm">
-                                <thead><tr><th>Tên</th><th>Kích thước</th><th>Số lượng</th><th>Fragile</th></tr></thead>
+                                <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>Kích thước</th>
+                                    <th>Số lượng</th>
+                                    <th>Fragile</th>
+                                </tr>
+                                </thead>
                                 <tbody id="d-items"></tbody>
                             </table>
                         </div>
@@ -130,6 +141,12 @@
                             <button class="btn btn-outline-secondary" data-act="accepted">Ghi nhận hợp đồng</button>
                             <button class="btn btn-outline-primary" data-act="in_progress">Bắt đầu vận chuyển</button>
                             <button class="btn btn-success" data-act="completed">Hoàn thành</button>
+
+                            <!-- NÚT MỚI: Provider xác nhận đã nhận tiền -->
+                            <button class="btn btn-warning" id="btnConfirmPaid" type="button">
+                                Xác nhận đã thanh toán
+                            </button>
+
                             <button class="btn btn-danger" data-act="cancelled">Hủy đơn</button>
                             <button class="btn btn-outline-danger ms-auto" data-act="declined">Từ chối</button>
                         </div>

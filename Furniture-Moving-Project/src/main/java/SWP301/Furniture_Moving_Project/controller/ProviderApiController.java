@@ -187,4 +187,16 @@ public class ProviderApiController {
                                   @RequestBody ProviderOrderUpdateStatusDTO body) {
         providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
     }
+
+    // === Nút "Xác nhận đã thanh toán" cho Provider ===
+    // Provider đã tự kiểm tra sao kê ngân hàng, sau đó bấm nút trên UI.
+    // Chỉ đổi trạng thái order sang "paid" nếu:
+    //  - Đơn thuộc providerId này
+    //  - Đơn đang ở trạng thái "ready_to_pay"
+    @PostMapping(path = {"/api/providers/{providerId}/orders/{orderId}/confirm-payment", "/{providerId}/orders/{orderId}/confirm-payment"})
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmPayment(@PathVariable Integer providerId,
+                               @PathVariable Integer orderId) {
+        providerOrderService.confirmPayment(providerId, orderId);
+    }
 }

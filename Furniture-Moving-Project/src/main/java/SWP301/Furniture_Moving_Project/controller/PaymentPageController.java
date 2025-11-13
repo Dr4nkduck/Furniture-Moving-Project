@@ -49,8 +49,6 @@ public class PaymentPageController {
         // ✅ (2) Chặn nếu đơn không thuộc user hoặc chưa có provider nhận
         boolean allowed = serviceRequestRepository.canAccessPayment(requestId, username) == 1;
         if (!allowed) {
-            // Có thể đổi thành redirect nếu muốn UI thân thiện:
-            // return "redirect:/orders?error=not-eligible";
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Bạn chưa đủ điều kiện để thanh toán: đơn không thuộc bạn hoặc chưa được nhà vận chuyển ghi nhận."
@@ -62,11 +60,23 @@ public class PaymentPageController {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Không tìm thấy đơn vận chuyển #" + requestId));
 
+        String status = sr.getStatus();
+
+        // 🔒 CHẶN ĐƠN CHƯA SẴN SÀNG THANH TOÁN
+        // Chỉ cho phép vào /payment khi:
+        //  - ready_to_pay: khách chuẩn bị thanh toán
+        //  - paid        : đã thanh toán (show thông báo, redirect)
+        if (!"ready_to_pay".equalsIgnoreCase(status) && !"paid".equalsIgnoreCase(status)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Đơn này chưa sẵn sàng để thanh toán. Vui lòng chờ nhà vận chuyển ghi nhận hợp đồng."
+            );
+        }
+
         // ---- Thông tin cơ bản khớp HTML
         BigDecimal amount = sr.getTotalCost();
         LocalDateTime createdAt = sr.getRequestDate();
         LocalDate expectedDate = sr.getPreferredDate();
-        String status = sr.getStatus();
 
         int itemCount  = queryInt("SELECT COUNT(*) FROM dbo.furniture_items  WHERE request_id = ?", requestId);
         int imageCount = queryInt("SELECT COUNT(*) FROM dbo.request_images   WHERE request_id = ?", requestId);

@@ -1,7 +1,6 @@
 package SWP301.Furniture_Moving_Project.model;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,6 +55,20 @@ public class ServiceRequest {
     @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FurnitureItem> furnitureItems = new ArrayList<>();
 
+    // ==== Bổ sung cho thanh toán ====
+    @Column(name = "payment_status")
+    private String paymentStatus; // PENDING | PAID | FAILED | EXPIRED
+
+    @Column(name = "paid_at", columnDefinition = "datetime2")
+    private LocalDateTime paidAt;
+
+    @Column(name = "deposit_amount", precision = 10, scale = 2)
+    private BigDecimal depositAmount; // nếu chọn DEPOSIT_20 thì lưu số tiền đặt cọc
+
+    @Column(name = "payment_type")
+    private String paymentType; // DEPOSIT_20 | FULL
+
+    // ===== Constructor =====
     public ServiceRequest() {}
 
     @PrePersist
@@ -65,7 +78,7 @@ public class ServiceRequest {
         if (status == null) status = "pending";
     }
 
-    // getters & setters
+    // ===== Getters & Setters =====
     public Integer getRequestId() {
         return requestId;
     }
@@ -168,5 +181,37 @@ public class ServiceRequest {
 
     public void setFurnitureItems(List<FurnitureItem> furnitureItems) {
         this.furnitureItems = furnitureItems;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public BigDecimal getDepositAmount() {
+        return depositAmount;
+    }
+
+    public void setDepositAmount(BigDecimal depositAmount) {
+        this.depositAmount = depositAmount;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
     }
 }

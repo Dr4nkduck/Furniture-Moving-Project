@@ -3,6 +3,11 @@
     const providerId = meta && meta.content ? meta.content :
         (new URLSearchParams(location.search).get('providerId') || 1);
 
+    const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+    const csrfTokenMeta  = document.querySelector('meta[name="_csrf"]');
+    const csrfHeader = csrfHeaderMeta && csrfHeaderMeta.content;
+    const csrfToken  = csrfTokenMeta && csrfTokenMeta.content;
+
     const tbody = document.getElementById('ordersTbody');
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
@@ -22,6 +27,18 @@
         items: document.getElementById('d-items'),
         timeline: document.getElementById('d-timeline')
     };
+
+    const btnConfirmPaid = document.getElementById('btnConfirmPaid');
+
+    let currentOrderId = null;
+
+    function withCsrf(headers) {
+        const h = Object.assign({}, headers || {});
+        if (csrfHeader && csrfToken) {
+            h[csrfHeader] = csrfToken;
+        }
+        return h;
+    }
 
     async function fetchJSON(url, options) {
         const res = await fetch(url, options);
@@ -54,6 +71,8 @@
                 return 'Ghi nhận hợp đồng';
             case 'ready_to_pay':
                 return 'Sẵn sàng thanh toán';
+            case 'paid':
+                return 'Đã thanh toán';
             case 'in_progress':
                 return 'Đang vận chuyển';
             case 'completed':
@@ -91,6 +110,8 @@
 
     async function loadDetail(orderId) {
         const dto = await fetchJSON(`/api/providers/${providerId}/orders/${orderId}`);
+        currentOrderId = orderId;
+
         dEmpty.classList.add('d-none');
         dWrap.classList.remove('d-none');
 
@@ -117,7 +138,7 @@
 
         // Simple visual timeline
         d.timeline.innerHTML = '';
-        const steps = ['pending', 'accepted', 'in_progress', 'completed'];
+        const steps = ['pending', 'accepted', 'ready_to_pay', 'paid', 'in_progress', 'completed'];
         const idx = steps.indexOf(dto.status);
         steps.forEach((s, i) => {
             const div = document.createElement('div');
@@ -126,7 +147,7 @@
             d.timeline.appendChild(div);
         });
 
-        // Wire actions
+        // Wire actions: status transitions
         document.querySelectorAll('.actions [data-act]').forEach(btn => {
             btn.onclick = async () => {
                 const act = btn.getAttribute('data-act');
@@ -137,7 +158,7 @@
                 }
                 const res = await fetch(`/api/providers/${providerId}/orders/${orderId}/status`, {
                     method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: withCsrf({'Content-Type': 'application/json'}),
                     body: JSON.stringify(body)
                 });
                 if (!res.ok) {
@@ -149,6 +170,42 @@
                 await loadList();
             };
         });
+
+        // Wire nút "Xác nhận đã thanh toán"
+        if (btnConfirmPaid) {
+            const canConfirm = dto.status === 'ready_to_pay';
+            btnConfirmPaid.disabled = !canConfirm;
+            btnConfirmPaid.title = canConfirm
+                ? ''
+                : 'Chỉ xác nhận khi đơn đang ở trạng thái "Sẵn sàng thanh toán".';
+
+            btnConfirmPaid.onclick = async () => {
+                if (!currentOrderId) return;
+                const ok = confirm(`Bạn đã kiểm tra sao kê và xác nhận đơn #${currentOrderId} đã được thanh toán?`);
+                if (!ok) return;
+
+                try {
+                    const res = await fetch(
+                        `/api/providers/${providerId}/orders/${currentOrderId}/confirm-payment`,
+                        {
+                            method: 'POST',
+                            headers: withCsrf({'Accept': 'application/json'})
+                        }
+                    );
+                    if (!res.ok) {
+                        const msg = await res.text();
+                        alert(msg || 'Không thể xác nhận thanh toán. Vui lòng thử lại.');
+                        return;
+                    }
+                    alert(`Đã đánh dấu đơn #${currentOrderId} là ĐÃ THANH TOÁN.`);
+                    await loadDetail(currentOrderId);
+                    await loadList();
+                } catch (e) {
+                    console.error(e);
+                    alert('Có lỗi xảy ra khi gọi API xác nhận thanh toán.');
+                }
+            };
+        }
     }
 
     // Events

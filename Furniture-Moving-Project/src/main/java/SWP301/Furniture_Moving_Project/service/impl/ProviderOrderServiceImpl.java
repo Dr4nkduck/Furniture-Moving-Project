@@ -71,8 +71,13 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
 
         List<ProviderOrderItemProjection> items = srRepo.findOrderItems(requestId);
         dto.setItems(items.stream()
-                .map(i -> new ProviderOrderItemDTO(i.getItemId(), i.getItemType(), i.getSize(),
-                        i.getQuantity() == null ? 0 : i.getQuantity(), Boolean.TRUE.equals(i.getIsFragile())))
+                .map(i -> new ProviderOrderItemDTO(
+                        i.getItemId(),
+                        i.getItemType(),
+                        i.getSize(),
+                        i.getQuantity() == null ? 0 : i.getQuantity(),
+                        Boolean.TRUE.equals(i.getIsFragile()))
+                )
                 .collect(Collectors.toList()));
         return dto;
     }
@@ -86,14 +91,14 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
 
         // Get the request to check contract
         ServiceRequest request = srRepo.findById(requestId)
-            .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         // Handle acknowledgment: when provider accepts, acknowledge contract and set request to ready_to_pay
         if ("accepted".equals(ns)) {
             // Update contract to acknowledged if exists
             if (request.getContractId() != null) {
                 Contract contract = contractRepo.findById(request.getContractId())
-                    .orElse(null);
+                        .orElse(null);
                 if (contract != null && "signed".equals(contract.getStatus())) {
                     contract.setStatus("acknowledged");
                     contract.setAcknowledgedAt(OffsetDateTime.now());
@@ -114,9 +119,43 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
             default -> throw new IllegalArgumentException("Unsupported status: " + ns);
         }
 
-        int updated = srRepo.providerUpdateStatus(providerId, requestId, ns,
-                StringUtils.hasText(cancelReason) && "cancelled".equals(ns) ? cancelReason : null);
+        int updated = srRepo.providerUpdateStatus(
+                providerId,
+                requestId,
+                ns,
+                StringUtils.hasText(cancelReason) && "cancelled".equals(ns) ? cancelReason : null
+        );
         if (updated == 0) throw new IllegalArgumentException("Order not found or not owned by provider");
+    }
+
+    /**
+     * Provider bấm nút "Xác nhận đã thanh toán" sau khi tự kiểm tra sao kê.
+     * Luồng: chỉ cho phép xác nhận nếu:
+     *  - Đơn thuộc về provider này
+     *  - Trạng thái hiện tại đang "ready_to_pay" (hoặc "pending" tuỳ bạn)
+     * Sau đó set status = "paid".
+     */
+    public void confirmPayment(Integer providerId, Integer requestId) {
+        ServiceRequest sr = srRepo.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        // Kiểm tra quyền sở hữu
+        if (sr.getProviderId() == null || !sr.getProviderId().equals(providerId)) {
+            throw new IllegalArgumentException("Order not owned by provider");
+        }
+
+        String current = sr.getStatus() == null ? "" : sr.getStatus().toLowerCase();
+        // Chỉ cho xác nhận khi đang chờ thanh toán
+        if (!current.equals("ready_to_pay")) {
+            throw new IllegalStateException("Order is not in ready_to_pay state, cannot confirm payment.");
+        }
+
+        // Đánh dấu đã thanh toán
+        sr.setStatus("paid");
+        // Nếu sau này bạn có thêm trường paidAt thì có thể set ở đây:
+        // sr.setPaidAt(LocalDateTime.now());
+
+        srRepo.save(sr);
     }
 
     private static String join(String a, String b) {
@@ -127,8 +166,8 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
     private static String joinFull(String street, String city, String state, String zip) {
         StringBuilder sb = new StringBuilder();
         if (StringUtils.hasText(street)) sb.append(street);
-        if (StringUtils.hasText(city)) sb.append(sb.length()>0?", ":"").append(city);
-        if (StringUtils.hasText(state)) sb.append(sb.length()>0?", ":"").append(state);
+        if (StringUtils.hasText(city)) sb.append(sb.length() > 0 ? ", " : "").append(city);
+        if (StringUtils.hasText(state)) sb.append(sb.length() > 0 ? ", " : "").append(state);
         if (StringUtils.hasText(zip)) sb.append(" ").append(zip);
         return sb.toString();
     }
