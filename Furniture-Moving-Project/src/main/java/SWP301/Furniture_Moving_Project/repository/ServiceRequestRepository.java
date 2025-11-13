@@ -121,4 +121,8 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             @Param("status") String status,
             @Param("cancelReason") String cancelReason
     );
+
+
+
+    
 }
