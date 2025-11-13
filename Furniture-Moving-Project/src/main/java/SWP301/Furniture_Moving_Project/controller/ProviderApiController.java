@@ -11,6 +11,8 @@ import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+
 
 import java.time.LocalDate;
 import java.util.*;
@@ -119,4 +121,25 @@ public class ProviderApiController {
                                   @RequestBody ProviderOrderUpdateStatusDTO body) {
         providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
     }
+
+    // src/main/java/.../ProviderApiController.java
+
+@GetMapping("/me")
+public Map<String, Object> me(Authentication auth) {
+    if (auth == null || !auth.isAuthenticated()) {
+        throw new IllegalArgumentException("Chưa đăng nhập");
+    }
+    String username = auth.getName();
+    Integer providerId = providerRepository
+            .findProviderIdByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
+
+    return Map.of(
+            "success", true,
+            "providerId", providerId
+    );
+}
+
+
+    
 }

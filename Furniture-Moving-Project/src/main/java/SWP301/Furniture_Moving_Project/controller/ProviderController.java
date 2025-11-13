@@ -2,12 +2,16 @@
 package SWP301.Furniture_Moving_Project.controller;
 
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
+import SWP301.Furniture_Moving_Project.model.Provider;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @Controller
-@RequestMapping("/provider") // <— KHÁC với /api/providers
+@RequestMapping("/provider")
 public class ProviderController {
 
     private final ProviderRepository providerRepository;
@@ -18,7 +22,7 @@ public class ProviderController {
 
     @GetMapping({"", "/", "/home"})
     public String home() {
-        return "provider/home"; // đổi theo tên template của bạn (templates/provider/home.html)
+        return "provider/home";
     }
 
     @GetMapping("/dashboard")
@@ -27,7 +31,22 @@ public class ProviderController {
     }
 
     @GetMapping("/services")
-    public String services() {
+    public String services(Model model, Authentication auth) {
+        // Lấy username đang đăng nhập
+        String username = auth != null ? auth.getName() : null;
+
+        // Tìm provider theo username
+        Integer providerId = providerRepository
+                .findProviderIdByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
+
+        // Nếu muốn show companyName trên navbar:
+        Optional<Provider> pOpt = providerRepository.findById(providerId);
+        pOpt.ifPresent(p -> model.addAttribute("companyName", p.getCompanyName()));
+
+        // Đưa providerId xuống view để <meta> dùng
+        model.addAttribute("providerId", providerId);
+
         return "provider/services";
     }
 
@@ -41,6 +60,7 @@ public class ProviderController {
         model.addAttribute("orderId", id);
         return "provider/order-detail";
     }
+
 
     
 }

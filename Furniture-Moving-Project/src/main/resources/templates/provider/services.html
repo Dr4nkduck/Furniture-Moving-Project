@@ -5,16 +5,16 @@
     <title>PV-002 • Bảng giá & Dịch vụ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Inject từ controller nếu có -->
-    <meta th:if="${providerId != null}" name="provider-id" th:content="${providerId}"/>
+    <!-- Inject từ controller -->
+    <meta name="provider-id" th:content="${providerId}"/>
 
     <!-- Early theme boot -->
     <script>
         (function(){
             try{
-                var s=localStorage.getItem('theme');
-                var prefers=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.classList.toggle('dark', s?s==='dark':prefers);
+                var s = localStorage.getItem('theme');
+                var prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', s ? s === 'dark' : prefers);
             }catch(e){}
         })();
     </script>
@@ -42,11 +42,11 @@
 
             <div class="d-flex align-items-center ms-4 mb-4">
                 <div class="position-relative">
-                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:40px;height:40px;">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar"
+                         style="width:40px;height:40px;">
                     <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                 </div>
                 <div class="ms-3">
-                    <!-- Ưu tiên company_name nếu controller set model.addAttribute("companyName", ...) -->
                     <h6 class="mb-0"
                         th:text="${companyName != null && !#strings.isEmpty(companyName) ? companyName : #authentication?.name}">
                         provider1
@@ -82,7 +82,9 @@
             </form>
 
             <div class="navbar-nav align-items-center ms-auto">
-                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button" aria-pressed="false">🌙 Dark</button>
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary me-2" type="button"
+                        aria-pressed="false">🌙 Dark
+                </button>
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -96,18 +98,20 @@
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt="" style="width:40px;height:40px;">
+                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt=""
+                             style="width:40px;height:40px;">
                         <span class="d-none d-lg-inline-flex"
                               th:text="${companyName != null && !#strings.isEmpty(companyName) ? companyName : #authentication?.name}">
-              provider1
-            </span>
+                            provider1
+                        </span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
                         <a class="dropdown-item" href="/provider/profile">Hồ sơ</a>
                         <a class="dropdown-item" href="/provider/settings">Cài đặt</a>
                         <div class="dropdown-divider"></div>
                         <form th:action="@{/logout}" method="post" id="logoutForm"></form>
-                        <a href="#" class="dropdown-item" onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
+                        <a href="#" class="dropdown-item"
+                           onclick="document.getElementById('logoutForm').submit(); return false;">Đăng xuất</a>
                     </div>
                 </div>
             </div>
@@ -119,9 +123,11 @@
                 <h3 class="m-0 text-shadow">PV-002 • Thiết lập gói & bảng giá</h3>
                 <div>
                     <button class="btn btn-outline-light btn-sm me-2" id="btnRefresh">
-                        <i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+                        <i class="bi bi-arrow-clockwise"></i> Làm mới
+                    </button>
                     <button class="btn btn-primary btn-sm" id="btnOpenAdd">
-                        <i class="bi bi-plus-lg"></i> Thêm gói</button>
+                        <i class="bi bi-plus-lg"></i> Thêm gói
+                    </button>
                 </div>
             </div>
 
@@ -137,7 +143,6 @@
                             <span id="configuredCount" class="badge badge-dim"></span>
                         </div>
 
-                        <!-- Filter by base service package -->
                         <div class="row g-2 mb-2">
                             <div class="col-12">
                                 <select id="filterByPackage" class="form-select form-select-sm">
@@ -147,13 +152,16 @@
                         </div>
 
                         <div class="input-group input-group-sm mb-2">
-              <span class="input-group-text bg-transparent text-light border-secondary">
-                <i class="bi bi-search"></i></span>
-                            <input id="searchConfigured" class="form-control bg-transparent text-light border-secondary"
+                            <span class="input-group-text bg-transparent text-light border-secondary">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input id="searchConfigured"
+                                   class="form-control bg-transparent text-light border-secondary"
                                    placeholder="Tìm theo tên snapshot...">
                         </div>
 
-                        <div class="list-group list-hover" id="configuredList" style="max-height:66vh;overflow:auto;"></div>
+                        <div class="list-group list-hover" id="configuredList"
+                             style="max-height:66vh;overflow:auto;"></div>
                     </div>
                 </div>
 
@@ -167,11 +175,14 @@
                             </div>
                             <div>
                                 <button class="btn btn-outline-danger btn-sm me-2" id="btnDelete">
-                                    <i class="bi bi-trash"></i> Xóa gói</button>
+                                    <i class="bi bi-trash"></i> Xóa gói
+                                </button>
                                 <button class="btn btn-outline-warning btn-sm me-2" id="btnReset">
-                                    <i class="bi bi-eraser"></i> Đặt lại giá</button>
+                                    <i class="bi bi-eraser"></i> Đặt lại giá
+                                </button>
                                 <button class="btn btn-success btn-sm" id="btnSave">
-                                    <i class="bi bi-save2"></i> Lưu</button>
+                                    <i class="bi bi-save2"></i> Lưu
+                                </button>
                             </div>
                         </div>
 
@@ -184,12 +195,15 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Tên gói (snapshot khi lưu)</label>
                                     <input id="packageNameSnapshot" class="form-control" maxlength="120"
-                                           placeholder="VD: Vận chuyển văn phòng — HCM" />
-                                    <div class="form-text muted">Để trống sẽ dùng tên gốc từ <code>service_packages</code>.</div>
+                                           placeholder="VD: Vận chuyển văn phòng — HCM"/>
+                                    <div class="form-text muted">
+                                        Để trống sẽ dùng tên gốc từ <code>service_packages</code>.
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Giá mỗi km</label>
-                                    <input id="pricePerKm" class="form-control" type="number" step="1000" min="0" placeholder="VD: 100000" />
+                                    <input id="pricePerKm" class="form-control" type="number" step="1000" min="0"
+                                           placeholder="VD: 100000"/>
                                 </div>
                             </div>
 
@@ -226,7 +240,8 @@
                         &copy; <a href="#">Your Site Name</a>, All Right Reserved.
                     </div>
                     <div class="col-12 col-sm-6 text-center text-sm-end">
-                        Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
+                        Designed By
+                        <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
                     </div>
                 </div>
             </div>
@@ -256,7 +271,8 @@
                 </div>
                 <div>
                     <label class="form-label">Giá/km ban đầu (tuỳ chọn)</label>
-                    <input id="modalPerKm" class="form-control" type="number" step="1000" min="0" placeholder="VD: 100000">
+                    <input id="modalPerKm" class="form-control" type="number" step="1000" min="0"
+                           placeholder="VD: 100000">
                 </div>
             </div>
             <div class="modal-footer">
