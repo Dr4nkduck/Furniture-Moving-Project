@@ -990,42 +990,82 @@ async function fetchWithBackoff(url, options, { maxRetries = 3, baseDelay = 700 
 
 
 /* ========= [ADD] Helper: normalize & trích gợi ý hành chính từ query ========= */
-function _normalize(s){ return String(s||"").toLowerCase().normalize("NFC").trim(); }
+/* ========= [ADD] Helper: normalize & trích gợi ý hành chính từ query ========= */
+function _normalize(s){ 
+  return String(s||"").toLowerCase().normalize("NFC").trim(); 
+}
 
 function extractAdminHintsFromQuery(q){
   const t = _normalize(q);
+
+  const mHamlet   = t.match(/\b(thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)\s+([a-z0-9\s\-]+)/i);
   const mWard     = t.match(/\b(phường|xã|thị trấn)\s+([a-z0-9\s\-]+)/i);
   const mDistrict = t.match(/\b(quận|huyện|thị xã)\s+([a-z0-9\s\-]+)/i);
   const mCityProv = t.match(/\b(thành phố|tỉnh|tp\.?)\s+([a-z0-9\s\.\-]+)/i);
+
   return {
+    hamlet:   mHamlet   ? _normalize(mHamlet[2])   : "",
     ward:     mWard     ? _normalize(mWard[2])     : "",
     district: mDistrict ? _normalize(mDistrict[2]) : "",
     cityprov: mCityProv ? _normalize(mCityProv[2]) : ""
   };
 }
 
+
+/* ========= [ADD] Helper: chấm điểm ứng viên theo cấp hành chính ========= */
 /* ========= [ADD] Helper: chấm điểm ứng viên theo cấp hành chính ========= */
 function scorePlaceByParts(parts, qHints){
-  // BẮT BUỘC có ward/commune
-  const wardLike = _normalize(parts.ward || parts.commune || "");
-  if (!wardLike) return -1e9;
-
-  let s = 10; // điểm cơ sở
-  if (qHints.ward && wardLike.includes(qHints.ward)) s += 30;
-
+  const hamlet   = _normalize(parts.hamlet   || "");
+  const ward     = _normalize(parts.ward     || "");
+  const commune  = _normalize(parts.commune  || "");
   const district = _normalize(parts.district || "");
-  const city     = _normalize(parts.city || "");
+  const city     = _normalize(parts.city     || "");
   const prov     = _normalize(parts.province || "");
 
-  if (qHints.district && district.includes(qHints.district)) s += 15;
-  if (qHints.cityprov && (city.includes(qHints.cityprov) || prov.includes(qHints.cityprov))) s += 10;
+  // nếu quá chung chung, không có bất kỳ cấp nào -> vứt
+  if (!hamlet && !ward && !commune && !district && !city && !prov) {
+    return -1e9;
+  }
 
+  let s = 10; // base score
+
+  // có xã/phường → cộng điểm
+  if (ward || commune) s += 15;
+  // có thôn/xóm/ấp → cộng nhẹ, để ưu tiên chi tiết hơn
+  if (hamlet) s += 8;
+
+  // khớp tên thôn trong query
+  if (qHints.hamlet && hamlet && hamlet.includes(qHints.hamlet)) {
+    s += 35;
+  }
+
+  // khớp xã/ phường trong query
+  if (qHints.ward) {
+    if ((ward && ward.includes(qHints.ward)) ||
+        (commune && commune.includes(qHints.ward))) {
+      s += 25;
+    }
+  }
+
+  // khớp huyện
+  if (qHints.district && district && district.includes(qHints.district)) {
+    s += 15;
+  }
+
+  // khớp thành phố / tỉnh
+  if (qHints.cityprov && ( (city && city.includes(qHints.cityprov)) ||
+                           (prov && prov.includes(qHints.cityprov)) )) {
+    s += 10;
+  }
+
+  // bonus nếu đủ nhiều cấp
   if (district) s += 4;
   if (city)     s += 2;
   if (prov)     s += 2;
 
   return s;
 }
+
 
 /* ========= [ADD] Lấy NHIỀU ứng viên từ Nominatim/Photon (đã normPlace) ========= */
 async function geocodeNominatimMulti(q, limit = 6){
@@ -1050,6 +1090,7 @@ async function geocodePhotonMulti(q, limit = 6){
 }
 
 /* ========= [REPLACE] Geocode address: bắt buộc có xã/phường + chọn best match ========= */
+/* ========= [REPLACE] Geocode address: chọn best match, chấp nhận từ cấp thôn trở lên ========= */
 async function geocodeAddress(query) {
   const q = String(query || "").trim();
   if (q.length < 3) return { ok:false };
@@ -1062,36 +1103,46 @@ async function geocodeAddress(query) {
     ...(await geocodePhotonMulti(q, 6))
   ];
 
-  // Lọc những ứng viên có cấp xã/phường/thị trấn
-  const withCommune = pool.filter(p => {
+  // Chỉ giữ những ứng viên có ít nhất 1 cấp hành chính (thôn/xã/huyện/tỉnh...)
+  const candidates = pool.filter(p => {
     const parts = p.parts || {};
-    return !!(parts.ward || parts.commune);
+    return !!(parts.hamlet || parts.ward || parts.commune ||
+              parts.district || parts.city || parts.province);
   });
-  if (!withCommune.length) return { ok:false };
+
+  if (!candidates.length) return { ok:false };
 
   // Chấm điểm & chọn tốt nhất
-  withCommune.sort((a,b) => {
+  candidates.sort((a,b) => {
     const pa = scorePlaceByParts(a.parts || {}, hints);
     const pb = scorePlaceByParts(b.parts || {}, hints);
     return pb - pa;
   });
 
-  return withCommune[0] || { ok:false };
+  return candidates[0] || { ok:false };
 }
 
-/* ========= [REPLACE] Fallback geocode nhưng vẫn bắt buộc có xã/phường ========= */
+
+/* ========= [REPLACE] Fallback geocode: chấp nhận từ thôn trở lên ========= */
 async function resolveAddressWithFallback(addr) {
   const raw = String(addr || "").trim();
   if (!raw) return { ok:false };
 
   const accept = (res, usedQuery, fallbackTag) => {
     if (!res?.ok) return null;
-    const hasCommune = !!(res.parts?.ward || res.parts?.commune);
-    if (!hasCommune) return null; // BẮT BUỘC cấp xã/phường
+    const parts = res.parts || {};
+
+    // CHỈ YÊU CẦU có ít nhất một cấp hành chính (thôn/xã/phường/huyện/tỉnh)
+    const hasAdmin =
+      !!(parts.hamlet || parts.ward || parts.commune ||
+         parts.district || parts.city || parts.province);
+
+    if (!hasAdmin) return null;
+
     return {
       ok: true,
       ...res,
-      missingHouse: !res.parts?.houseNumber,
+      missingHouse: !parts.houseNumber,
       usedQuery,
       fallback: fallbackTag
     };
@@ -1118,9 +1169,10 @@ async function resolveAddressWithFallback(addr) {
     if (a3) return a3;
   }
 
-  // 4) Không có kết quả đạt yêu cầu (thiếu xã/phường)
+  // 4) Không có kết quả đủ thông tin
   return { ok:false };
 }
+
 
 
 /* ========= Prompt build ========= */
@@ -1825,18 +1877,20 @@ async function renderFinalCombinedSummary() {
   }
 
   if (!d.km) {
-    const dist = await calcDistance(d.fromPlace, d.toPlace);
-    if (!dist.ok) {
-      renderSlotReply("Mình chưa tính được quãng đường giữa 2 địa chỉ. Bạn kiểm tra lại địa chỉ giúp mình nhé.");
-      return;
-    }
-    d.km = dist.km;
-    d.durationText = dist.durationText;
-    d.routeText = dist.routeText;
-    // Tính xong km thì cập nhật lại panel tổng tiền bên phải
-window.AIQUOTE?.rerender?.();
-
+  const dist = await calcDistance(d.fromPlace, d.toPlace);
+  if (!dist.ok) {
+    renderSlotReply("Mình chưa tính được quãng đường giữa 2 địa chỉ. Bạn kiểm tra lại địa chỉ giúp mình nhé.");
+    return;
   }
+  d.km = dist.km;
+  d.durationText = dist.durationText;
+  d.routeText = dist.routeText;
+  d.routeSeconds = dist.seconds || null;   // <-- THÊM DÒNG NÀY
+
+  // Tính xong km thì cập nhật lại panel tổng tiền bên phải
+  window.AIQUOTE?.rerender?.();
+}
+
 
   const { amount: itemsAmount } = (window.AIQUOTE?.getTotals?.() || { amount: 0 });
   const cfg = loadSettings();
@@ -1846,24 +1900,44 @@ window.AIQUOTE?.rerender?.();
   const fromFmt = d.fromPlace?.formatted || d.fromAddr || "—";
   const toFmt   = d.toPlace?.formatted   || d.toAddr   || "—";
 
-  const html = `
-    <b>TÓM TẮT YÊU CẦU & BÁO GIÁ</b>
-    <table class="table table-sm mt-2 mb-2">
-      <tbody>
-        <tr><td>Tên khách hàng</td><td><b>${escapeHTML(d.name || "")}</b></td></tr>
-        <tr><td>Địa chỉ nhận hàng</td><td>${escapeHTML(fromFmt)}</td></tr>
-        <tr><td>Địa chỉ giao hàng</td><td>${escapeHTML(toFmt)}</td></tr>
-        <tr><td>Quãng đường ước tính</td><td><b>${d.km.toFixed(2)} km</b></td></tr>
-        <tr><td>Thời gian ước tính</td><td>${escapeHTML(d.durationText || "—")}</td></tr>
-        <tr><td><b>TỔNG SỐ TIỀN</b></td><td><b>${fmtMoney(grandTotal)}</b> (gồm hàng hóa tạm tính + phí ship)</td></tr>
-      </tbody>
-    </table>
-    <small class="text-muted d-block mb-1">SĐT liên hệ: ${escapeHTML(d.phone || "—")}</small>
-    <small class="text-muted">
-      Giá trên được tính theo danh sách hiện tại và quãng đường dự kiến. 
-      Nếu không phát sinh thêm đồ hoặc thay đổi địa chỉ/tuyến, giá sẽ không thay đổi.
-    </small>
-  `;
+    // Thời điểm lấy hàng (ngày + giờ KH chọn)
+  let pickupText = "—";
+  if (d.datetime) {
+    pickupText = d.datetime;                                // đã có sẵn chuỗi dd/MM/yyyy HH:mm
+  } else if (d._datetimeObj) {
+    pickupText = formatDateTimeVN(d._datetimeObj);
+  } else if (d.date || d.time) {
+    pickupText = [d.date || "", d.time || ""].join(" ").trim();
+  }
+
+  // Thời gian ước tính giao hàng = thời gian lấy hàng + thời gian di chuyển
+  let etaText = "—";
+  if (d._datetimeObj && d.routeSeconds) {
+    const etaDate = new Date(d._datetimeObj.getTime() + d.routeSeconds * 1000);
+    etaText = formatDateTimeVN(etaDate);
+  }
+
+
+ const html = `
+  <b>TÓM TẮT YÊU CẦU & BÁO GIÁ</b>
+  <table class="table table-sm mt-2 mb-2">
+    <tbody>
+      <tr><td>Tên khách hàng</td><td><b>${escapeHTML(d.name || "")}</b></td></tr>
+      <tr><td>Địa chỉ nhận hàng</td><td>${escapeHTML(fromFmt)}</td></tr>
+      <tr><td>Địa chỉ giao hàng</td><td>${escapeHTML(toFmt)}</td></tr>
+      <tr><td>Thời gian lấy hàng</td><td>${escapeHTML(pickupText || "—")}</td></tr>
+      <tr><td>Quãng đường ước tính</td><td><b>${d.km.toFixed(2)} km</b></td></tr>
+      <tr><td>Thời gian ước tính</td><td>${escapeHTML(d.durationText || "—")}</td></tr>
+      <tr><td><b>TỔNG SỐ TIỀN</b></td><td><b>${fmtMoney(grandTotal)}</b> (gồm hàng hóa tạm tính + phí ship)</td></tr>
+    </tbody>
+  </table>
+  <small class="text-muted d-block mb-1">SĐT liên hệ: ${escapeHTML(d.phone || "—")}</small>
+  <small class="text-muted">
+    Giá trên được tính theo danh sách hiện tại và quãng đường dự kiến. 
+    Nếu không phát sinh thêm đồ hoặc thay đổi địa chỉ/tuyến, giá sẽ không thay đổi.
+  </small>
+`;
+
 
   // Sau khi đã render tóm tắt và tính phí/route
 const payload = buildDraftPayload();
