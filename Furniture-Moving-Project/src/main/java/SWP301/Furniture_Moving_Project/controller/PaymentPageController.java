@@ -62,11 +62,13 @@ public class PaymentPageController {
 
         String status = sr.getStatus();
 
-        // 🔒 CHẶN ĐƠN CHƯA SẴN SÀNG THANH TOÁN
-        // Chỉ cho phép vào /payment khi:
-        //  - ready_to_pay: khách chuẩn bị thanh toán
-        //  - paid        : đã thanh toán (show thông báo, redirect)
-        if (!"ready_to_pay".equalsIgnoreCase(status) && !"paid".equalsIgnoreCase(status)) {
+        // 🔒 TH2: Đơn đã PAID mà user cố vào /payment/{id} -> redirect về homepage
+        if ("paid".equalsIgnoreCase(status)) {
+            return "redirect:/homepage";
+        }
+
+        // 🔒 Chỉ cho phép vào /payment khi đang READY_TO_PAY
+        if (!"ready_to_pay".equalsIgnoreCase(status)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Đơn này chưa sẵn sàng để thanh toán. Vui lòng chờ nhà vận chuyển ghi nhận hợp đồng."
@@ -104,6 +106,9 @@ public class PaymentPageController {
         if (pickupText == null || pickupText.isBlank())     pickupText = "—";
         if (deliveryText == null || deliveryText.isBlank()) deliveryText = "—";
 
+        // 🔹 Mã tham chiếu thanh toán dùng cho VietQR / sao kê ngân hàng: REQ(id)
+        String paymentRef = "REQ" + requestId;
+
         // ---- Đẩy model cho payment.html
         model.addAttribute("requestId", requestId);
         model.addAttribute("amount", amount);
@@ -115,6 +120,7 @@ public class PaymentPageController {
         model.addAttribute("pickupText", pickupText);
         model.addAttribute("deliveryText", deliveryText);
         model.addAttribute("status", status);
+        model.addAttribute("paymentRef", paymentRef); // ✅ để hiển thị REQ(id) trong payment.html
 
         return "payment/payment";
     }

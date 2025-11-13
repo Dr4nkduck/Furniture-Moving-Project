@@ -9,6 +9,8 @@
   <!-- Metadata cho JS -->
   <meta name="request-id" th:content="${requestId}"/>
   <meta name="total-cost" th:content="${amount}"/>
+  <!-- 🔹 PaymentRef cho JS / đối soát -->
+  <meta name="payment-ref" th:content="${paymentRef}"/>
 
   <!-- CSRF: chỉ render nếu đang bật -->
   <th:block th:if="${_csrf != null}">
@@ -64,6 +66,26 @@
             <span>Giá cần thanh toán:</span>
             <strong id="amountValue"
                     th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</strong>
+          </div>
+
+          <!-- 🔹 Nội dung chuyển khoản (REQid) để đối soát sao kê -->
+          <div class="summary-row payment-ref-row">
+            <span>Nội dung chuyển khoản:</span>
+            <span class="payment-ref-inline">
+              <code id="paymentRefText"
+                    class="payment-ref-chip"
+                    th:text="${paymentRef}">REQ123</code>
+              <button type="button"
+                      id="btnCopyPaymentRef"
+                      class="btn-copy-ref">
+                Copy
+              </button>
+            </span>
+          </div>
+
+          <div class="summary-note small">
+            Vui lòng giữ nguyên nội dung <strong th:text="${paymentRef}">REQ123</strong>
+            khi chuyển khoản để hệ thống và nhà cung cấp dễ dàng đối soát trong sao kê ngân hàng.
           </div>
 
           <div class="summary-row">
@@ -157,6 +179,29 @@
 
   <!-- ====== Footer (Fragment) ====== -->
   <div th:replace="fragments/footer :: footer"></div>
+
+  <!-- 🔹 JS nhỏ để copy REQ(id) vào clipboard -->
+  <script>
+    (() => {
+      const btn  = document.getElementById("btnCopyPaymentRef");
+      const code = document.getElementById("paymentRefText");
+      if (!btn || !code) return;
+
+      btn.addEventListener("click", async () => {
+        const text = code.textContent.trim();
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          const old = btn.textContent;
+          btn.textContent = "Đã copy!";
+          setTimeout(() => btn.textContent = old, 1500);
+        } catch (e) {
+          console.error(e);
+          alert("Không copy được, vui lòng tự ghi: " + text);
+        }
+      });
+    })();
+  </script>
 
 </body>
 </html>

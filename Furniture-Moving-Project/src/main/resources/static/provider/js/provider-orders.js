@@ -25,7 +25,9 @@
         pickup: document.getElementById('d-pickup'),
         delivery: document.getElementById('d-delivery'),
         items: document.getElementById('d-items'),
-        timeline: document.getElementById('d-timeline')
+        timeline: document.getElementById('d-timeline'),
+        // 🔹 Thêm element hiển thị mã thanh toán REQ(id) ở panel chi tiết
+        paymentRef: document.getElementById('d-paymentRef')
     };
 
     const btnConfirmPaid = document.getElementById('btnConfirmPaid');
@@ -94,6 +96,7 @@
         tbody.innerHTML = '';
         (rows || []).forEach(r => {
             const tr = document.createElement('tr');
+            const paymentRef = `REQ${r.requestId}`; // 🔹 Mã thanh toán chuẩn cho đối soát sao kê
             tr.innerHTML = `
         <td class="text-muted">#${r.requestId}</td>
         <td>${r.customerName || ''}</td>
@@ -101,6 +104,7 @@
         <td>${r.deliveryAddress || ''}</td>
         <td>${r.preferredDate || ''}</td>
         <td><span class="badge" data-status="${r.status}">${humanStatus(r.status)}</span></td>
+        <td>${paymentRef}</td>
         <td class="text-end">${fmtMoney(r.totalCost)}</td>
       `;
             tr.addEventListener('click', () => loadDetail(r.requestId));
@@ -123,6 +127,11 @@
         d.cost.textContent = fmtMoney(dto.totalCostEstimate);
         d.pickup.textContent = dto.pickupFull || '';
         d.delivery.textContent = dto.deliveryFull || '';
+
+        // 🔹 Hiển thị REQ(id) trong phần chi tiết
+        if (d.paymentRef) {
+            d.paymentRef.textContent = `REQ${dto.requestId}`;
+        }
 
         d.items.innerHTML = '';
         (dto.items || []).forEach(i => {
