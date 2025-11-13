@@ -988,6 +988,141 @@ async function fetchWithBackoff(url, options, { maxRetries = 3, baseDelay = 700 
   }
 }
 
+
+/* ========= [ADD] Helper: normalize & trích gợi ý hành chính từ query ========= */
+function _normalize(s){ return String(s||"").toLowerCase().normalize("NFC").trim(); }
+
+function extractAdminHintsFromQuery(q){
+  const t = _normalize(q);
+  const mWard     = t.match(/\b(phường|xã|thị trấn)\s+([a-z0-9\s\-]+)/i);
+  const mDistrict = t.match(/\b(quận|huyện|thị xã)\s+([a-z0-9\s\-]+)/i);
+  const mCityProv = t.match(/\b(thành phố|tỉnh|tp\.?)\s+([a-z0-9\s\.\-]+)/i);
+  return {
+    ward:     mWard     ? _normalize(mWard[2])     : "",
+    district: mDistrict ? _normalize(mDistrict[2]) : "",
+    cityprov: mCityProv ? _normalize(mCityProv[2]) : ""
+  };
+}
+
+/* ========= [ADD] Helper: chấm điểm ứng viên theo cấp hành chính ========= */
+function scorePlaceByParts(parts, qHints){
+  // BẮT BUỘC có ward/commune
+  const wardLike = _normalize(parts.ward || parts.commune || "");
+  if (!wardLike) return -1e9;
+
+  let s = 10; // điểm cơ sở
+  if (qHints.ward && wardLike.includes(qHints.ward)) s += 30;
+
+  const district = _normalize(parts.district || "");
+  const city     = _normalize(parts.city || "");
+  const prov     = _normalize(parts.province || "");
+
+  if (qHints.district && district.includes(qHints.district)) s += 15;
+  if (qHints.cityprov && (city.includes(qHints.cityprov) || prov.includes(qHints.cityprov))) s += 10;
+
+  if (district) s += 4;
+  if (city)     s += 2;
+  if (prov)     s += 2;
+
+  return s;
+}
+
+/* ========= [ADD] Lấy NHIỀU ứng viên từ Nominatim/Photon (đã normPlace) ========= */
+async function geocodeNominatimMulti(q, limit = 6){
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&addressdetails=1&accept-language=vi&q=${encodeURIComponent(q)}`;
+  try {
+    const r = await fetchWithTimeout(url, {}, 7000);
+    if (!r.ok) throw new Error(`Nominatim HTTP ${r.status}`);
+    const arr = await r.json();
+    return (arr || []).map(x => normPlace(x, "nominatim")).filter(p => p.ok);
+  } catch { return []; }
+}
+
+async function geocodePhotonMulti(q, limit = 6){
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lang=vi&limit=${limit}`;
+  try {
+    const r = await fetchWithTimeout(url, {}, 7000);
+    if (!r.ok) throw new Error(`Photon HTTP ${r.status}`);
+    const data = await r.json();
+    const feats = Array.isArray(data?.features) ? data.features : [];
+    return feats.map(x => normPlace(x, "photon")).filter(p => p.ok);
+  } catch { return []; }
+}
+
+/* ========= [REPLACE] Geocode address: bắt buộc có xã/phường + chọn best match ========= */
+async function geocodeAddress(query) {
+  const q = String(query || "").trim();
+  if (q.length < 3) return { ok:false };
+
+  const hints = extractAdminHintsFromQuery(q);
+
+  // Lấy pool ứng viên từ cả 2 nguồn
+  const pool = [
+    ...(await geocodeNominatimMulti(q, 6)),
+    ...(await geocodePhotonMulti(q, 6))
+  ];
+
+  // Lọc những ứng viên có cấp xã/phường/thị trấn
+  const withCommune = pool.filter(p => {
+    const parts = p.parts || {};
+    return !!(parts.ward || parts.commune);
+  });
+  if (!withCommune.length) return { ok:false };
+
+  // Chấm điểm & chọn tốt nhất
+  withCommune.sort((a,b) => {
+    const pa = scorePlaceByParts(a.parts || {}, hints);
+    const pb = scorePlaceByParts(b.parts || {}, hints);
+    return pb - pa;
+  });
+
+  return withCommune[0] || { ok:false };
+}
+
+/* ========= [REPLACE] Fallback geocode nhưng vẫn bắt buộc có xã/phường ========= */
+async function resolveAddressWithFallback(addr) {
+  const raw = String(addr || "").trim();
+  if (!raw) return { ok:false };
+
+  const accept = (res, usedQuery, fallbackTag) => {
+    if (!res?.ok) return null;
+    const hasCommune = !!(res.parts?.ward || res.parts?.commune);
+    if (!hasCommune) return null; // BẮT BUỘC cấp xã/phường
+    return {
+      ok: true,
+      ...res,
+      missingHouse: !res.parts?.houseNumber,
+      usedQuery,
+      fallback: fallbackTag
+    };
+  };
+
+  // 1) Full chuỗi
+  const primary = await geocodeAddress(raw);
+  const a1 = accept(primary, raw, "none");
+  if (a1) return a1;
+
+  // 2) Cắt từ cấp thôn/xóm/ấp/tổ... trở đi
+  const hamletOnly = stripToHamletLevel(raw);
+  if (hamletOnly && hamletOnly !== raw) {
+    const p2 = await geocodeAddress(hamletOnly);
+    const a2 = accept(p2, hamletOnly, "hamlet");
+    if (a2) return a2;
+  }
+
+  // 3) Bỏ số nhà/đầu chuỗi
+  const stripped = stripHouseNumber(raw);
+  if (stripped && stripped !== raw && stripped !== hamletOnly) {
+    const p3 = await geocodeAddress(stripped);
+    const a3 = accept(p3, stripped, "strip");
+    if (a3) return a3;
+  }
+
+  // 4) Không có kết quả đạt yêu cầu (thiếu xã/phường)
+  return { ok:false };
+}
+
+
 /* ========= Prompt build ========= */
 function buildPromptText(userText) {
   const s = loadSettings();
