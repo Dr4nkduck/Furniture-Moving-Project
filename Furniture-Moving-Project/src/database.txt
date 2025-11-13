@@ -1125,3 +1125,21 @@ END
 
 IF COL_LENGTH('dbo.service_requests','contract_id') IS NULL
     ALTER TABLE dbo.service_requests ADD contract_id INT NULL;
+
+
+SELECT * FROM service_packages;
+
+
+INSERT INTO service_packages(code, name, is_active)
+VALUES 
+('HOME_MOVE', N'Chuyển nhà trọn gói', 1),
+('OFFICE_MOVE', N'Chuyển văn phòng', 1),
+('STORAGE', N'Bốc xếp & kho bãi', 1);
+
+
+
+SELECT u.username, p.*
+FROM users u
+LEFT JOIN providers p ON p.user_id = u.user_id
+WHERE u.username = 'username_vua_dang_ky';
+
