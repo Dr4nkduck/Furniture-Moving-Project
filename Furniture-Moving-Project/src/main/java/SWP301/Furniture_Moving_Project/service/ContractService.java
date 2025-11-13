@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Service
 public class ContractService {
@@ -22,7 +23,8 @@ public class ContractService {
 
     public boolean hasAccepted(Integer userId) {
         if (userId == null) return false;
-        return contracts.existsByUser_UserIdAndStatus(userId, "accepted");
+        return contracts.existsByUser_UserIdAndStatus(userId, "signed") 
+            || contracts.existsByUser_UserIdAndStatus(userId, "acknowledged");
     }
 
     @Transactional
@@ -30,8 +32,17 @@ public class ContractService {
         User u = users.findById(userId).orElseThrow();
         Contract c = new Contract();
         c.setUser(u);
-        c.setStatus("accepted");
+        c.setStatus("signed"); // Changed from "accepted" to "signed"
         c.setSignedAt(OffsetDateTime.now());
+        // providerId will be set when request is created
         return contracts.save(c);
+    }
+
+    public Contract findByUserId(Integer userId) {
+        List<Contract> allContracts = contracts.findByUser_UserId(userId);
+        return allContracts.stream()
+            .filter(c -> "signed".equals(c.getStatus()) || "acknowledged".equals(c.getStatus()))
+            .findFirst()
+            .orElse(null);
     }
 }

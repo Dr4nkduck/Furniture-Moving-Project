@@ -1,5 +1,8 @@
 package SWP301.Furniture_Moving_Project.service;
 
+import SWP301.Furniture_Moving_Project.dto.AddressDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
+import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.RequestMetaDTO;
 import SWP301.Furniture_Moving_Project.model.Address;
@@ -9,11 +12,13 @@ import SWP301.Furniture_Moving_Project.model.RequestAddress;
 import SWP301.Furniture_Moving_Project.model.RequestImage;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
 import SWP301.Furniture_Moving_Project.repository.AddressRepository;
+import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import SWP301.Furniture_Moving_Project.repository.CustomerRepository;
 import SWP301.Furniture_Moving_Project.repository.FurnitureItemRepository;
 import SWP301.Furniture_Moving_Project.repository.RequestAddressRepository;
 import SWP301.Furniture_Moving_Project.repository.RequestImageRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
+import SWP301.Furniture_Moving_Project.model.Contract;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,6 +45,7 @@ public class FullRequestService {
     private final FurnitureItemRepository furnitureItemRepo;
     private final CustomerRepository customerRepo;
     private final RequestImageRepository requestImageRepo;
+    private final ContractRepository contractRepo;
 
     /** Thư mục gốc để lưu file vật lý (trên máy chủ). Ví dụ: uploads */
     @Value("${app.upload.dir:uploads}")
@@ -54,13 +60,15 @@ public class FullRequestService {
                               RequestAddressRepository requestAddressRepo,
                               FurnitureItemRepository furnitureItemRepo,
                               CustomerRepository customerRepo,
-                              RequestImageRepository requestImageRepo) {
+                              RequestImageRepository requestImageRepo,
+                              ContractRepository contractRepo) {
         this.serviceRequestRepo = serviceRequestRepo;
         this.addressRepo = addressRepo;
         this.requestAddressRepo = requestAddressRepo;
         this.furnitureItemRepo = furnitureItemRepo;
         this.customerRepo = customerRepo;
         this.requestImageRepo = requestImageRepo;
+        this.contractRepo = contractRepo;
     }
 
     /**
@@ -102,7 +110,14 @@ public class FullRequestService {
         );
         addressRepo.save(deliveryAddr);
 
-        // 4) Tạo ServiceRequest và gắn 2 Address (ManyToOne)
+        // 4) Tìm contract đã ký của customer này
+        Contract contract = contractRepo.findByUser_UserId(userId)
+            .stream()
+            .filter(c -> "signed".equals(c.getStatus()) || "acknowledged".equals(c.getStatus()))
+            .findFirst()
+            .orElse(null);
+
+        // 5) Tạo ServiceRequest và gắn 2 Address (ManyToOne)
         ServiceRequest sr = new ServiceRequest();
         sr.setCustomerId(customerId);
         sr.setProviderId(providerId);                 // có thể null
@@ -111,6 +126,16 @@ public class FullRequestService {
         sr.setTotalCost(meta.getEstimatedCost());     // nếu FE gửi estimate
         sr.setPickupAddress(pickupAddr);
         sr.setDeliveryAddress(deliveryAddr);
+        
+        // Link request to contract if exists
+        if (contract != null) {
+            sr.setContractId(contract.getContractId());
+            // Update contract with providerId if not set
+            if (contract.getProviderId() == null && providerId != null) {
+                contract.setProviderId(providerId);
+                contractRepo.save(contract);
+            }
+        }
 
         final ServiceRequest saved = serviceRequestRepo.save(sr);
 

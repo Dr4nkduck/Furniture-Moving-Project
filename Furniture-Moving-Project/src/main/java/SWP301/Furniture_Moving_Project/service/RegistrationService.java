@@ -1,5 +1,6 @@
 package SWP301.Furniture_Moving_Project.service;
 
+import SWP301.Furniture_Moving_Project.dto.RegisterForm;
 import SWP301.Furniture_Moving_Project.model.*;
 import SWP301.Furniture_Moving_Project.repository.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,13 @@ public class RegistrationService {
         if (userRepository.existsByEmail(form.getEmail())) {
             throw new IllegalArgumentException("Email đã tồn tại");
         }
+        if (form.getRole() == null || form.getRole().isBlank()) {
+            throw new IllegalArgumentException("Vui lòng chọn vai trò");
+        }
+        final String pickedRole = form.getRole().trim().toUpperCase();
+        if (!pickedRole.equals("CUSTOMER") && !pickedRole.equals("PROVIDER")) {
+            throw new IllegalArgumentException("Vai trò không hợp lệ");
+        }
 
         // 2) Tạo users
         User u = new User();
@@ -59,14 +67,14 @@ public class RegistrationService {
         cred.setFailedAttempts(0);
         authCredentialRepository.save(cred);
 
-        // 4) Gán role CUSTOMER
-        Integer customerRoleId = roleRepository.findByRoleName("CUSTOMER")
+        // 4) Gán role do người dùng chọn (PRIMARY)
+        Integer roleId = roleRepository.findByRoleName(pickedRole)
                 .map(Role::getRoleId)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy role CUSTOMER (hãy chạy seed DB)."));
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy role " + pickedRole + " (hãy chạy seed DB)."));
 
         UserRole ur = new UserRole();
         ur.setUserId(u.getUserId());
-        ur.setRoleId(customerRoleId);
+        ur.setRoleId(roleId);
         ur.setPrimary(true);
         userRoleRepository.save(ur);
 

@@ -9,6 +9,8 @@
   <!-- Metadata cho JS -->
   <meta name="request-id" th:content="${requestId}"/>
   <meta name="total-cost" th:content="${amount}"/>
+  <!-- 🔹 PaymentRef cho JS / đối soát -->
+  <meta name="payment-ref" th:content="${paymentRef}"/>
 
   <!-- CSRF: chỉ render nếu đang bật -->
   <th:block th:if="${_csrf != null}">
@@ -66,6 +68,26 @@
                     th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</strong>
           </div>
 
+          <!-- 🔹 Nội dung chuyển khoản (REQid) để đối soát sao kê -->
+          <div class="summary-row payment-ref-row">
+            <span>Nội dung chuyển khoản:</span>
+            <span class="payment-ref-inline">
+              <code id="paymentRefText"
+                    class="payment-ref-chip"
+                    th:text="${paymentRef}">REQ123</code>
+              <button type="button"
+                      id="btnCopyPaymentRef"
+                      class="btn-copy-ref">
+                Copy
+              </button>
+            </span>
+          </div>
+
+          <div class="summary-note small">
+            Vui lòng giữ nguyên nội dung <strong th:text="${paymentRef}">REQ123</strong>
+            khi chuyển khoản để hệ thống và nhà cung cấp dễ dàng đối soát trong sao kê ngân hàng.
+          </div>
+
           <div class="summary-row">
             <span>Ngày tạo đơn:</span>
             <span th:text="${#temporals.format(createdAt, 'dd/MM/yyyy HH:mm')}">2025-11-09 10:00</span>
@@ -108,6 +130,21 @@
           <h2 id="qrTitle">Thanh toán qua VietQR</h2>
         </div>
         <div class="bd">
+          <!-- Payment Type Selection -->
+          <div class="payment-type-selection" style="margin-bottom: 20px;">
+            <h3 style="margin-bottom: 10px; font-size: 16px;">Chọn phương thức thanh toán:</h3>
+            <div style="display: flex; gap: 15px;">
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="radio" name="paymentType" value="DEPOSIT" id="paymentTypeDeposit" style="margin-right: 8px;">
+                <span>Đặt cọc (20%)</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="radio" name="paymentType" value="FULL" id="paymentTypeFull" checked style="margin-right: 8px;">
+                <span>Thanh toán đầy đủ (100%)</span>
+              </label>
+            </div>
+          </div>
+
           <div class="qr-wrapper">
             <div id="qrBox" class="qr-box" aria-live="polite">
               <!-- JS sẽ thay nội dung; giữ fallback noscript -->
@@ -142,6 +179,29 @@
 
   <!-- ====== Footer (Fragment) ====== -->
   <div th:replace="fragments/footer :: footer"></div>
+
+  <!-- 🔹 JS nhỏ để copy REQ(id) vào clipboard -->
+  <script>
+    (() => {
+      const btn  = document.getElementById("btnCopyPaymentRef");
+      const code = document.getElementById("paymentRefText");
+      if (!btn || !code) return;
+
+      btn.addEventListener("click", async () => {
+        const text = code.textContent.trim();
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          const old = btn.textContent;
+          btn.textContent = "Đã copy!";
+          setTimeout(() => btn.textContent = old, 1500);
+        } catch (e) {
+          console.error(e);
+          alert("Không copy được, vui lòng tự ghi: " + text);
+        }
+      });
+    })();
+  </script>
 
 </body>
 </html>

@@ -4,13 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Đăng ký</title>
-  <!-- Dùng lại file login.css -->
   <link rel="stylesheet" th:href="@{/accountmanage/css/register.css}">
 </head>
 <body>
   <div class="wrapper">
     <form th:action="@{/register}" method="post" th:object="${form}">
-      <h1>Register</h1>
+      <h1>Đăng ký</h1>
 
       <div class="input-box">
         <input type="text" th:field="*{username}" placeholder="Tên đăng nhập" required>
@@ -33,27 +32,34 @@
       </div>
 
       <div class="input-box">
-        <input type="text" th:field="*{phone}" placeholder="Số Điện thoại">
+        <input type="text" th:field="*{phone}" placeholder="Số điện thoại">
+      </div>
+
+      <!-- Select vai trò -->
+      <div class="input-box select-field">
+        <select class="role-select" th:field="*{role}" required>
+          <option value="" disabled selected>-- Chọn vai trò --</option>
+          <option value="CUSTOMER">Khách hàng (USER)</option>
+          <option value="PROVIDER">Nhà cung cấp (PROVIDER)</option>
+        </select>
       </div>
 
       <button type="submit" class="btn">Đăng ký</button>
 
       <!-- Hiện lỗi nếu có -->
-      <div th:if="${error}" style="color:#fff; text-align:center; margin-top:10px;">
+      <div th:if="${error}" class="form-msg error">
         <span th:text="${error}"></span>
       </div>
+      <div th:if="${success}" class="form-msg success">
+        <span th:text="${success}"></span>
+      </div>
 
-      <!-- Link quay lại login -->
       <div class="register-link">
         <p>Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
       </div>
 
-      <!-- Nút quay lại homepage -->
-      <div style="text-align:center; margin-top:15px;">
-        <a href="/homepage" class="btn" 
-           style="display:inline-block; padding:10px 20px; border-radius:40px; background:#eee; color:#333; text-decoration:none; font-weight:600;">
-          Quay lại Trang chính
-        </a>
+      <div class="center-btn">
+        <a href="/homepage" class="ghost-btn">Quay lại Trang chính</a>
       </div>
     </form>
   </div>

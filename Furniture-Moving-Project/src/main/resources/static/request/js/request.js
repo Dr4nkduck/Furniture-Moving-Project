@@ -290,7 +290,8 @@ function serialize(){
     items,
     preferredDate: fd.get('preferredDate') || '',
     preferredTime: fd.get('preferredTime') || '',
-    estimate: calcEstimate()
+    // 👇 QUAN TRỌNG: gửi đúng tên khoá BE đang map (RequestMetaDTO.estimatedCost)
+    estimatedCost: Number(calcEstimate())
   };
 }
 
@@ -360,7 +361,9 @@ function buildFullRequestPayload(viewPayload){
       customerId: Number($('#customerId')?.value || 1), // thay bằng session nếu có
       providerId: ($('#providerId')?.value ? Number($('#providerId').value) : null),
       preferredDate: viewPayload.preferredDate,
-      notes: viewPayload.notes || ''
+      notes: viewPayload.notes || '',
+      // 👇 QUAN TRỌNG: đưa estimatedCost vào đúng chỗ để BE map vào RequestMetaDTO
+      estimatedCost: Number(viewPayload.estimatedCost ?? calcEstimate())
     },
     furnitureItems: (viewPayload.items || []).map(it => ({
       name: it.name,
