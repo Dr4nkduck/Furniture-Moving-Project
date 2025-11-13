@@ -2,8 +2,11 @@ package SWP301.Furniture_Moving_Project.controller;
 
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
+import SWP301.Furniture_Moving_Project.repository.UserRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,15 +21,21 @@ public class PaymentPageController {
 
     private final ServiceRequestRepository serviceRequestRepository;
     private final JdbcTemplate jdbc;
+    private final UserRepository userRepository; // ✅ thêm repository để truy user
 
     public PaymentPageController(ServiceRequestRepository serviceRequestRepository,
-                                 JdbcTemplate jdbcTemplate) {
+                                 JdbcTemplate jdbcTemplate,
+                                 UserRepository userRepository) {
         this.serviceRequestRepository = serviceRequestRepository;
         this.jdbc = jdbcTemplate;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/payment/{id}")
     public String viewPayment(@PathVariable("id") Integer requestId, Model model) {
+        // ✅ Thêm thông tin đăng nhập trước
+        addLoginInfo(model);
+
         ServiceRequest sr = serviceRequestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn vận chuyển #" + requestId));
 
@@ -45,7 +54,7 @@ public class PaymentPageController {
         }
         if (providerCompanyName == null || providerCompanyName.isBlank()) providerCompanyName = "Đang xử lý";
 
-        // ---- LẤY ĐỊA CHỈ trực tiếp từ pickup_address_id / delivery_address_id → addresses
+        // ---- LẤY ĐỊA CHỈ
         String pickupText = queryString("""
                 SELECT a.street_address
                 FROM dbo.addresses a
@@ -62,7 +71,7 @@ public class PaymentPageController {
         if (pickupText == null || pickupText.isBlank())     pickupText = "—";
         if (deliveryText == null || deliveryText.isBlank()) deliveryText = "—";
 
-        // ---- Đẩy model đúng tên mà payment/payment.html đang dùng
+        // ---- Đẩy model cho payment.html
         model.addAttribute("requestId", requestId);
         model.addAttribute("amount", amount);
         model.addAttribute("createdAt", createdAt);
@@ -74,7 +83,6 @@ public class PaymentPageController {
         model.addAttribute("deliveryText", deliveryText);
         model.addAttribute("status", status);
 
-        // templates/payment/payment.html
         return "payment/payment";
     }
 
@@ -93,6 +101,33 @@ public class PaymentPageController {
             return jdbc.queryForObject(sql, String.class, args);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /** ============================================================
+     *  HÀM DÙNG CHUNG CHO NAVBAR (thêm biến isLoggedIn, currentUser)
+     *  ============================================================ */
+    private void addLoginInfo(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) {
+            model.addAttribute("isLoggedIn", true);
+
+            Object principal = auth.getPrincipal();
+            String username = null;
+            try {
+                username = (String) principal.getClass().getMethod("getUsername").invoke(principal);
+            } catch (Exception ignored) {
+            }
+
+            if (username != null) {
+                userRepository.findByUsername(username).ifPresent(u -> {
+                    model.addAttribute("currentUser", u);
+                });
+            }
+        } else {
+            model.addAttribute("isLoggedIn", false);
         }
     }
 }

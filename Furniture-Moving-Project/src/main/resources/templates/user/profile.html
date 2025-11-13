@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hồ sơ khách hàng</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet" />
+    <link th:href="@{/user/css/profile.css}" rel="stylesheet" />
+</head>
+<body>
+<div class="wrapper">
+    <div th:replace="fragments/header :: topbar"></div>
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <div class="page-header d-none">
+        <div class="container">
+            <h2>Hồ sơ khách hàng</h2>
+            <a th:href="@{/homepage}">Trang chủ</a>
+            <a href="javascript:void(0)">Hồ sơ</a>
+        </div>
+    </div>
+
+    <section class="profile-section py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="card profile-summary">
+                        <div class="card-body text-center">
+                            <div class="avatar-wrapper mb-3">
+                                <img class="avatar" th:src="@{/images/loginbg.jpg}" alt="avatar" />
+                            </div>
+                            <h5 class="mb-1" th:text="${(currentUser != null) ? (currentUser.firstName + ' ' + currentUser.lastName) : 'Khách hàng'}">Tên người dùng</h5>
+                            <div class="text-muted small" th:text="${(currentUser != null) ? currentUser.username : ''}">@username</div>
+                            <hr/>
+                            <ul class="list-unstyled text-left small mb-0">
+                                <li class="mb-2"><i class="far fa-envelope mr-2"></i> <span th:text="${(currentUser != null) ? currentUser.email : ''}">email@example.com</span></li>
+                                <li class="mb-2"><i class="far fa-user mr-2"></i> ID: <span th:text="${(currentUser != null) ? currentUser.userId : ''}">#</span></li>
+                                <li class="mb-2"><i class="far fa-calendar-alt mr-2"></i> Tham gia: <span th:text="${(currentUser != null) ? (currentUser.createdAt != null ? #temporals.format(currentUser.createdAt, 'dd/MM/yyyy') : '—') : '—'}">—</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="btn-group toggle-nav" role="group" aria-label="User panels">
+                            <button id="btn-show-info" type="button" class="btn btn-primary active">
+                                <i class="fas fa-id-card mr-1"></i> Thông tin cá nhân
+                            </button>
+                            <button id="btn-show-password" type="button" class="btn btn-outline-primary">
+                                <i class="fas fa-key mr-1"></i> Đổi mật khẩu
+                            </button>
+                        </div>
+                        <a class="btn btn-sm btn-outline-secondary" th:href="@{/user}"><i class="fas fa-chevron-left mr-1"></i>Quay lại</a>
+                    </div>
+
+                    <div id="panel-info" class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Thông tin cá nhân</h5>
+                        </div>
+                        <div class="card-body">
+
+                            <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
+                            <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+
+                            <form th:action="@{/user/profile/update-info}" method="post" th:object="${currentUser}">
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Họ</label>
+                                        <input type="text" class="form-control" th:field="*{firstName}" placeholder="Nhập họ" required />
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Tên</label>
+                                        <input type="text" class="form-control" th:field="*{lastName}" placeholder="Nhập tên" required />
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Email</label>
+                                        <input type="email" class="form-control" th:field="*{email}" placeholder="email@example.com" required />
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Số điện thoại</label>
+                                        <input type="text" class="form-control" th:field="*{phone}" placeholder="Nhập số điện thoại" />
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center">
+                                    <button type="submit" class="btn btn-primary mr-2">
+                                        <i class="fas fa-save mr-1"></i> Lưu thay đổi
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary">Hủy</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="panel-password" class="card mt-4" style="display:none;">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Đổi mật khẩu</h5>
+                        </div>
+                        <div class="card-body">
+
+                            <div th:if="${successMessagePass}" class="alert alert-success" role="alert" th:text="${successMessagePass}"></div>
+                            <div th:if="${errorMessagePass}" class="alert alert-danger" role="alert" th:text="${errorMessagePass}"></div>
+
+                            <form th:action="@{/user/profile/update-password}" method="post">
+
+                                <div class="form-group">
+                                    <label>Mật khẩu hiện tại</label>
+                                    <input type="password" class="form-control" name="currentPassword" placeholder="••••••••" required />
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Mật khẩu mới</label>
+                                        <input type="password" class="form-control" name="newPassword" placeholder="••••••••" required />
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Nhập lại mật khẩu</label>
+                                        <input type="password" class="form-control" name="confirmPassword" placeholder="••••••••" required />
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-key mr-1"></i> Đổi mật khẩu
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div th:replace="fragments/footer :: footer"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/js/main.js}"></script>
+<script>
+    (function(){
+        var btnInfo = document.getElementById('btn-show-info');
+        var btnPwd = document.getElementById('btn-show-password');
+        var panelInfo = document.getElementById('panel-info');
+        var panelPwd = document.getElementById('panel-password');
+
+        function showInfo(){
+            panelInfo.style.display = '';
+            panelPwd.style.display = 'none';
+            btnInfo.classList.add('btn-primary');
+            btnInfo.classList.remove('btn-outline-primary');
+            btnPwd.classList.add('btn-outline-primary');
+            btnPwd.classList.remove('btn-primary');
+        }
+        function showPwd(){
+            panelInfo.style.display = 'none';
+            panelPwd.style.display = '';
+            btnPwd.classList.add('btn-primary');
+            btnPwd.classList.remove('btn-outline-primary');
+            btnInfo.classList.add('btn-outline-primary');
+            btnInfo.classList.remove('btn-primary');
+        }
+
+
+        var hasPasswordMessage = document.querySelector('.card-body .alert[th\\:if="${successMessagePass}"], .card-body .alert[th\\:if="${errorMessagePass}"]');
+
+        if (hasPasswordMessage) {
+            showPwd();
+        } else {
+            showInfo();
+        }
+
+
+        if(btnInfo) btnInfo.addEventListener('click', showInfo);
+        if(btnPwd) btnPwd.addEventListener('click', showPwd);
+    })();
+</script>
+</body>
+</html>

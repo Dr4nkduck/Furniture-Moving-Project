@@ -1,16 +1,13 @@
+// src/main/java/SWP301/Furniture_Moving_Project/controller/ProviderController.java
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-@RestController
-@RequestMapping("/api/providers")
-@CrossOrigin(origins = "*")
+@Controller
+@RequestMapping("/provider") // <— KHÁC với /api/providers
 public class ProviderController {
 
     private final ProviderRepository providerRepository;
@@ -19,15 +16,31 @@ public class ProviderController {
         this.providerRepository = providerRepository;
     }
 
-        
-    @GetMapping("/provider/services")
+    @GetMapping({"", "/", "/home"})
+    public String home() {
+        return "provider/home"; // đổi theo tên template của bạn (templates/provider/home.html)
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard() {
+        return "provider/dashboard";
+    }
+
+    @GetMapping("/services")
     public String services() {
         return "provider/services";
     }
 
-    @GetMapping("/provider/orders")
+    @GetMapping("/orders")
     public String orders() {
         return "provider/orders";
     }
-}
 
+    @GetMapping("/orders/{id}")
+    public String orderDetail(@PathVariable Integer id, Model model) {
+        model.addAttribute("orderId", id);
+        return "provider/order-detail";
+    }
+
+    
+}

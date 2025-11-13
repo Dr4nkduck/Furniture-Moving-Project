@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 @Service
 public class RegistrationService {
 
+    private static final AccountStatus status = AccountStatus.ACTIVE;
     private final UserRepository userRepository;
     private final AuthCredentialRepository authCredentialRepository;
     private final RoleRepository roleRepository;
@@ -54,7 +55,7 @@ public class RegistrationService {
         u.setPhone(form.getPhone());
         u.setFirstName(form.getFirstName());
         u.setLastName(form.getLastName());
-        u.setStatus("active");
+        u.setAccountStatus(status);
         u.setCreatedAt(OffsetDateTime.now());
         u.setUpdatedAt(OffsetDateTime.now());
         u = userRepository.save(u);

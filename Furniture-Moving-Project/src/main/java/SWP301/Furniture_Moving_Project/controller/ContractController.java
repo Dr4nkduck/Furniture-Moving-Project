@@ -28,9 +28,8 @@ public class ContractController {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
 
-        if (contracts.hasAccepted(userId)) {
-            return "redirect:/request";
-        }
+        // Luôn cho vào trang hợp đồng, không redirect khi đã accepted
+        addLoginInfo(model, userId);
 
         User u = users.findById(userId).orElse(null);
         model.addAttribute("customerName", buildName(u));
@@ -41,7 +40,6 @@ public class ContractController {
     public String acceptContract() {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
-
         contracts.accept(userId);
         return "redirect:/request";
     }
@@ -53,10 +51,8 @@ public class ContractController {
 
         Object p = auth.getPrincipal();
 
-        // Entity User làm principal
         if (p instanceof User) return ((User) p).getUserId();
 
-        // Spring Security UserDetails mặc định
         if (p instanceof org.springframework.security.core.userdetails.User su) {
             String username = su.getUsername();
 
@@ -85,5 +81,17 @@ public class ContractController {
         if (u.getUsername() != null && !u.getUsername().isEmpty()) return u.getUsername();
         if (u.getEmail() != null && !u.getEmail().isEmpty()) return u.getEmail();
         return "Khách hàng";
+    }
+
+    /** Thêm biến isLoggedIn/currentUser cho navbar */
+    private void addLoginInfo(Model model, Integer userId) {
+        if (userId != null) {
+            users.findById(userId).ifPresent(u -> {
+                model.addAttribute("isLoggedIn", true);
+                model.addAttribute("currentUser", u);
+            });
+        } else {
+            model.addAttribute("isLoggedIn", false);
+        }
     }
 }

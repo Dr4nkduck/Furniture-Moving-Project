@@ -108,10 +108,13 @@
     setStatus("");
 
     try {
+      // Get selected payment type
+      const paymentType = document.querySelector('input[name="paymentType"]:checked')?.value || 'FULL';
+      
       const headers = { "Accept": "application/json" };
       if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
 
-      const res = await fetch(`/payment/${requestId}/init`, { method: "POST", headers });
+      const res = await fetch(`/payment/${requestId}/init?paymentType=${encodeURIComponent(paymentType)}`, { method: "POST", headers });
       if (!res.ok) { setStatus("Không khởi tạo được phiên thanh toán."); enableRetry(true); return; }
 
       const { payUrl, txnRef, expireAt, amount, vietqrImageUrl } = await res.json();
