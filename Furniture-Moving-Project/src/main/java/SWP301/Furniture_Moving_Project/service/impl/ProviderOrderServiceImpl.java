@@ -1,22 +1,22 @@
 package SWP301.Furniture_Moving_Project.service.impl;
 
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
-import SWP301.Furniture_Moving_Project.dto.ProviderOrderItemDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
-import SWP301.Furniture_Moving_Project.model.Contract;
-import SWP301.Furniture_Moving_Project.model.ServiceRequest;
-import SWP301.Furniture_Moving_Project.repository.ContractRepository;
-import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderItemDTO;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderDetailProjection;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderItemProjection;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderSummaryProjection;
 import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
+import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-
+import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
+import SWP301.Furniture_Moving_Project.model.Contract;
+import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
 @Service
@@ -172,4 +172,3 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
         return sb.toString();
     }
 }
-    
