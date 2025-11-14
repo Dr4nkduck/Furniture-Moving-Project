@@ -1,262 +1,232 @@
 <!DOCTYPE html>
-<html lang="vi"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta charset="utf-8">
+    <title>Thanh toán đơn hàng - FURNITURE MOVING</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Thanh toán đơn hàng</title>
+    <!-- Metadata cho JS -->
+    <meta name="request-id" th:content="${requestId}"/>
+    <meta name="total-cost" th:content="${amount}"/>
+    <meta name="payment-ref" th:content="${paymentRef}"/>
 
-  <!-- Metadata cho JS -->
-  <meta name="request-id" th:content="${requestId}"/>
-  <meta name="total-cost" th:content="${amount}"/>
-  <meta name="payment-ref" th:content="${paymentRef}"/>
+    <!-- CSRF: chỉ render nếu đang bật -->
+    <th:block th:if="${_csrf != null}">
+        <meta name="_csrf" th:content="${_csrf.token}"/>
+        <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    </th:block>
 
-  <!-- CSRF: chỉ render nếu đang bật -->
-  <th:block th:if="${_csrf != null}">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-  </th:block>
+    <!-- Favicon -->
+    <link rel="icon" th:href="@{/homepage/img/favicon.ico}"/>
 
-  <!-- CSS Libraries for navbar and footer -->
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
-  <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+          rel="stylesheet">
 
-  <!-- Payment CSS - must load after homepage CSS to override if needed -->
-  <link rel="stylesheet" th:href="@{/payment/css/payment.css}"/>
+    <!-- CSS Libraries (CDN + local libs) -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/homepage/lib/flaticon/font/flaticon.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/animate/animate.min.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/owlcarousel/assets/owl.carousel.min.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/lightbox/css/lightbox.min.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/slick/slick.css}" rel="stylesheet">
+    <link th:href="@{/homepage/lib/slick/slick-theme.css}" rel="stylesheet">
 
-  <!-- Đảm bảo header / navbar / footer không bị overlay che -->
-  <style>
-    .payment-body .top-bar,
-    .payment-body .nav-bar,
-    .payment-body .footer {
-      position: relative;
-      z-index: 20;
-    }
-  </style>
+    <!-- Template Stylesheet -->
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
 
-  <!-- jQuery must load first for Bootstrap and other scripts -->
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <!-- Page-specific CSS -->
+    <link rel="stylesheet" th:href="@{/payment/css/payment.css}"/>
 </head>
 
-<body class="payment-body page-payment">
+<body>
 <div class="wrapper">
+    <!-- Top Bar -->
+    <div th:replace="fragments/header :: topbar"></div>
 
-  <!-- ====== Fragments: header + navbar ====== -->
-  <div th:replace="fragments/header :: topbar"></div>
-  <div th:replace="fragments/navbar :: navbar"></div>
+    <!-- Nav Bar -->
+    <div th:replace="fragments/navbar :: navbar"></div>
 
-  <!-- ====== Payment Content ====== -->
-  <div class="payment-page" style="position: relative; z-index: 1;">
-    <!-- Header -->
-    <header class="payment-header" role="banner">
-      <div class="brand">
-        <div class="logo-circle" aria-hidden="true">FM</div>
-        <div class="brand-text">
-          <h1>Furniture Transport</h1>
-          <p>Thanh toán đơn vận chuyển</p>
-        </div>
-      </div>
-
-      <div class="order-mini">
-        <div class="order-id">
-          Mã đơn: <span th:text="${requestId}">123</span>
-        </div>
-        <div class="order-status" th:text="${status}">PENDING</div>
-      </div>
-    </header>
-
-    <!-- Layout chính -->
-    <main class="payment-layout" role="main">
-      <!-- Trái: thông tin đơn (card) -->
-      <section class="order-summary-card card">
-        <div class="hd">
-          <h2>Thông tin đơn vận chuyển</h2>
-        </div>
-        <div class="bd">
-          <div class="summary-row">
-            <span>Nhà cung cấp:</span>
-            <strong th:text="${providerCompanyName != null ? providerCompanyName : 'Đang xử lý'}">Tên nhà cung cấp</strong>
-          </div>
-
-          <div class="summary-row">
-            <span>Giá cần thanh toán:</span>
-            <strong id="amountValue"
-                    th:text="${amount != null ? #numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">0 đ</strong>
-          </div>
-
-          <!-- 🔹 Nội dung chuyển khoản (REQid) để đối soát sao kê -->
-          <div class="summary-row payment-ref-row">
-            <span>Nội dung chuyển khoản:</span>
-            <span class="payment-ref-inline">
-              <code id="paymentRefText"
-                    class="payment-ref-chip"
-                    th:text="${paymentRef != null ? paymentRef : 'REQ123'}">REQ123</code>
-              <button type="button"
-                      id="btnCopyPaymentRef"
-                      class="btn-copy-ref">
-                Copy
-              </button>
-            </span>
-          </div>
-
-          <div class="summary-note small">
-            Vui lòng giữ nguyên nội dung
-            <strong th:text="${paymentRef != null ? paymentRef : 'REQ123'}">REQ123</strong>
-            khi chuyển khoản để hệ thống và nhà cung cấp dễ dàng đối soát trong sao kê ngân hàng.
-          </div>
-
-          <div class="summary-row">
-            <span>Ngày tạo đơn:</span>
-            <span th:text="${createdAt != null ? #temporals.format(createdAt, 'dd/MM/yyyy HH:mm') : '—'}">
-              2025-11-09 10:00
-            </span>
-          </div>
-
-          <div class="summary-row">
-            <span>Ngày vận chuyển dự kiến:</span>
-            <span th:text="${expectedDate != null ? #temporals.format(expectedDate, 'dd/MM/yyyy') : '—'}">—</span>
-          </div>
-
-          <div class="summary-row">
-            <span>Số lượng đồ:</span>
-            <span th:text="${itemCount != null ? itemCount : 0}">0</span>
-          </div>
-
-          <div class="summary-row">
-            <span>Số ảnh minh họa:</span>
-            <span th:text="${imageCount != null ? imageCount : 0}">0</span>
-          </div>
-
-          <div class="address-block">
-            <h3>Điểm nhận hàng</h3>
-            <p th:text="${pickupText != null and !pickupText.isEmpty() ? pickupText : '—'}">Địa chỉ nhận…</p>
-          </div>
-
-          <div class="address-block">
-            <h3>Điểm giao hàng</h3>
-            <p th:text="${deliveryText != null and !deliveryText.isEmpty() ? deliveryText : '—'}">Địa chỉ giao…</p>
-          </div>
-
-          <div class="summary-note">
-            Sau khi thanh toán thành công, đơn của bạn sẽ được chuyển sang bước xử lý tiếp theo.
-          </div>
-        </div>
-      </section>
-
-      <!-- Phải: VietQR + trạng thái (card) -->
-      <section class="payment-panel-card card" aria-labelledby="qrTitle">
-        <div class="hd">
-          <h2 id="qrTitle">Thanh toán qua VietQR</h2>
-        </div>
-        <div class="bd">
-
-          <!-- Payment Type Selection -->
-          <div class="payment-type-selection" style="margin-bottom: 20px;">
-            <h3 style="margin-bottom: 10px; font-size: 16px;">Chọn phương thức thanh toán:</h3>
-            <div style="display: flex; gap: 15px;">
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="radio" name="paymentType" value="DEPOSIT_20" id="paymentTypeDeposit" style="margin-right: 8px;">
-                <span>Đặt cọc (20%)</span>
-              </label>
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="radio" name="paymentType" value="FULL" id="paymentTypeFull" checked style="margin-right: 8px;">
-                <span>Thanh toán đầy đủ (100%)</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="qr-wrapper">
-            <div id="qrBox" class="qr-box" aria-live="polite">
-              <!-- JS sẽ thay nội dung; giữ fallback noscript -->
-              <noscript><div class="qr-skeleton">Vui lòng bật JavaScript để xem mã QR.</div></noscript>
+    <!-- ====== Payment Content ====== -->
+    <div class="container py-5">
+        <!-- Header -->
+        <header class="payment-header" role="banner">
+            <div class="brand">
+                <div class="logo-circle" aria-hidden="true">FM</div>
+                <div class="brand-text">
+                    <h1>Furniture Transport</h1>
+                    <p>Thanh toán đơn vận chuyển</p>
+                </div>
             </div>
 
-            <div class="status-area">
-              <div id="statusText" class="status-text" role="status">
-                Đang tạo phiên thanh toán, vui lòng chờ...
-              </div>
-              <div id="countdown" class="countdown-text" aria-live="polite"></div>
+            <div class="order-mini">
+                <div class="order-id">
+                    Mã đơn: <span th:text="${requestId}">123</span>
+                </div>
+                <div class="order-status" th:text="${status}">PENDING</div>
             </div>
-          </div>
+        </header>
 
-          <div class="actions">
-            <button id="retryButton" type="button" class="btn-outline" aria-label="Tạo lại mã QR">
-              Tạo lại QR
-            </button>
-          </div>
+        <!-- Layout chính -->
+        <main class="payment-layout" role="main">
+            <!-- Trái: thông tin đơn (card) -->
+            <section class="order-summary-card card">
+                <div class="hd">
+                    <h2>Thông tin đơn vận chuyển</h2>
+                </div>
+                <div class="bd">
+                    <div class="summary-row">
+                        <span>Nhà cung cấp:</span>
+                        <strong th:text="${providerCompanyName != null ? providerCompanyName : 'Đang xử lý'}">Tên nhà cung cấp</strong>
+                    </div>
 
-          <div class="tips">
-            <h3>Hướng dẫn nhanh</h3>
-            <ol>
-              <li>Mở ứng dụng ngân hàng có hỗ trợ VietQR.</li>
-              <li>Chọn chức năng quét mã QR.</li>
-              <li>Quét mã bên cạnh và xác nhận thanh toán.</li>
-              <li>Giữ nguyên trang đến khi trạng thái chuyển sang <b>"Thanh toán thành công"</b>.</li>
-            </ol>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+                    <div class="summary-row">
+                        <span>Giá cần thanh toán:</span>
+                        <strong id="amountValue"
+                                th:text="${amount != null ? #numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">0 đ</strong>
+                    </div>
 
-  <!-- ====== Footer (Fragment) ====== -->
+                    <!-- 🔹 Nội dung chuyển khoản (REQid) để đối soát sao kê -->
+                    <div class="summary-row payment-ref-row">
+                        <span>Nội dung chuyển khoản:</span>
+                        <span class="payment-ref-inline">
+                          <code id="paymentRefText"
+                                class="payment-ref-chip"
+                                th:text="${paymentRef != null ? paymentRef : 'REQ123'}">REQ123</code>
+                          <button type="button"
+                                  id="btnCopyPaymentRef"
+                                  class="btn-copy-ref">
+                            Copy
+                          </button>
+                        </span>
+                    </div>
+
+                    <div class="summary-note small">
+                        Vui lòng giữ nguyên nội dung
+                        <strong th:text="${paymentRef != null ? paymentRef : 'REQ123'}">REQ123</strong>
+                        khi chuyển khoản để hệ thống và nhà cung cấp dễ dàng đối soát trong sao kê ngân hàng.
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Ngày tạo đơn:</span>
+                        <span th:text="${createdAt != null ? #temporals.format(createdAt, 'dd/MM/yyyy HH:mm') : '—'}">
+                          2025-11-09 10:00
+                        </span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Ngày vận chuyển dự kiến:</span>
+                        <span th:text="${expectedDate != null ? #temporals.format(expectedDate, 'dd/MM/yyyy') : '—'}">—</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Số lượng đồ:</span>
+                        <span th:text="${itemCount != null ? itemCount : 0}">0</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Số ảnh minh họa:</span>
+                        <span th:text="${imageCount != null ? imageCount : 0}">0</span>
+                    </div>
+
+                    <div class="address-block">
+                        <h3>Điểm nhận hàng</h3>
+                        <p th:text="${pickupText != null and !pickupText.isEmpty() ? pickupText : '—'}">Địa chỉ nhận…</p>
+                    </div>
+
+                    <div class="address-block">
+                        <h3>Điểm giao hàng</h3>
+                        <p th:text="${deliveryText != null and !deliveryText.isEmpty() ? deliveryText : '—'}">Địa chỉ giao…</p>
+                    </div>
+
+                    <div class="summary-note">
+                        Sau khi thanh toán thành công, đơn của bạn sẽ được chuyển sang bước xử lý tiếp theo.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Phải: VietQR + trạng thái (card) -->
+            <section class="payment-panel-card card" aria-labelledby="qrTitle">
+                <div class="hd">
+                    <h2 id="qrTitle">Thanh toán qua VietQR</h2>
+                </div>
+                <div class="bd">
+
+                    <!-- Payment Type Selection -->
+                    <div class="payment-type-selection" style="margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 10px; font-size: 16px;">Chọn phương thức thanh toán:</h3>
+                        <div style="display: flex; gap: 15px;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="paymentType" value="DEPOSIT_20" id="paymentTypeDeposit" style="margin-right: 8px;">
+                                <span>Đặt cọc (20%)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="paymentType" value="FULL" id="paymentTypeFull" checked style="margin-right: 8px;">
+                                <span>Thanh toán đầy đủ (100%)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="qr-wrapper">
+                        <div id="qrBox" class="qr-box" aria-live="polite">
+                            <!-- JS sẽ thay nội dung; giữ fallback noscript -->
+                            <noscript><div class="qr-skeleton">Vui lòng bật JavaScript để xem mã QR.</div></noscript>
+                        </div>
+
+                        <div class="status-area">
+                            <div id="statusText" class="status-text" role="status">
+                                Đang tạo phiên thanh toán, vui lòng chờ...
+                            </div>
+                            <div id="countdown" class="countdown-text" aria-live="polite"></div>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button id="retryButton" type="button" class="btn-outline" aria-label="Tạo lại mã QR">
+                            Tạo lại QR
+                        </button>
+                    </div>
+
+                    <div class="tips">
+                        <h3>Hướng dẫn nhanh</h3>
+                        <ol>
+                            <li>Mở ứng dụng ngân hàng có hỗ trợ VietQR.</li>
+                            <li>Chọn chức năng quét mã QR.</li>
+                            <li>Quét mã bên cạnh và xác nhận thanh toán.</li>
+                            <li>Giữ nguyên trang đến khi trạng thái chuyển sang <b>"Thanh toán thành công"</b>.</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- ====== End Payment Content ====== -->
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
 
 </div> <!-- /.wrapper -->
 
-<!-- ====== JS cho layout chung (navbar/footer) ====== -->
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
 <script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/lib/owlcarousel/owl.carousel.min.js}"></script>
+<script th:src="@{/homepage/lib/isotope/isotope.pkgd.min.js}"></script>
+<script th:src="@{/homepage/lib/lightbox/js/lightbox.min.js}"></script>
+<script th:src="@{/homepage/lib/waypoints/waypoints.min.js}"></script>
+<script th:src="@{/homepage/lib/counterup/counterup.min.js}"></script>
+<script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
+
+<!-- Template Javascript -->
 <script th:src="@{/homepage/js/main.js}"></script>
 
-<!-- Initialize Bootstrap components after all scripts load -->
-<script>
-  (function() {
-    // Ensure jQuery is available
-    if (typeof jQuery !== 'undefined') {
-      jQuery(document).ready(function($) {
-        // Initialize WOW.js if available
-        if (typeof WOW !== 'undefined') {
-          try {
-            new WOW().init();
-          } catch(e) {
-            console.warn('WOW.js initialization failed:', e);
-          }
-        }
-
-        // Ensure Bootstrap dropdowns work
-        try {
-          $('.dropdown-toggle').dropdown();
-        } catch(e) {
-          console.warn('Bootstrap dropdown initialization failed:', e);
-        }
-
-        // Back to top button functionality
-        $(window).scroll(function () {
-          if ($(this).scrollTop() > 200) {
-            $('.back-to-top').fadeIn('slow');
-          } else {
-            $('.back-to-top').fadeOut('slow');
-          }
-        });
-        $('.back-to-top').click(function () {
-          $('html, body').animate({scrollTop: 0}, 1500, 'easeInOutExpo');
-          return false;
-        });
-      });
-    } else {
-      console.error('jQuery is not loaded!');
-    }
-  })();
-</script>
-
-<!-- Payment JS - load after all dependencies -->
+<!-- Page-specific JS -->
 <script th:src="@{/payment/js/payment.js}"></script>
 
-<!-- 🔹 JS nhỏ để copy REQ(id) vào clipboard -->
+<!-- Utility Scripts -->
 <script>
   (function() {
     document.addEventListener('DOMContentLoaded', function() {
