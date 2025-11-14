@@ -2,6 +2,7 @@ package SWP301.Furniture_Moving_Project.controller;
 
 import SWP301.Furniture_Moving_Project.dto.CreateFullRequestDTO;
 import SWP301.Furniture_Moving_Project.dto.CreateServiceRequestDTO;
+import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.FullRequestService;
 import SWP301.Furniture_Moving_Project.service.ServiceRequestService;
@@ -23,13 +24,16 @@ public class ServiceRequestController {
     private final ServiceRequestService serviceRequestService;
     private final FullRequestService fullRequestService;
     private final ServiceRequestRepository serviceRequestRepository;
+    private final ProviderRepository providerRepository;
 
     public ServiceRequestController(ServiceRequestService serviceRequestService,
                                     FullRequestService fullRequestService,
-                                    ServiceRequestRepository serviceRequestRepository) {
+                                    ServiceRequestRepository serviceRequestRepository,
+                                    ProviderRepository providerRepository) {
         this.serviceRequestService = serviceRequestService;
         this.fullRequestService = fullRequestService;
         this.serviceRequestRepository = serviceRequestRepository;
+        this.providerRepository = providerRepository;
     }
 
     // Helper: build error body thống nhất
@@ -102,6 +106,20 @@ public class ServiceRequestController {
                     data.put("providerId", sr.getProviderId());
                     data.put("preferredDate", sr.getPreferredDate());
                     data.put("status", sr.getStatus());
+                    data.put("totalCost", sr.getTotalCost());
+                    
+                    // Include provider information if providerId exists
+                    if (sr.getProviderId() != null) {
+                        providerRepository.findById(sr.getProviderId()).ifPresent(provider -> {
+                            Map<String, Object> providerInfo = new LinkedHashMap<>();
+                            providerInfo.put("providerId", provider.getProviderId());
+                            providerInfo.put("companyName", provider.getCompanyName());
+                            providerInfo.put("rating", provider.getRating());
+                            providerInfo.put("verificationStatus", provider.getVerificationStatus());
+                            data.put("provider", providerInfo);
+                        });
+                    }
+                    
                     Map<String, Object> resp = new LinkedHashMap<>();
                     resp.put("success", true);
                     resp.put("data", data);

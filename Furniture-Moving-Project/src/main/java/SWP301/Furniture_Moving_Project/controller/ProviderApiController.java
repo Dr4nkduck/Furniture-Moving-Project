@@ -10,6 +10,7 @@ import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
@@ -42,16 +43,30 @@ public class ProviderApiController {
     }
 
     @GetMapping
-    public Map<String, Object> list(@RequestParam(defaultValue = "verified") String status) {
-        var data = providerRepository
-                .findByVerificationStatusOrderByCompanyNameAsc(status)
-                .stream()
-                .map(p -> Map.of(
-                        "providerId", p.getProviderId(),
-                        "companyName", p.getCompanyName(),
-                        "rating", p.getRating()
-                ))
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Map<String, Object> list(@RequestParam(required = false) String status) {
+        // If no status specified, return all providers (for request form dropdown)
+        // If status specified, filter by that status
+        List<Map<String, Object>> data;
+        
+        if (status == null || status.isBlank()) {
+            // Use native query to avoid lazy loading issues
+            data = providerRepository.findAvailableProvidersLight();
+        } else {
+            // Filter by status using entity query
+            data = providerRepository
+                    .findByVerificationStatusOrderByCompanyNameAsc(status)
+                    .stream()
+                    .map(p -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("providerId", p.getProviderId());
+                        m.put("companyName", p.getCompanyName());
+                        m.put("rating", p.getRating());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+        }
+        
         return Map.of("success", true, "data", data);
     }
 

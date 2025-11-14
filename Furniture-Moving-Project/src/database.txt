@@ -1127,6 +1127,20 @@ IF COL_LENGTH('dbo.service_requests','contract_id') IS NULL
     ALTER TABLE dbo.service_requests ADD contract_id INT NULL;
 
 
+
+IF OBJECT_ID('service_packages','U') IS NULL
+BEGIN
+    CREATE TABLE service_packages (
+        package_id INT IDENTITY(1,1) PRIMARY KEY,
+        code       NVARCHAR(50)  NOT NULL UNIQUE,
+        name       NVARCHAR(255) NOT NULL,
+        is_active  BIT           NOT NULL DEFAULT 1
+    );
+END;
+
+
+
+
 SELECT * FROM service_packages;
 
 
