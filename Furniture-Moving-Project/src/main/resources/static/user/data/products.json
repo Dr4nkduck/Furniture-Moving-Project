@@ -108,5 +108,177 @@
   { "name": "máy xay sinh tố", "price": 4000 },
   { "name": "máy ép trái cây", "price": 6000 },
   { "name": "lò nướng", "price": 12000 },
-  { "name": "máy pha cà phê", "price": 12000 }
+  { "name": "máy pha cà phê", "price": 12000 },
+  { "name": "bàn học (nhỏ)", "price": 15000 },
+  { "name": "bàn học (vừa)", "price": 22500 },
+  { "name": "bàn học (lớn)", "price": 30000 },
+
+  { "name": "bàn làm việc (nhỏ)", "price": 20000 },
+  { "name": "bàn làm việc (vừa)", "price": 30000 },
+  { "name": "bàn làm việc (lớn)", "price": 40000 },
+
+  { "name": "bàn ăn (nhỏ)", "price": 22000 },
+  { "name": "bàn ăn (vừa)", "price": 33000 },
+  { "name": "bàn ăn (lớn)", "price": 44000 },
+
+  { "name": "bàn trà (nhỏ)", "price": 12000 },
+  { "name": "bàn trà (vừa)", "price": 18000 },
+  { "name": "bàn trà (lớn)", "price": 24000 },
+
+  { "name": "giường đơn (nhỏ)", "price": 300000 },
+  { "name": "giường đơn (vừa)", "price": 450000 },
+  { "name": "giường đơn (lớn)", "price": 600000 },
+
+  { "name": "giường đôi (nhỏ)", "price": 400000 },
+  { "name": "giường đôi (vừa)", "price": 600000 },
+  { "name": "giường đôi (lớn)", "price": 800000 },
+
+  { "name": "giường tầng (nhỏ)", "price": 500000 },
+  { "name": "giường tầng (vừa)", "price": 750000 },
+  { "name": "giường tầng (lớn)", "price": 1000000 },
+
+  { "name": "nệm (nhỏ)", "price": 12000 },
+  { "name": "nệm (vừa)", "price": 18000 },
+  { "name": "nệm (lớn)", "price": 24000 },
+
+  { "name": "tủ quần áo (nhỏ)", "price": 350000 },
+  { "name": "tủ quần áo (vừa)", "price": 525000 },
+  { "name": "tủ quần áo (lớn)", "price": 700000 },
+
+  { "name": "tủ 3 cánh (nhỏ)", "price": 450000 },
+  { "name": "tủ 3 cánh (vừa)", "price": 675000 },
+  { "name": "tủ 3 cánh (lớn)", "price": 900000 },
+
+  { "name": "tủ 4 cánh (nhỏ)", "price": 550000 },
+  { "name": "tủ 4 cánh (vừa)", "price": 825000 },
+  { "name": "tủ 4 cánh (lớn)", "price": 1100000 },
+
+  { "name": "tủ đầu giường (nhỏ)", "price": 8000 },
+  { "name": "tủ đầu giường (vừa)", "price": 12000 },
+  { "name": "tủ đầu giường (lớn)", "price": 16000 },
+
+  { "name": "tủ giày (nhỏ)", "price": 12000 },
+  { "name": "tủ giày (vừa)", "price": 18000 },
+  { "name": "tủ giày (lớn)", "price": 24000 },
+
+  { "name": "kệ sách (nhỏ)", "price": 15000 },
+  { "name": "kệ sách (vừa)", "price": 22500 },
+  { "name": "kệ sách (lớn)", "price": 30000 },
+
+  { "name": "kệ TV (nhỏ)", "price": 15000 },
+  { "name": "kệ TV (vừa)", "price": 22500 },
+  { "name": "kệ TV (lớn)", "price": 30000 },
+
+  { "name": "tủ bếp nhỏ (nhỏ)", "price": 30000 },
+  { "name": "tủ bếp nhỏ (vừa)", "price": 45000 },
+  { "name": "tủ bếp nhỏ (lớn)", "price": 60000 },
+
+  { "name": "bàn trang điểm (nhỏ)", "price": 22000 },
+  { "name": "bàn trang điểm (vừa)", "price": 33000 },
+  { "name": "bàn trang điểm (lớn)", "price": 44000 },
+
+  { "name": "ghế trang điểm (nhỏ)", "price": 7000 },
+  { "name": "ghế trang điểm (vừa)", "price": 10500 },
+  { "name": "ghế trang điểm (lớn)", "price": 14000 },
+
+  { "name": "bàn gấp (nhỏ)", "price": 9000 },
+  { "name": "bàn gấp (vừa)", "price": 13500 },
+  { "name": "bàn gấp (lớn)", "price": 18000 },
+
+  { "name": "bàn họp (nhỏ)", "price": 350000 },
+  { "name": "bàn họp (vừa)", "price": 525000 },
+  { "name": "bàn họp (lớn)", "price": 700000 },
+
+  { "name": "tủ hồ sơ (nhỏ)", "price": 20000 },
+  { "name": "tủ hồ sơ (vừa)", "price": 30000 },
+  { "name": "tủ hồ sơ (lớn)", "price": 40000 },
+
+  { "name": "bàn thờ (nhỏ)", "price": 350000 },
+  { "name": "bàn thờ (vừa)", "price": 525000 },
+  { "name": "bàn thờ (lớn)", "price": 700000 },
+
+  { "name": "tủ thờ (nhỏ)", "price": 450000 },
+  { "name": "tủ thờ (vừa)", "price": 675000 },
+  { "name": "tủ thờ (lớn)", "price": 900000 },
+
+  { "name": "ghế xoay (nhỏ)", "price": 10000 },
+  { "name": "ghế xoay (vừa)", "price": 15000 },
+  { "name": "ghế xoay (lớn)", "price": 20000 },
+
+  { "name": "ghế sofa (nhỏ)", "price": 300000 },
+  { "name": "ghế sofa (vừa)", "price": 450000 },
+  { "name": "ghế sofa (lớn)", "price": 600000 },
+
+  { "name": "ghế đôn (nhỏ)", "price": 5000 },
+  { "name": "ghế đôn (vừa)", "price": 7500 },
+  { "name": "ghế đôn (lớn)", "price": 10000 },
+
+  { "name": "ghế ăn (nhỏ)", "price": 7000 },
+  { "name": "ghế ăn (vừa)", "price": 10500 },
+  { "name": "ghế ăn (lớn)", "price": 14000 },
+
+  { "name": "sofa 2 chỗ (nhỏ)", "price": 350000 },
+  { "name": "sofa 2 chỗ (vừa)", "price": 525000 },
+  { "name": "sofa 2 chỗ (lớn)", "price": 700000 },
+
+  { "name": "sofa 3 chỗ (nhỏ)", "price": 450000 },
+  { "name": "sofa 3 chỗ (vừa)", "price": 675000 },
+  { "name": "sofa 3 chỗ (lớn)", "price": 900000 },
+
+  { "name": "sofa góc (nhỏ)", "price": 550000 },
+  { "name": "sofa góc (vừa)", "price": 825000 },
+  { "name": "sofa góc (lớn)", "price": 1100000 },
+
+  { "name": "kệ kho sắt (nhỏ)", "price": 250000 },
+  { "name": "kệ kho sắt (vừa)", "price": 375000 },
+  { "name": "kệ kho sắt (lớn)", "price": 500000 },
+
+  { "name": "kệ nhựa (nhỏ)", "price": 10000 },
+  { "name": "kệ nhựa (vừa)", "price": 15000 },
+  { "name": "kệ nhựa (lớn)", "price": 20000 },
+
+  { "name": "đèn bàn (nhỏ)", "price": 3000 },
+  { "name": "đèn bàn (vừa)", "price": 4500 },
+  { "name": "đèn bàn (lớn)", "price": 6000 },
+
+  { "name": "đèn cây (nhỏ)", "price": 5000 },
+  { "name": "đèn cây (vừa)", "price": 7500 },
+  { "name": "đèn cây (lớn)", "price": 10000 },
+
+  { "name": "gương đứng (nhỏ)", "price": 8000 },
+  { "name": "gương đứng (vừa)", "price": 12000 },
+  { "name": "gương đứng (lớn)", "price": 16000 },
+
+  { "name": "gương treo tường (nhỏ)", "price": 6000 },
+  { "name": "gương treo tường (vừa)", "price": 9000 },
+  { "name": "gương treo tường (lớn)", "price": 12000 },
+
+  { "name": "tranh treo tường (nhỏ)", "price": 5000 },
+  { "name": "tranh treo tường (vừa)", "price": 7500 },
+  { "name": "tranh treo tường (lớn)", "price": 10000 },
+  { "name": "đồng hồ treo tường (nhỏ)", "price": 3000 },
+  { "name": "đồng hồ treo tường (vừa)", "price": 4500 },
+  { "name": "đồng hồ treo tường (lớn)", "price": 6000 },
+  { "name": "cây cảnh nhỏ (nhỏ)", "price": 5000 },
+  { "name": "cây cảnh nhỏ (vừa)", "price": 7500 },
+  { "name": "cây cảnh nhỏ (lớn)", "price": 10000 },
+  { "name": "cây cảnh lớn (nhỏ)", "price": 120000 },
+  { "name": "cây cảnh lớn (vừa)", "price": 180000 },
+  { "name": "cây cảnh lớn (lớn)", "price": 240000 },
+  { "name": "chậu cây gốm (nhỏ)", "price": 7000 },
+  { "name": "chậu cây gốm (vừa)", "price": 10500 },
+  { "name": "chậu cây gốm (lớn)", "price": 14000 },
+  { "name": "valy nhỏ (nhỏ)", "price": 5000 },
+  { "name": "valy nhỏ (vừa)", "price": 7500 },
+  { "name": "valy nhỏ (lớn)", "price": 10000 },
+  { "name": "valy lớn (nhỏ)", "price": 7000 },
+  { "name": "valy lớn (vừa)", "price": 10500 },
+  { "name": "valy lớn (lớn)", "price": 14000 },
+  { "name": "thùng carton nhỏ (nhỏ)", "price": 2000 },
+  { "name": "thùng carton nhỏ (vừa)", "price": 3000 },
+  { "name": "thùng carton nhỏ (lớn)", "price": 4000 },
+  { "name": "thùng carton lớn (nhỏ)", "price": 3000 },
+  { "name": "thùng carton lớn (vừa)", "price": 4500 },
+  { "name": "thùng carton lớn (lớn)", "price": 6000 }
+
 ]

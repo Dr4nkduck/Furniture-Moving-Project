@@ -1934,7 +1934,7 @@ async function renderFinalCombinedSummary() {
   <small class="text-muted d-block mb-1">SĐT liên hệ: ${escapeHTML(d.phone || "—")}</small>
   <small class="text-muted">
     Giá trên được tính theo danh sách hiện tại và quãng đường dự kiến. 
-    Nếu không phát sinh thêm đồ hoặc thay đổi địa chỉ/tuyến, giá sẽ không thay đổi.
+    Đây là mức giá ước tính, có thể thay đổi tùy vào nhà cung cấp, gói, phát sinh,...
   </small>
 `;
 
