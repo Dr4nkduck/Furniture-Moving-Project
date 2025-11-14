@@ -126,6 +126,14 @@
             window.location.href = "/homepage";
           }, 1200);
 
+        } else if (st === "COMPLETED") {
+            clearTimers();
+            setStatus("Đã xác nhận");
+            if (statusEl) {
+              statusEl.style.color = '#10b981';
+            }
+            enableRetry(false);
+            showTopNotification("Đơn hàng đã được xác nhận");
         } else if (st === "FAILED") {
           clearTimers();
           setStatus("Thanh toán thất bại. Vui lòng thử lại.");
