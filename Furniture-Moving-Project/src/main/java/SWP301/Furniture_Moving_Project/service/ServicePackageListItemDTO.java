@@ -1,15 +1,20 @@
-package SWP301.Furniture_Moving_Project.dto;
+package SWP301.Furniture_Moving_Project.service;
 
 public class ServicePackageListItemDTO {
 
+    // id gói trong bảng service_packages
     private Integer packageId;
-    /** Tên hiển thị ở list bên trái: snapshot nếu có, không thì tên gốc */
-    private String packageName;
-    /** Tên gói gốc từ bảng service_packages (dùng cho filter) */
+
+    // tên gốc trong bảng service_packages
     private String basePackageName;
-    /** Giá/km provider đã cấu hình (có thể null) */
+
+    // tên hiển thị cho provider (snapshot), nếu null thì dùng basePackageName
+    private String packageName;
+
+    // giá/km mà provider đã set (có thể null nếu chưa cấu hình)
     private Double pricePerKm;
 
+    // ===== getters/setters =====
     public Integer getPackageId() {
         return packageId;
     }
@@ -18,20 +23,20 @@ public class ServicePackageListItemDTO {
         this.packageId = packageId;
     }
 
-    public String getPackageName() {
-        return packageName;
-    }
-
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
-    }
-
     public String getBasePackageName() {
         return basePackageName;
     }
 
     public void setBasePackageName(String basePackageName) {
         this.basePackageName = basePackageName;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
     }
 
     public Double getPricePerKm() {

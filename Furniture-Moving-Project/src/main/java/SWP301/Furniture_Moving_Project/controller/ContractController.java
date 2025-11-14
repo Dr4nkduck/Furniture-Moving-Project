@@ -28,12 +28,8 @@ public class ContractController {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
 
-        // ✅ Thêm để navbar hiển thị đúng
+        // Luôn cho vào trang hợp đồng, không redirect khi đã accepted
         addLoginInfo(model, userId);
-
-        if (contracts.hasAccepted(userId)) {
-            return "redirect:/request";
-        }
 
         User u = users.findById(userId).orElse(null);
         model.addAttribute("customerName", buildName(u));
@@ -44,7 +40,6 @@ public class ContractController {
     public String acceptContract() {
         Integer userId = currentUserId();
         if (userId == null) return "redirect:/login";
-
         contracts.accept(userId);
         return "redirect:/request";
     }
@@ -56,10 +51,8 @@ public class ContractController {
 
         Object p = auth.getPrincipal();
 
-        // Entity User làm principal
         if (p instanceof User) return ((User) p).getUserId();
 
-        // Spring Security UserDetails mặc định
         if (p instanceof org.springframework.security.core.userdetails.User su) {
             String username = su.getUsername();
 
@@ -90,9 +83,7 @@ public class ContractController {
         return "Khách hàng";
     }
 
-    /** ============================================================
-     *  HÀM DÙNG CHUNG CHO NAVBAR (thêm biến isLoggedIn, currentUser)
-     *  ============================================================ */
+    /** Thêm biến isLoggedIn/currentUser cho navbar */
     private void addLoginInfo(Model model, Integer userId) {
         if (userId != null) {
             users.findById(userId).ifPresent(u -> {

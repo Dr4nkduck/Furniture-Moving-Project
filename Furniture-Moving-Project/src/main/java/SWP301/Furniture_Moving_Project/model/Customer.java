@@ -56,4 +56,6 @@ public class Customer {
     public void setCustomerSince(OffsetDateTime customerSince) {
         this.customerSince = customerSince;
     }
+
+    
 }

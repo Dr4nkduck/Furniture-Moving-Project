@@ -1,6 +1,5 @@
 package SWP301.Furniture_Moving_Project.repository;
 
-import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
 import SWP301.Furniture_Moving_Project.model.Provider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,9 +14,11 @@ public interface ProviderRepository extends JpaRepository<Provider, Integer> {
     @Query("select p.providerId from Provider p where p.user.username = :username")
     Optional<Integer> findProviderIdByUsername(String username);
 
-    // === THÊM MỚI: Query nhẹ lấy danh sách provider cho dropdown /request ===
-    // Sử dụng native query để tránh lỗi entity-schema mismatch
-    // Trả về: [{ providerId, companyName, rating }]
+    List<Provider> findByVerificationStatusOrderByCompanyNameAsc(String verificationStatus);
+
+    List<Provider> findByCompanyNameContainingIgnoreCase(String companyName);
+
+    // Query nhẹ cho dropdown /request (không phụ thuộc entity)
     @Query(value = """
         SELECT 
           p.provider_id  AS providerId,

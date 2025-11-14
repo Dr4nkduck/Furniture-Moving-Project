@@ -5,6 +5,9 @@
     <title>Yêu cầu dịch vụ • Furniture Moving</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
+    <!-- (Tuỳ dùng CSRF) -->
+    <!-- <meta name="_csrf" th:content="${_csrf.token}"/> -->
+
     <!-- ====== CSS: dùng chung với homepage ====== -->
     <link rel="icon" th:href="@{/homepage/img/favicon.ico}" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,9 +29,7 @@
     <link rel="stylesheet" th:href="@{/request/css/request.css}" />
 
     <!-- Patch tránh navbar chồng topbar (chỉ trang này) -->
-    <style>
-      .page-request .nav-bar{margin-top:0!important;position:relative!important;top:0!important;}
-    </style>
+    <style>.page-request .nav-bar{margin-top:0!important;position:relative!important;top:0!important;}</style>
   </head>
 
   <body class="page-request">
@@ -55,6 +56,8 @@
         <div class="grid">
           <!-- LEFT: FORM -->
           <form id="reqForm" class="stack" style="display:grid; gap: var(--space, 24px);">
+            <!-- customerId (hidden) -->
+            <input type="hidden" id="customerId" th:value="${currentCustomerId}"/>
 
             <!-- 1) SERVICE BASICS -->
             <section class="card" id="step-service">
@@ -72,7 +75,6 @@
                       <option value="INTERCITY">Vận chuyển liên tỉnh</option>
                       <option value="TRUCK_RENT">Cho thuê xe tải</option>
                     </select>
-                    <div class="hint">Có thể map với bảng <code>service_packages</code>.</div>
                   </div>
                   <div class="col-6">
                     <label for="providerId">Nhà cung cấp (tuỳ chọn)</label>
@@ -227,32 +229,51 @@
 
           </form>
 
-          <!-- RIGHT: SUMMARY -->
-          <aside class="summary">
-            <section class="card">
-              <div class="hd"><div class="eyebrow">Tổng quan</div><strong>Tóm tắt & Ước tính</strong></div>
-              <div class="bd">
-                <div class="kv"><span>Gói:</span> <strong id="sumPkg">—</strong></div>
-                <div class="kv"><span>Đồ đạc:</span> <strong id="sumItems">0 món</strong></div>
-                <div class="kv"><span>Ảnh tải lên:</span> <strong id="sumImgs">0</strong></div>
-                <div class="kv"><span>Ngày:</span> <strong id="sumDate">—</strong></div>
-                <div class="sep"></div>
-                <div class="kv"><span>Ước tính (tham khảo):</span> <strong id="sumCost">—</strong></div>
-                <div class="hint">Chi phí ước tính để tham khảo. Giá cuối cùng phụ thuộc quãng đường, đồ đạc, nhà cung cấp.</div>
-              </div>
-            </section>
+          <!-- ... giữ nguyên các phần trên ... -->
 
-            <section class="card">
-              <div class="hd"><div class="eyebrow">Lưu ý</div><strong>Trạng thái & Quy định</strong></div>
-              <div class="bd" style="font-size:14px; color:var(--muted)">
-                <ul style="margin:0 0 0 18px; display:grid; gap:8px;">
-                  <li>Yêu cầu mới tạo sẽ ở trạng thái <strong>pending</strong>.</li>
-                  <li>Chỉ có thể sửa/xoá khi trạng thái còn pending.</li>
-                  <li>Ảnh chỉ dùng để nhà cung cấp ước lượng – không bắt buộc.</li>
-                </ul>
-              </div>
-            </section>
-          </aside>
+<!-- RIGHT: SUMMARY -->
+<aside class="summary">
+  <section class="card">
+    <div class="hd"><div class="eyebrow">Tổng quan</div><strong>Tóm tắt & Ước tính</strong></div>
+    <div class="bd">
+      <div class="kv"><span>Gói:</span> <strong id="sumPkg">—</strong></div>
+      <div class="kv"><span>Đồ đạc:</span> <strong id="sumItems">0 món</strong></div>
+      <div class="kv"><span>Ảnh tải lên:</span> <strong id="sumImgs">0</strong></div>
+      <div class="kv"><span>Ngày:</span> <strong id="sumDate">—</strong></div>
+
+      <div class="sep"></div>
+
+      <!-- mới: tách 2 dòng chi phí -->
+      <div class="kv"><span>Phí vận chuyển đồ:</span> <strong id="sumMoveCost">—</strong></div>
+      <div class="kv">
+        <span>Phí ship <small id="sumShipMeta" style="opacity:.7"></small>:</span>
+        <strong id="sumShipCost">—</strong>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="kv"><span><b>Tổng tạm tính:</b></span> <strong id="sumCost">—</strong></div>
+
+      <div class="hint" style="margin-top:8px">
+        Chi phí ước tính để tham khảo. Giá cuối cùng phụ thuộc quãng đường, đồ đạc, nhà cung cấp.
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><div class="eyebrow">Lưu ý</div><strong>Trạng thái & Quy định</strong></div>
+    <div class="bd" style="font-size:14px; color:var(--muted)">
+      <ul style="margin:0 0 0 18px; display:grid; gap:8px;">
+        <li>Yêu cầu mới tạo sẽ ở trạng thái <strong>pending</strong>.</li>
+        <li>Chỉ có thể sửa/xoá khi trạng thái còn pending.</li>
+        <li>Ảnh chỉ dùng để nhà cung cấp ước lượng – không bắt buộc.</li>
+      </ul>
+    </div>
+  </section>
+</aside>
+
+<!-- ... giữ nguyên các phần dưới ... -->
+
         </div>
       </main>
 

@@ -1,3 +1,4 @@
+// src/main/java/SWP301/Furniture_Moving_Project/repository/ServiceRequestRepository.java
 package SWP301.Furniture_Moving_Project.repository;
 
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
@@ -16,20 +17,15 @@ import java.util.List;
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Integer> {
 
     List<ServiceRequest> findByCustomerId(Integer customerId);
-
     List<ServiceRequest> findByStatus(String status);
-
     List<ServiceRequest> findByCustomerIdAndStatus(Integer customerId, String status);
-
     List<ServiceRequest> findTop5ByCustomerIdOrderByCreatedAtDesc(Integer customerId);
-    // Nếu entity không có 'createdAt', đổi sang:
-    // List<ServiceRequest> findTop5ByCustomerIdOrderByRequestDateDesc(Integer customerId);
 
     long countByProviderId(Integer providerId);
-
     long countByProviderIdAndStatus(Integer providerId, String status);
 
-    /* ---- PV-003: list orders for provider with search & status filter ---- */
+    long countByProviderIdAndPreferredDateAndStatusIn(Integer providerId, LocalDate preferredDate, Collection<String> status);
+
     @Query(value = """
         SELECT 
             sr.request_id      AS requestId,
@@ -66,7 +62,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             @Param("q") String q
     );
 
-    /* ---- PV-003: order detail for provider ---- */
     @Query(value = """
         SELECT 
             sr.request_id     AS requestId,
@@ -74,17 +69,14 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             sr.request_date   AS requestDate,
             sr.preferred_date AS preferredDate,
             sr.total_cost     AS totalCost,
-
             u.first_name      AS customerFirstName,
             u.last_name       AS customerLastName,
             u.phone           AS customerPhone,
             u.email           AS customerEmail,
-
             pu.street_address AS pickupStreet,
             pu.city           AS pickupCity,
             pu.state          AS pickupState,
             pu.zip_code       AS pickupZip,
-
             de.street_address AS deliveryStreet,
             de.city           AS deliveryCity,
             de.state          AS deliveryState,
@@ -101,7 +93,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             @Param("requestId") Integer requestId
     );
 
-    /* ---- PV-003: items of an order ---- */
     @Query(value = """
         SELECT 
             fi.item_id    AS itemId,
@@ -115,7 +106,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
         """, nativeQuery = true)
     List<ProviderOrderItemProjection> findOrderItems(@Param("requestId") Integer requestId);
 
-    /* ---- PV-004: update status (and optional cancel reason) ---- */
     @Modifying
     @Query(value = """
         UPDATE service_requests 
