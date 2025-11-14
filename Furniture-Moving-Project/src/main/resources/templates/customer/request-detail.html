@@ -14,7 +14,9 @@
 <!-- Nếu bạn dùng navbar fragment thì bỏ comment dòng dưới -->
 <!-- <th:block th:replace="fragments/navbar :: navbar"></th:block> -->
 
-<div class="fm-page">
+<!-- ✅ gắn data-request-id để JS realtime đọc -->
+<div class="fm-page fm-detail-root"
+     th:attr="data-request-id=${request.requestId}">
 
     <!-- Stepper trạng thái flow -->
     <div class="fm-stepper">
@@ -58,10 +60,21 @@
                     <div>
                         <div class="fm-label">Trạng thái yêu cầu</div>
                         <div>
-                            <span class="fm-badge fm-badge--request"
+                            <!-- ✅ js-status để realtime cập nhật -->
+                            <span class="fm-badge fm-badge--request js-status"
                                   th:classappend="' status-' + ${request.status}">
                                 <span class="fm-badge-dot"></span>
-                                <span th:text="${request.status}">pending</span>
+                                <!-- Hiển thị thân thiện -->
+                                <span th:text="${
+                                        request.status == 'pending' ? 'Đang chờ xác nhận' :
+                                        request.status == 'ready_to_pay' ? 'Chờ thanh toán' :
+                                        request.status == 'paid' ? 'Đã thanh toán' :
+                                        request.status == 'in_progress' ? 'Đang thực hiện' :
+                                        request.status == 'completed' ? 'Hoàn tất dịch vụ' :
+                                        request.status == 'cancelled' ? 'Đã huỷ' :
+                                        request.status
+                                }">
+                                </span>
                             </span>
                         </div>
                     </div>
@@ -69,12 +82,19 @@
                     <div>
                         <div class="fm-label">Trạng thái thanh toán</div>
                         <div>
-                            <span class="fm-badge fm-badge--payment"
+                            <!-- ✅ js-payment-status để realtime -->
+                            <span class="fm-badge fm-badge--payment js-payment-status"
                                   th:if="${request.paymentStatus != null}">
                                 <span class="fm-badge-dot"></span>
-                                <span th:text="${request.paymentStatus}">PENDING</span>
+                                <span th:text="${
+                                        request.paymentStatus == 'PENDING' ? 'Chưa thanh toán' :
+                                        request.paymentStatus == 'PAID' ? 'Đã thanh toán' :
+                                        request.paymentStatus == 'FAILED' ? 'Thanh toán thất bại' :
+                                        request.paymentStatus
+                                }">
+                                </span>
                             </span>
-                            <span th:if="${request.paymentStatus == null}" class="fm-value">—</span>
+                            <span th:if="${request.paymentStatus == null}" class="fm-value js-payment-empty">—</span>
                         </div>
                     </div>
                 </div>
@@ -96,7 +116,8 @@
                     </div>
                     <div>
                         <div class="fm-label">Thời điểm thanh toán</div>
-                        <div class="fm-value">
+                        <!-- ✅ js-paid-at -->
+                        <div class="fm-value js-paid-at">
                             <span th:if="${request.paidAt != null}"
                                   th:text="${#temporals.format(request.paidAt, 'dd/MM/yyyy HH:mm')}">
                                 01/11/2025 12:00
@@ -114,16 +135,24 @@
                 <div class="fm-row">
                     <div>
                         <div class="fm-label">Tổng chi phí</div>
-                        <div class="fm-price-main"
-                             th:text="${request.totalCost != null ? #numbers.formatDecimal(request.totalCost, 0, 'COMMA', 0, 'POINT') + ' đ' : '—'}">
+                        <!-- ✅ js-total -->
+                        <div class="fm-price-main js-total"
+                             th:text="${request.totalCost != null 
+                                       ? #numbers.formatDecimal(request.totalCost, 0, 'COMMA', 0, 'POINT') + ' đ' 
+                                       : '—'}">
                             1.000.000 đ
                         </div>
                     </div>
                     <div>
-                        <div class="fm-label">Kiểu thanh toán</div>
-                        <div class="fm-value"
-                             th:text="${request.paymentType != null ? request.paymentType : '—'}">
-                            DEPOSIT_20
+                        <div class="fm-label">Hình thức thanh toán</div>
+                        <div class="fm-value js-payment-type"
+                             th:text="${
+                                request.paymentType == null ? '—' :
+                                request.paymentType == 'DEPOSIT_20' ? 'Đặt cọc 20%' :
+                                request.paymentType == 'FULL' ? 'Thanh toán toàn bộ' :
+                                request.paymentType
+                             }">
+                            Đặt cọc 20%
                         </div>
                     </div>
                 </div>
@@ -131,8 +160,11 @@
                 <div class="fm-row">
                     <div>
                         <div class="fm-label">Số tiền đặt cọc</div>
-                        <div class="fm-value"
-                             th:text="${request.depositAmount != null ? #numbers.formatDecimal(request.depositAmount, 0, 'COMMA', 0, 'POINT') + ' đ' : '—'}">
+                        <!-- ✅ js-deposit -->
+                        <div class="fm-value js-deposit"
+                             th:text="${request.depositAmount != null 
+                                       ? #numbers.formatDecimal(request.depositAmount, 0, 'COMMA', 0, 'POINT') + ' đ' 
+                                       : '—'}">
                             200.000 đ
                         </div>
                     </div>
@@ -165,7 +197,9 @@
                         <div class="fm-label">Mã hợp đồng</div>
                     </div>
                     <div class="fm-value">
-                        <span th:if="${contract != null}"
+                        <!-- ✅ js-contract-id -->
+                        <span class="js-contract-id"
+                              th:if="${contract != null}"
                               th:text="${contract.contractId}">101</span>
                         <span th:if="${contract == null}">Chưa có</span>
                     </div>
@@ -176,9 +210,18 @@
                         <div class="fm-label">Trạng thái HĐ</div>
                     </div>
                     <div class="fm-value">
-                        <span class="fm-badge fm-badge--contract">
+                        <!-- ✅ js-contract-status -->
+                        <span class="fm-badge fm-badge--contract js-contract-status">
                             <span class="fm-badge-dot"></span>
-                            <span th:text="${contract.status}">signed</span>
+                            <span th:text="${
+                                contract.status == 'draft' ? 'Chưa ký' :
+                                contract.status == 'signed' ? 'Đã ký' :
+                                contract.status == 'acknowledged' ? 'Đơn vị vận chuyển đã xác nhận' :
+                                contract.status == 'cancelled' ? 'Hợp đồng bị huỷ' :
+                                contract.status
+                            }">
+                                Đã ký
+                            </span>
                         </span>
                     </div>
                 </div>
@@ -186,7 +229,8 @@
                 <div class="fm-grid-2col" th:if="${contract != null}">
                     <div>
                         <div class="fm-label">Ngày ký HĐ</div>
-                        <div class="fm-value">
+                        <!-- ✅ js-contract-signed -->
+                        <div class="fm-value js-contract-signed">
                             <span th:if="${contract.signedAt != null}"
                                   th:text="${#temporals.format(contract.signedAt, 'dd/MM/yyyy HH:mm')}">
                                 01/11/2025 10:00
@@ -196,8 +240,9 @@
                     </div>
 
                     <div>
-                        <div class="fm-label">Provider xác nhận</div>
-                        <div class="fm-value">
+                        <div class="fm-label">Đơn vị vận chuyển xác nhận</div>
+                        <!-- ✅ js-contract-ack -->
+                        <div class="fm-value js-contract-ack">
                             <span th:if="${contract.acknowledgedAt != null}"
                                   th:text="${#temporals.format(contract.acknowledgedAt, 'dd/MM/yyyy HH:mm')}">
                                 01/11/2025 10:15
@@ -236,6 +281,9 @@
         ← Quay lại danh sách
     </a>
 </div>
+
+<!-- ✅ JS realtime cho trang detail -->
+<script th:src="@{/customer/js/request-detail.js}"></script>
 
 </body>
 </html>
