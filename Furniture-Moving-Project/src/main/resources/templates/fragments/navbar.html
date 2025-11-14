@@ -20,38 +20,24 @@
                     id="navbarCollapse"
             >
                 <div class="navbar-nav mr-auto">
-                    <a th:href="@{/homepage}" class="nav-item nav-link active"
-                    >Trang chủ</a
-                    >
-                    <a th:href="@{/homepage/about}" class="nav-item nav-link"
-                    >Thông tin</a
-                    >
-                    <a th:href="@{/homepage/service}" class="nav-item nav-link"
-                    >Dịch vụ</a
-                    >
-                    <a th:href="@{/providers}" class="nav-item nav-link"
-                    >Đơn vị vận chuyển</a
-                    >
+                    <a th:href="@{/homepage}" class="nav-item nav-link active">Trang chủ</a>
+                    <a th:href="@{/homepage/about}" class="nav-item nav-link">Thông tin</a>
+                    <a th:href="@{/homepage/service}" class="nav-item nav-link">Dịch vụ</a>
+                    <a th:href="@{/providers}" class="nav-item nav-link">Đơn vị vận chuyển</a>
                     <div class="nav-item dropdown">
                         <a
                                 href="#"
                                 class="nav-link dropdown-toggle"
                                 data-toggle="dropdown"
-                        >Hỗ trợ</a
-                        >
+                        >Hỗ trợ</a>
                         <div class="dropdown-menu">
-                            <a th:href="@{/homepage/blog}" class="dropdown-item"
-                            >Yêu cầu hỗ trợ</a
-                            >
-                            <a th:href="@{/homepage/single}" class="dropdown-item"
-                            >Khiếu nại</a
-                            >
+                            <a th:href="@{/homepage/blog}" class="dropdown-item">Yêu cầu hỗ trợ</a>
+                            <a th:href="@{/homepage/single}" class="dropdown-item">Khiếu nại</a>
                         </div>
                     </div>
-                    <a th:href="@{/homepage/contact}" class="nav-item nav-link"
-                    >Liên hệ</a
-                    >
+                    <a th:href="@{/homepage/contact}" class="nav-item nav-link">Liên hệ</a>
                 </div>
+
                 <div class="ml-auto">
                     <!-- Hiển thị thông tin user nếu đã đăng nhập -->
                     <div th:if="${isLoggedIn}" class="nav-item dropdown">
@@ -63,19 +49,20 @@
                             <img
                                     th:src="@{/images/loginbg.jpg}"
                                     alt="avatar"
-                                    style="
-                      width: 30px;
-                      height: 30px;
-                      border-radius: 50%;
-                      margin-right: 8px;
-                    "
+                                    style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;"
                             />
-                            <span
-                                    th:text="${currentUser.firstName + ' ' + currentUser.lastName}"
-                            >User Name</span
-                            >
+                            <span th:text="${currentUser.firstName + ' ' + currentUser.lastName}">
+                                User Name
+                            </span>
                         </a>
                         <div class="dropdown-menu">
+
+                            <!-- ✅ CHỈ THÊM DÒNG NÀY -->
+                            <a th:href="@{/customer/requests}" class="dropdown-item">
+                                Hợp đồng & yêu cầu của tôi
+                            </a>
+                            <!-- HẾT PHẦN THÊM -->
+
                             <a href="#" class="dropdown-item">Thông tin cá nhân</a>
                             <a href="#" class="dropdown-item">Cài đặt</a>
                             <div class="dropdown-divider"></div>
