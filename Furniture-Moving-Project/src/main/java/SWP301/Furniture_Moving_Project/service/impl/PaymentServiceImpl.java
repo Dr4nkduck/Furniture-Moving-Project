@@ -52,7 +52,7 @@ public class PaymentServiceImpl implements PaymentService {
     /**
      * Overload dùng cho controller:
      * - FULL: thanh toán toàn bộ
-     * - DEPOSIT_20 / DEPOSIT: đặt cọc 20%
+     * - DEPOSIT / DEPOSIT_20: đặt cọc 20%
      */
     public PaymentInitResponse initPayment(Integer serviceRequestId, String paymentType) {
         ServiceRequest sr = serviceRequestRepository.findById(serviceRequestId)
@@ -62,21 +62,45 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalStateException("Đơn chưa có tổng giá hợp lệ để thanh toán");
         }
 
+        // Chuẩn hoá kiểu thanh toán
+        String normalizedType;
+        if ("DEPOSIT_20".equalsIgnoreCase(paymentType) || "DEPOSIT".equalsIgnoreCase(paymentType)) {
+            normalizedType = "DEPOSIT"; // user chọn radio "DEPOSIT"
+        } else {
+            normalizedType = "FULL";
+        }
+
         BigDecimal total = sr.getTotalCost();
         BigDecimal amount;
-        if ("DEPOSIT_20".equalsIgnoreCase(paymentType) || "DEPOSIT".equalsIgnoreCase(paymentType)) {
+
+        if ("DEPOSIT".equals(normalizedType)) {
+            // Đặt cọc 20%
             amount = total.multiply(new BigDecimal("0.20"));
         } else {
+            // Thanh toán toàn bộ
             amount = total;
         }
 
         // Làm tròn sang VND integer
         amount = amount.setScale(0, RoundingMode.HALF_UP);
 
-        // Hết hạn
+        // === CẬP NHẬT THÔNG TIN THANH TOÁN VÀO ServiceRequest ===
+        sr.setPaymentType(normalizedType);            // "DEPOSIT" hoặc "FULL"
+        if ("DEPOSIT".equals(normalizedType)) {
+            sr.setDepositAmount(amount);             // số tiền cọc 20%
+        } else {
+            sr.setDepositAmount(null);               // không lưu cọc nếu full
+        }
+        // Bạn có thể tuỳ chọn set thêm paymentStatus ở đây nếu muốn
+        // sr.setPaymentStatus("PENDING");
+
+        serviceRequestRepository.save(sr);
+
+        // === TÍNH HẾT HẠN PHIÊN ===
         OffsetDateTime expireAt = OffsetDateTime.now(ZONE_VN).plusMinutes(expireMinutes);
 
         // Nội dung chuyển khoản: REQ{requestId}
+        // (nếu muốn encode cả kiểu thanh toán có thể dùng REQ{id}-DEPOSIT/FULL)
         String addInfo = addInfoPrefix + serviceRequestId;
 
         // Tạo URL ảnh QR (VietQR public)
@@ -122,11 +146,21 @@ public class PaymentServiceImpl implements PaymentService {
             paymentStatus = "PENDING";
         }
 
+        // 🔹 Nếu kiểu thanh toán là DEPOSIT thì trả về số tiền cọc,
+        // ngược lại trả totalCost như trước
+        BigDecimal amountForResponse;
+        if ("DEPOSIT".equalsIgnoreCase(sr.getPaymentType()) && sr.getDepositAmount() != null) {
+            amountForResponse = sr.getDepositAmount();
+        } else {
+            amountForResponse = sr.getTotalCost();
+        }
+
         PaymentStatusResponse resp = new PaymentStatusResponse();
-        resp.setStatus(paymentStatus);
-        resp.setAmount(sr.getTotalCost());
-        // Nếu bạn có trường paidAt trong entity thì có thể map thêm, còn hiện tại để null
-        resp.setPaidAt(null);
-        return resp;
+resp.setStatus(paymentStatus);
+resp.setAmount(amountForResponse);
+resp.setPaidAt(sr.getPaidAt());          // dùng luôn field paidAt của entity
+resp.setPaymentType(sr.getPaymentType()); // "DEPOSIT" hoặc "FULL"
+return resp;
+
     }
 }
