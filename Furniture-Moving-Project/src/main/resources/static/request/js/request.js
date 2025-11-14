@@ -481,19 +481,18 @@ function prefillFromAiquoteDraft() {
   }
 
   if (Array.isArray(d.items) && d.items.length && itemsBody) {
-  // luôn ghi đè bảng khi có dữ liệu từ AI
-  itemsBody.innerHTML = '';
-  d.items.forEach(it => addItemRow({
-    name: it.name ?? it.item ?? '',
-    qty:  Math.max(1, Number(it.qty || it.quantity) || 1),
-    len:  Number(it.len || it.lengthCm || it.length || 0),
-    wid:  Number(it.wid || it.widthCm  || it.width  || 0),
-    hgt:  Number(it.hgt || it.heightCm || it.height || 0),
-    wgt:  Number(it.wgt || it.weightKg || it.weight || 0),
-    fragile: !!it.fragile
-  }));
-}
-
+    // luôn ghi đè bảng khi có dữ liệu từ AI
+    itemsBody.innerHTML = '';
+    d.items.forEach(it => addItemRow({
+      name: it.name ?? it.item ?? '',
+      qty:  Math.max(1, Number(it.qty || it.quantity) || 1),
+      len:  Number(it.len || it.lengthCm || it.length || 0),
+      wid:  Number(it.wid || it.widthCm  || it.width  || 0),
+      hgt:  Number(it.hgt || it.heightCm || it.height || 0),
+      wgt:  Number(it.wgt || it.weightKg || it.weight || 0),
+      fragile: !!it.fragile
+    }));
+  }
 
   updateSummary();
 }
@@ -555,6 +554,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   }
+
+  // ✅ CHỈ CHO PHÉP CHỌN NGÀY >= HÔM NAY (FRONTEND ONLY)
+  const dateInput = document.getElementById('preferredDate');
+  if (dateInput) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    // chỉ cho phép chọn ngày >= hôm nay
+    dateInput.min = todayStr;
+
+    // nếu nháp/AI-fill đang để ngày < hôm nay thì auto đẩy về hôm nay
+    if (dateInput.value && dateInput.value < todayStr) {
+      dateInput.value = todayStr;
+    }
+  }
+
+  // cập nhật lại summary sau khi chỉnh ngày
+  updateSummary();
 });
 
 /* ========= Serialize to JSON cho API ========= */

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security" lang="vi">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Chi tiết yêu cầu</title>
@@ -8,11 +10,35 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
     <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
-    
+
     <!-- CSS chung của project (nếu có) -->
     <link rel="stylesheet" th:href="@{/dashboard/css/main.css}">
     <!-- CSS riêng cho trang chi tiết -->
     <link rel="stylesheet" th:href="@{/customer/css/request-detail.css}">
+
+    <!-- Style nhỏ cho rating (có thể chuyển sang request-detail.css nếu muốn) -->
+    <style>
+        .rating-stars .star {
+            font-size: 1.8rem;
+            cursor: pointer;
+            margin-right: 0.25rem;
+            transition: transform 0.1s ease-in-out;
+        }
+
+        .rating-stars .star.active {
+            color: #ffc107;
+        }
+
+        .rating-stars .star:hover {
+            transform: scale(1.1);
+        }
+
+        .fm-rating-note {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+    </style>
 </head>
 <body>
 
@@ -142,8 +168,8 @@
                         <div class="fm-label">Tổng chi phí</div>
                         <!-- ✅ js-total -->
                         <div class="fm-price-main js-total"
-                             th:text="${request.totalCost != null 
-                                       ? #numbers.formatDecimal(request.totalCost, 0, 'COMMA', 0, 'POINT') + ' đ' 
+                             th:text="${request.totalCost != null
+                                       ? #numbers.formatDecimal(request.totalCost, 0, 'COMMA', 0, 'POINT') + ' đ'
                                        : '—'}">
                             1.000.000 đ
                         </div>
@@ -168,8 +194,8 @@
                         <div class="fm-label">Số tiền đặt cọc</div>
                         <!-- ✅ js-deposit -->
                         <div class="fm-value js-deposit"
-                             th:text="${request.depositAmount != null 
-                                       ? #numbers.formatDecimal(request.depositAmount, 0, 'COMMA', 0, 'POINT') + ' đ' 
+                             th:text="${request.depositAmount != null
+                                       ? #numbers.formatDecimal(request.depositAmount, 0, 'COMMA', 0, 'POINT') + ' đ'
                                        : '—'}">
                             200.000 đ
                         </div>
@@ -181,6 +207,59 @@
                     khối lượng đồ đạc thực tế, quãng đường và điều khoản trong hợp đồng.
                 </div>
             </div>
+
+            <!-- ⭐️ KHU VỰC ĐÁNH GIÁ DỊCH VỤ -->
+            <div class="fm-section js-rating-section" id="rating-section" style="display:none;">
+
+                <div class="fm-section-title d-flex justify-content-between align-items-center">
+                    <span>Đánh giá dịch vụ</span>
+                    <!-- Nút đóng khung rating -->
+                    <button type="button"
+                            class="btn btn-sm btn-link text-muted js-rating-close">
+                        <i class="fa fa-times"></i> Đóng
+                    </button>
+                </div>
+
+                <div class="fm-row">
+                    <div class="fm-label">Mức độ hài lòng</div>
+                    <div class="fm-value">
+                        <div id="rating-stars" class="rating-stars js-rating-stars">
+                            <i class="fa fa-star star" data-value="1"></i>
+                            <i class="fa fa-star star" data-value="2"></i>
+                            <i class="fa fa-star star" data-value="3"></i>
+                            <i class="fa fa-star star" data-value="4"></i>
+                            <i class="fa fa-star star" data-value="5"></i>
+                        </div>
+                        <div class="fm-rating-note">
+                            Chọn từ 1 đến 5 sao (1: Rất không hài lòng, 5: Rất hài lòng)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fm-row" style="margin-top: 8px;">
+                    <div class="fm-label">Góp ý thêm (không bắt buộc)</div>
+                    <div class="fm-value" style="width:100%;">
+                        <textarea id="rating-comment"
+                                  class="form-control js-rating-comment"
+                                  rows="3"
+                                  placeholder="Ví dụ: Nhân viên thân thiện, đến đúng giờ, đồ đạc được bảo quản tốt..."></textarea>
+                    </div>
+                </div>
+
+                <div class="fm-row" style="margin-top: 8px;">
+                    <button type="button"
+                            id="rating-submit-btn"
+                            class="fm-btn-primary js-rating-submit">
+                        Gửi đánh giá
+                    </button>
+                </div>
+
+                <div class="fm-row" style="margin-top: 4px;">
+                    <small id="rating-status"
+                           class="text-muted js-rating-status"></small>
+                </div>
+            </div>
+            <!-- Hết khu vực rating -->
 
             <!-- Có thể thêm Địa chỉ, Đồ đạc... -->
 
@@ -279,6 +358,14 @@
                        th:href="@{|/contract/${contract.contractId}|}">
                         Xem hợp đồng
                     </a>
+
+                    <!-- ✅ Nút "Đánh giá" (JS sẽ tự ẩn/hiện tùy status) -->
+                    <button type="button"
+                            id="open-rating-btn"
+                            class="fm-btn-ghost js-rating-open"
+                            style="display:none;">
+                        Đánh giá
+                    </button>
                 </div>
             </div>
 
@@ -290,7 +377,7 @@
     </a>
 </div>
 
-<!-- ✅ JS realtime cho trang detail -->
+<!-- ✅ JS realtime cho trang detail + rating -->
 <script th:src="@{/customer/js/request-detail.js}"></script>
 
 <!-- Footer -->

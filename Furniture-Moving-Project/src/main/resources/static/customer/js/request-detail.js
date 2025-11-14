@@ -19,43 +19,86 @@
   const elContractSigned = root.querySelector(".js-contract-signed");
   const elContractAck = root.querySelector(".js-contract-ack");
 
+  // ===== RATING ELEMENTS =====
+  const elRatingButton =
+    root.querySelector(".js-rating-open") ||
+    root.querySelector("#open-rating-btn");
+  const elRatingSection =
+    root.querySelector(".js-rating-section") ||
+    root.querySelector("#rating-section");
+  const ratingStars = root.querySelectorAll(
+    ".js-rating-stars .star, #rating-stars .star"
+  );
+  const elRatingComment =
+    root.querySelector(".js-rating-comment") ||
+    root.querySelector("#rating-comment");
+  const elRatingStatus =
+    root.querySelector(".js-rating-status") ||
+    root.querySelector("#rating-status");
+  const elRatingSubmit =
+    root.querySelector(".js-rating-submit") ||
+    root.querySelector("#rating-submit-btn");
+  const elRatingClose = root.querySelector(".js-rating-close");
+
+  let currentRating = 0;
+  let ratingInitialized = false;
+
   // ===== Friendly text mapping =====
   function friendlyRequestStatus(code) {
     switch (code) {
-      case "pending": return "Đang chờ xác nhận";
-      case "ready_to_pay": return "Chờ thanh toán";
-      case "paid": return "Đã thanh toán";
-      case "in_progress": return "Đang thực hiện";
-      case "completed": return "Hoàn tất dịch vụ";
-      case "cancelled": return "Đã huỷ";
-      default: return code || "";
+      case "pending":
+        return "Đang chờ xác nhận";
+      case "ready_to_pay":
+        return "Chờ thanh toán";
+      case "paid":
+        return "Đã thanh toán";
+      case "in_progress":
+        return "Đang thực hiện";
+      case "completed":
+        return "Hoàn tất dịch vụ";
+      case "cancelled":
+        return "Đã huỷ";
+      default:
+        return code || "";
     }
   }
 
   function friendlyPaymentStatus(code) {
     switch (code) {
-      case "PENDING": return "Chưa thanh toán";
-      case "PAID": return "Đã thanh toán";
-      case "FAILED": return "Thanh toán thất bại";
-      default: return code || "";
+      case "PENDING":
+        return "Chưa thanh toán";
+      case "PAID":
+        return "Đã thanh toán";
+      case "FAILED":
+        return "Thanh toán thất bại";
+      default:
+        return code || "";
     }
   }
 
   function friendlyContractStatus(code) {
     switch (code) {
-      case "draft": return "Chưa ký";
-      case "signed": return "Đã ký";
-      case "acknowledged": return "đã xác nhận";
-      case "cancelled": return "Hợp đồng bị huỷ";
-      default: return code || "";
+      case "draft":
+        return "Chưa ký";
+      case "signed":
+        return "Đã ký";
+      case "acknowledged":
+        return "đã xác nhận";
+      case "cancelled":
+        return "Hợp đồng bị huỷ";
+      default:
+        return code || "";
     }
   }
 
   function friendlyPaymentType(code) {
     switch (code) {
-      case "DEPOSIT_20": return "Đặt cọc 20%";
-      case "FULL": return "Thanh toán toàn bộ";
-      default: return code || "";
+      case "DEPOSIT_20":
+        return "Đặt cọc 20%";
+      case "FULL":
+        return "Thanh toán toàn bộ";
+      default:
+        return code || "";
     }
   }
 
@@ -67,12 +110,168 @@
     if (status) el.classList.add("status-" + status);
   }
 
+  // ===== RATING: UI helpers =====
+  function updateStarUI() {
+    if (!ratingStars || ratingStars.length === 0) return;
+    ratingStars.forEach((star) => {
+      const value = parseInt(star.getAttribute("data-value"), 10);
+      if (!isNaN(value) && value <= currentRating) {
+        star.classList.add("active");
+      } else {
+        star.classList.remove("active");
+      }
+    });
+  }
+
+  function loadExistingRating() {
+    if (!elRatingButton) return;
+
+    fetch(`/api/customer/request/${requestId}/rating`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((res) => {
+        if (res.status === 404) {
+          // chưa có rating
+          if (elRatingStatus) elRatingStatus.textContent = "";
+          return null;
+        }
+        if (!res.ok) {
+          throw new Error("Failed to load rating");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!data) return;
+
+        currentRating = data.rating;
+        updateStarUI();
+
+        if (elRatingComment) {
+          elRatingComment.value = data.comment || "";
+        }
+        if (elRatingStatus) {
+          elRatingStatus.textContent =
+            "Bạn đã đánh giá đơn này, có thể chỉnh sửa nếu muốn.";
+        }
+        if (elRatingSection) {
+          elRatingSection.style.display = "";
+        }
+        if (elRatingButton) {
+          elRatingButton.textContent = "Sửa đánh giá";
+        }
+      })
+      .catch((err) => console.debug("Rating load error:", err));
+  }
+
+  function handleRatingVisibility(detail) {
+    if (!elRatingButton) return;
+    const status = (detail.status || "").toLowerCase();
+    if (status === "completed") {
+      // Đơn đã hoàn thành => cho phép đánh giá
+      elRatingButton.style.display = "inline-flex";
+      if (!ratingInitialized) {
+        ratingInitialized = true;
+        loadExistingRating();
+      }
+    } else {
+      // Các trạng thái khác => ẩn rating
+      elRatingButton.style.display = "none";
+      if (elRatingSection) {
+        elRatingSection.style.display = "none";
+      }
+    }
+  }
+
+  function attachRatingEvents() {
+    // Mở form khi bấm nút "Đánh giá"
+    if (elRatingButton && elRatingSection) {
+      elRatingButton.addEventListener("click", () => {
+        elRatingSection.style.display = ""; // luôn mở ra
+      });
+    }
+
+    // Đóng form khi bấm nút "Đóng"
+    if (elRatingClose && elRatingSection) {
+      elRatingClose.addEventListener("click", () => {
+        elRatingSection.style.display = "none";
+      });
+    }
+
+    // Click chọn sao
+    if (ratingStars && ratingStars.length > 0) {
+      ratingStars.forEach((star) => {
+        star.addEventListener("click", () => {
+          const value = parseInt(star.getAttribute("data-value"), 10);
+          if (!isNaN(value)) {
+            currentRating = value;
+            updateStarUI();
+          }
+        });
+      });
+    }
+
+    // Submit rating
+    if (elRatingSubmit) {
+      elRatingSubmit.addEventListener("click", () => {
+        if (!currentRating) {
+          if (elRatingStatus) {
+            elRatingStatus.textContent =
+              "Vui lòng chọn số sao từ 1 đến 5.";
+          }
+          return;
+        }
+
+        const payload = {
+          rating: currentRating,
+          comment: elRatingComment ? elRatingComment.value.trim() : "",
+        };
+
+        fetch(`/api/customer/request/${requestId}/rating`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => {
+            if (!res.ok) {
+              if (elRatingStatus) {
+                if (res.status === 400) {
+                  elRatingStatus.textContent =
+                    "Đơn chưa hoàn thành hoặc dữ liệu không hợp lệ.";
+                } else {
+                  elRatingStatus.textContent =
+                    "Không thể lưu đánh giá. Vui lòng thử lại.";
+                }
+              }
+              throw new Error("Failed to save rating");
+            }
+            return res.json();
+          })
+          .then((data) => {
+            currentRating = data.rating;
+            updateStarUI();
+            if (elRatingStatus) {
+              elRatingStatus.textContent =
+                "Đã lưu đánh giá. Cảm ơn bạn!";
+            }
+            if (elRatingButton) {
+              elRatingButton.textContent = "Sửa đánh giá";
+            }
+          })
+          .catch((err) => console.debug("Rating save error:", err));
+      });
+    }
+  }
+
+  attachRatingEvents();
+
   function refreshOnce() {
     fetch(`/api/customer/request/${requestId}`, {
-      headers: { "X-Requested-With": "XMLHttpRequest" }
+      headers: { "X-Requested-With": "XMLHttpRequest" },
     })
-      .then(r => r.json())
-      .then(d => {
+      .then((r) => r.json())
+      .then((d) => {
         if (!d) return;
 
         // ---- REQUEST STATUS ----
@@ -140,8 +339,11 @@
         if (elContractAck) {
           elContractAck.textContent = d.contractAckAtFormatted || "—";
         }
+
+        // ---- RATING VISIBILITY ----
+        handleRatingVisibility(d);
       })
-      .catch(err => console.debug("Realtime detail error:", err));
+      .catch((err) => console.debug("Realtime detail error:", err));
   }
 
   refreshOnce();
