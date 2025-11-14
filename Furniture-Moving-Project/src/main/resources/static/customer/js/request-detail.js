@@ -7,6 +7,9 @@
 
   const elStatus = root.querySelector(".js-status");
   const elPayment = root.querySelector(".js-payment-status");
+  const elPaymentEmpty = root.querySelector(".js-payment-empty"); // khi paymentStatus null
+  const elPaymentType = root.querySelector(".js-payment-type");   // hình thức thanh toán
+
   const elPaidAt = root.querySelector(".js-paid-at");
   const elTotal = root.querySelector(".js-total");
   const elDeposit = root.querySelector(".js-deposit");
@@ -75,20 +78,44 @@
         // ---- REQUEST STATUS ----
         if (elStatus) {
           updateBadgeClass(elStatus, d.status);
-          elStatus.querySelector("span:last-child").textContent = friendlyRequestStatus(d.status);
+          const span = elStatus.querySelector("span:last-child");
+          if (span) span.textContent = friendlyRequestStatus(d.status);
         }
 
         // ---- PAYMENT STATUS ----
-        if (elPayment) {
+        if (elPayment || elPaymentEmpty) {
           if (d.paymentStatus) {
-            elPayment.style.display = "inline-flex";
-            elPayment.querySelector("span:last-child").textContent =
-              friendlyPaymentStatus(d.paymentStatus);
+            // đã có trạng thái thanh toán
+            if (elPayment) {
+              elPayment.style.display = "inline-flex";
+              const span = elPayment.querySelector("span:last-child");
+              if (span) span.textContent = friendlyPaymentStatus(d.paymentStatus);
+            }
+            if (elPaymentEmpty) {
+              elPaymentEmpty.style.display = "none";
+            }
           } else {
-            elPayment.style.display = "none";
+            // chưa có trạng thái thanh toán
+            if (elPayment) {
+              elPayment.style.display = "none";
+            }
+            if (elPaymentEmpty) {
+              elPaymentEmpty.style.display = "inline";
+              elPaymentEmpty.textContent = "—";
+            }
           }
         }
 
+        // ---- PAYMENT TYPE (Đặt cọc / Full) ----
+        if (elPaymentType) {
+          if (d.paymentType) {
+            elPaymentType.textContent = friendlyPaymentType(d.paymentType);
+          } else {
+            elPaymentType.textContent = "—";
+          }
+        }
+
+        // ---- TIỀN & THỜI GIAN ----
         if (elPaidAt) elPaidAt.textContent = d.paidAtFormatted || "—";
         if (elTotal) elTotal.textContent = d.totalCostFormatted || "—";
         if (elDeposit) elDeposit.textContent = d.depositFormatted || "—";
@@ -99,15 +126,20 @@
         if (elContractStatus) {
           if (d.contractStatus) {
             elContractStatus.style.display = "inline-flex";
-            elContractStatus.querySelector("span:last-child").textContent =
-              friendlyContractStatus(d.contractStatus);
+            const span = elContractStatus.querySelector("span:last-child");
+            if (span) span.textContent = friendlyContractStatus(d.contractStatus);
           } else {
             elContractStatus.style.display = "none";
           }
         }
 
-        if (elContractSigned) elContractSigned.textContent = d.contractSignedAtFormatted || "—";
-        if (elContractAck) elContractAck.textContent = d.contractAckAtFormatted || "—";
+        if (elContractSigned) {
+          elContractSigned.textContent = d.contractSignedAtFormatted || "—";
+        }
+
+        if (elContractAck) {
+          elContractAck.textContent = d.contractAckAtFormatted || "—";
+        }
       })
       .catch(err => console.debug("Realtime detail error:", err));
   }

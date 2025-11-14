@@ -145,6 +145,7 @@
                     </div>
                     <div>
                         <div class="fm-label">Hình thức thanh toán</div>
+                        <!-- ✅ js-payment-type để realtime -->
                         <div class="fm-value js-payment-type"
                              th:text="${
                                 request.paymentType == null ? '—' :
@@ -176,7 +177,7 @@
                 </div>
             </div>
 
-            <!-- Bạn có thể thêm Địa chỉ, Đồ đạc... ở đây nếu đã có trong ServiceRequest -->
+            <!-- Có thể thêm Địa chỉ, Đồ đạc... -->
 
         </section>
 
@@ -265,7 +266,7 @@
                         Đi đến thanh toán
                     </a>
 
-                    <!-- Nút “Xem hợp đồng” (nếu bạn có trang /contracts/{id}) -->
+                    <!-- Nút “Xem hợp đồng” -->
                     <a class="fm-btn-ghost"
                        th:if="${contract != null}"
                        th:href="@{|/contracts/${contract.contractId}|}">
