@@ -51,7 +51,12 @@ public class ProviderController {
     }
 
     @GetMapping("/orders")
-    public String orders() {
+    public String orders(Model model, Authentication auth) {
+        String username = auth != null ? auth.getName() : null;
+        Integer providerId = providerRepository
+                .findProviderIdByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
+        model.addAttribute("providerId", providerId);
         return "provider/orders";
     }
 
