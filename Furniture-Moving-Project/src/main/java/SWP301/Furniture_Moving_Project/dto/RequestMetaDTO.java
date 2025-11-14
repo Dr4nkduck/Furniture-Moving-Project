@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 public class RequestMetaDTO {
 
-    @NotNull
+    // customerId is optional - will be set automatically from authenticated user
     private Integer customerId;
 
     private Integer providerId;

@@ -7,8 +7,13 @@ import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.FullRequestService;
 import SWP301.Furniture_Moving_Project.service.ServiceRequestService;
 import jakarta.validation.Valid;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,15 +30,18 @@ public class ServiceRequestController {
     private final FullRequestService fullRequestService;
     private final ServiceRequestRepository serviceRequestRepository;
     private final ProviderRepository providerRepository;
+    private final JdbcTemplate jdbc;
 
     public ServiceRequestController(ServiceRequestService serviceRequestService,
                                     FullRequestService fullRequestService,
                                     ServiceRequestRepository serviceRequestRepository,
-                                    ProviderRepository providerRepository) {
+                                    ProviderRepository providerRepository,
+                                    JdbcTemplate jdbc) {
         this.serviceRequestService = serviceRequestService;
         this.fullRequestService = fullRequestService;
         this.serviceRequestRepository = serviceRequestRepository;
         this.providerRepository = providerRepository;
+        this.jdbc = jdbc;
     }
 
     // Helper: build error body thống nhất
@@ -75,11 +83,53 @@ public class ServiceRequestController {
         if (br.hasErrors()) {
             return badRequestFrom(br);
         }
+        
+        // Automatically get customerId from authenticated user (more secure)
+        Integer customerId = getCurrentCustomerId();
+        if (customerId == null) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("success", false);
+            body.put("message", "User must be logged in as a customer to create requests");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+        }
+        
+        // Override customerId in DTO with the authenticated user's customerId
+        if (dto.getRequest() != null) {
+            dto.getRequest().setCustomerId(customerId);
+        }
+        
         Integer id = fullRequestService.createAll(dto);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", true);
         body.put("data", Map.of("requestId", id));
         return ResponseEntity.status(201).body(body);
+    }
+    
+    /**
+     * Lấy customer_id tương ứng user đang login
+     * users.username -> customers.customer_id
+     */
+    private Integer getCurrentCustomerId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return null;
+        }
+        String username = auth.getName();
+
+        try {
+            return jdbc.queryForObject(
+                    """
+                    SELECT c.customer_id
+                    FROM customers c
+                    JOIN users u ON u.user_id = c.user_id
+                    WHERE u.username = ?
+                    """,
+                    Integer.class,
+                    username
+            );
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
     }
 
     // POST /api/requests/{id}/images  (upload ảnh cho request đã tạo)

@@ -13,9 +13,12 @@ import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class ServiceRequestService {
@@ -35,6 +38,9 @@ public class ServiceRequestService {
         this.customerRepository = customerRepository;
     }
 
+    // ========================
+    // Tạo ServiceRequest (giữ nguyên logic của bạn)
+    // ========================
     @Transactional
     public Integer create(CreateServiceRequestDTO dto) {
 
@@ -64,7 +70,7 @@ public class ServiceRequestService {
         sr.setCustomerId(dto.getCustomerId());
         sr.setProviderId(dto.getProviderId());
         sr.setPreferredDate(dto.getPreferredDate());
-//        sr.setStatus(dto.getStatus() == null || dto.getStatus().isBlank() ? "pending" : dto.getStatus());
+        // sr.setStatus(dto.getStatus() == null || dto.getStatus().isBlank() ? "pending" : dto.getStatus());
         sr.setTotalCost(dto.getTotalCost());
 
         // set ManyToOne addresses (entity đã managed)
@@ -90,5 +96,58 @@ public class ServiceRequestService {
         // 7) Lưu & trả id
         final ServiceRequest saved = serviceRequestRepository.save(sr);
         return saved.getRequestId();
+    }
+
+    // ========================
+    // Tiện ích chung
+    // ========================
+    public Optional<ServiceRequest> findById(Integer requestId) {
+        return serviceRequestRepository.findById(requestId);
+    }
+
+    public ServiceRequest save(ServiceRequest sr) {
+        return serviceRequestRepository.save(sr);
+    }
+
+    // ========================
+    // Thanh toán: đánh dấu đã trả (PAID)
+    // ========================
+    /**
+     * Đánh dấu ServiceRequest đã thanh toán thành công.
+     * - Cập nhật: payment_status=PAID, paid_at=now, payment_type, deposit_amount (nếu DEPOSIT_20)
+     * - Đồng bộ trạng thái workflow tổng thể: status=PAID (nếu trước đó chưa là PAID)
+     */
+    @Transactional
+    public ServiceRequest markAsPaid(Integer requestId, BigDecimal amount, String paymentType) {
+        ServiceRequest sr = serviceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ServiceRequest #" + requestId));
+
+        // Ghi nhận thông tin thanh toán
+        sr.setPaymentStatus("PAID");
+        sr.setPaidAt(LocalDateTime.now());
+        sr.setPaymentType(paymentType);
+
+        // Nếu chọn đặt cọc 20% thì lưu số tiền đặt cọc, ngược lại để null
+        if ("DEPOSIT_20".equalsIgnoreCase(paymentType)) {
+            sr.setDepositAmount(amount);
+        } else {
+            sr.setDepositAmount(null);
+        }
+
+        // Đồng bộ trạng thái workflow tổng thể
+        if (sr.getStatus() == null || !"PAID".equalsIgnoreCase(sr.getStatus())) {
+            sr.setStatus("PAID");
+        }
+
+        return serviceRequestRepository.save(sr);
+    }
+
+    // (Tuỳ chọn) Nếu cần reset/đổi trạng thái thanh toán (FAILED/EXPIRED) trong tương lai:
+    @Transactional
+    public ServiceRequest markPaymentStatus(Integer requestId, String paymentStatus) {
+        ServiceRequest sr = serviceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ServiceRequest #" + requestId));
+        sr.setPaymentStatus(paymentStatus);
+        return serviceRequestRepository.save(sr);
     }
 }

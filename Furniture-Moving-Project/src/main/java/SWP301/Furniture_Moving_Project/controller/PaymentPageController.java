@@ -12,6 +12,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,17 +36,54 @@ public class PaymentPageController {
 
     @GetMapping("/payment/{id}")
     public String viewPayment(@PathVariable("id") Integer requestId, Model model) {
-        // ✅ Thêm thông tin đăng nhập trước
+        // ✅ (0) Thêm thông tin đăng nhập cho navbar/template
         addLoginInfo(model);
 
+        // ✅ (1) Lấy username từ SecurityContext
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để truy cập thanh toán.");
+        }
+        String username = auth.getName();
+
+        // ✅ (2) Chặn nếu đơn không thuộc user hoặc chưa có provider nhận
+        boolean allowed = serviceRequestRepository.canAccessPayment(requestId, username) == 1;
+        if (!allowed) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Bạn chưa đủ điều kiện để thanh toán: đơn không thuộc bạn hoặc chưa được nhà vận chuyển ghi nhận."
+            );
+        }
+
+        // ✅ (3) Hợp lệ rồi mới load dữ liệu đơn
         ServiceRequest sr = serviceRequestRepository.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn vận chuyển #" + requestId));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Không tìm thấy đơn vận chuyển #" + requestId));
+
+        String status = sr.getStatus();
+
+        // 🔒 TH2: Đơn đã PAID mà user cố vào /payment/{id} -> redirect về homepage
+        if ("paid".equalsIgnoreCase(status)) {
+            return "redirect:/homepage";
+        }
+
+        // 🔒 Cho phép thanh toán khi:
+        // 1. Status là "ready_to_pay" (provider đã accept)
+        // 2. HOẶC status là "pending" nhưng đã có provider assigned (cho phép thanh toán sớm)
+        boolean canPay = "ready_to_pay".equalsIgnoreCase(status) 
+                || ("pending".equalsIgnoreCase(status) && sr.getProviderId() != null);
+        
+        if (!canPay) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Đơn này chưa sẵn sàng để thanh toán. Vui lòng chờ nhà vận chuyển ghi nhận hợp đồng."
+            );
+        }
 
         // ---- Thông tin cơ bản khớp HTML
         BigDecimal amount = sr.getTotalCost();
         LocalDateTime createdAt = sr.getRequestDate();
         LocalDate expectedDate = sr.getPreferredDate();
-        String status = sr.getStatus();
 
         int itemCount  = queryInt("SELECT COUNT(*) FROM dbo.furniture_items  WHERE request_id = ?", requestId);
         int imageCount = queryInt("SELECT COUNT(*) FROM dbo.request_images   WHERE request_id = ?", requestId);
@@ -71,6 +111,9 @@ public class PaymentPageController {
         if (pickupText == null || pickupText.isBlank())     pickupText = "—";
         if (deliveryText == null || deliveryText.isBlank()) deliveryText = "—";
 
+        // 🔹 Mã tham chiếu thanh toán dùng cho VietQR / sao kê ngân hàng: REQ(id)
+        String paymentRef = "REQ" + requestId;
+
         // ---- Đẩy model cho payment.html
         model.addAttribute("requestId", requestId);
         model.addAttribute("amount", amount);
@@ -82,6 +125,7 @@ public class PaymentPageController {
         model.addAttribute("pickupText", pickupText);
         model.addAttribute("deliveryText", deliveryText);
         model.addAttribute("status", status);
+        model.addAttribute("paymentRef", paymentRef); // ✅ để hiển thị REQ(id) trong payment.html
 
         return "payment/payment";
     }
@@ -111,16 +155,10 @@ public class PaymentPageController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth != null && auth.isAuthenticated()
-                && !"anonymousUser".equals(auth.getPrincipal())) {
+                && !"anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
             model.addAttribute("isLoggedIn", true);
 
-            Object principal = auth.getPrincipal();
-            String username = null;
-            try {
-                username = (String) principal.getClass().getMethod("getUsername").invoke(principal);
-            } catch (Exception ignored) {
-            }
-
+            String username = auth.getName();
             if (username != null) {
                 userRepository.findByUsername(username).ifPresent(u -> {
                     model.addAttribute("currentUser", u);

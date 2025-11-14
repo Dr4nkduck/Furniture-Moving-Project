@@ -121,4 +121,19 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             @Param("status") String status,
             @Param("cancelReason") String cancelReason
     );
+
+    /* ==== PAYMENT GUARD: chỉ cho phép khi đơn thuộc đúng user & đã có provider nhận ==== */
+    @Query(value = """
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM dbo.service_requests sr
+        JOIN dbo.customers c ON c.customer_id = sr.customer_id
+        JOIN dbo.users u ON u.user_id = c.user_id
+        WHERE sr.request_id = :requestId
+          AND u.username   = :username
+          AND sr.provider_id IS NOT NULL
+          -- Nếu muốn siết theo trạng thái thanh toán được phép, bỏ comment dòng dưới:
+          -- AND sr.status IN ('ASSIGNED','ACCEPTED','IN_PROGRESS','COMPLETED')
+        """, nativeQuery = true)
+    int canAccessPayment(@Param("requestId") Integer requestId,
+                         @Param("username")  String username);
 }

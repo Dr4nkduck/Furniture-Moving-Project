@@ -1,0 +1,241 @@
+/* ==== GLOBAL ==== */
+body {
+    background: #050814;
+    color: #f5f5f5;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.fm-page {
+    max-width: 1200px;
+    margin: 32px auto 64px;
+    padding: 0 16px 40px;
+}
+
+/* ==== STEPPER ==== */
+.fm-stepper {
+    background: #0d111f;
+    border-radius: 24px;
+    padding: 16px 24px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+}
+
+.fm-step {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-align: left;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #f5f5f5;
+    background: #141a2a;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.fm-step span {
+    font-weight: 600;
+}
+
+.fm-step--active {
+    background: #ffb400;
+    color: #111;
+    opacity: 1;
+}
+
+/* ==== LAYOUT ==== */
+.fm-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .fm-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==== CARD ==== */
+.fm-card {
+    background: #0d111f;
+    border-radius: 24px;
+    padding: 20px 22px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
+.fm-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+}
+
+.fm-card-title {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 13px;
+    color: #ffb400;
+    font-weight: 700;
+}
+
+.fm-card-subtitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* ==== FILTER CHIPS ==== */
+.fm-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.fm-chip {
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    border: 1px solid #242b3c;
+    background: #090d18;
+    color: #cbd5f5;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.fm-chip:hover {
+    border-color: #ffb400;
+}
+
+.fm-chip--active {
+    background: #ffb400;
+    color: #111;
+    border-color: #ffb400;
+    font-weight: 600;
+}
+
+/* ==== REQUEST LIST ==== */
+.fm-request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.fm-empty {
+    padding: 24px 12px 8px;
+    font-size: 14px;
+    color: #a5afce;
+}
+
+/* ==== REQUEST ITEM ==== */
+.fm-request-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.5fr) auto;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #111627;
+    border: 1px solid #181f30;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .fm-request-item {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+    }
+}
+
+.fm-req-main {
+    font-size: 13px;
+}
+
+.fm-req-id {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.fm-req-label {
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 11px;
+    color: #a5b0d8;
+}
+
+.fm-req-val {
+    font-size: 13px;
+    color: #e7ecff;
+}
+
+.fm-req-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+/* ==== BADGES ==== */
+.fm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid transparent;
+    background: #151b2b;
+    color: #cbd5ff;
+}
+
+.fm-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.fm-badge--contract {
+    border-color: #27324a;
+}
+
+/* Status colors */
+.status-pending { color: #facc15; }
+.status-ready_to_pay { color: #f97316; }
+.status-paid { color: #4ade80; }
+.status-in_progress { color: #38bdf8; }
+.status-completed { color: #22c55e; }
+.status-cancelled { color: #f87171; }
+
+/* ==== PRICE ==== */
+.fm-req-amount {
+    font-weight: 600;
+    font-size: 15px;
+    color: #ffb400;
+}
+
+/* ==== BUTTON ==== */
+.fm-link-detail {
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid #ffb400;
+    color: #ffb400;
+    background: transparent;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.fm-link-detail:hover {
+    background: #ffb400;
+    color: #111;
+}

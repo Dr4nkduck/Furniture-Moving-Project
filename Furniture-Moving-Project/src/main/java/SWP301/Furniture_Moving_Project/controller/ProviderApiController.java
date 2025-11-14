@@ -137,24 +137,32 @@ public class ProviderApiController {
         providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
     }
 
-    // src/main/java/.../ProviderApiController.java
-
-@GetMapping("/me")
-public Map<String, Object> me(Authentication auth) {
-    if (auth == null || !auth.isAuthenticated()) {
-        throw new IllegalArgumentException("Chưa đăng nhập");
+    // === Nút "Xác nhận đã thanh toán" cho Provider ===
+    // Provider đã tự kiểm tra sao kê ngân hàng, sau đó bấm nút trên UI.
+    // Chỉ đổi trạng thái order sang "paid" nếu:
+    //  - Đơn thuộc providerId này
+    //  - Đơn đang ở trạng thái "ready_to_pay"
+    @PostMapping("/{providerId}/orders/{orderId}/confirm-payment")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmPayment(@PathVariable Integer providerId,
+                               @PathVariable Integer orderId) {
+        providerOrderService.confirmPayment(providerId, orderId);
     }
-    String username = auth.getName();
-    Integer providerId = providerRepository
-            .findProviderIdByUsername(username)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
 
-    return Map.of(
-            "success", true,
-            "providerId", providerId
-    );
-}
+    // GET /api/providers/me - Lấy thông tin provider hiện tại
+    @GetMapping("/me")
+    public Map<String, Object> me(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalArgumentException("Chưa đăng nhập");
+        }
+        String username = auth.getName();
+        Integer providerId = providerRepository
+                .findProviderIdByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
 
-
-    
+        return Map.of(
+                "success", true,
+                "providerId", providerId
+        );
+    }
 }

@@ -56,7 +56,8 @@ public class SecurityConfig {
                     "/accountmanage/**",
                     "/homepage/**",
                     "/chatbot/**",
-                    "/dashbooard/**",       // nếu typo thì bạn sửa sau
+                    "/superadmin/**",
+                    "/dashbooard/**",
                     "/customer-trends/**",
                     "/provider-stats/**",
                     "/userdashboard",

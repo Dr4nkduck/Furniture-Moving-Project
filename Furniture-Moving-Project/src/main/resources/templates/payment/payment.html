@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -9,6 +11,7 @@
   <!-- Metadata cho JS -->
   <meta name="request-id" th:content="${requestId}"/>
   <meta name="total-cost" th:content="${amount}"/>
+  <meta name="payment-ref" th:content="${paymentRef}"/>
 
   <!-- CSRF: chỉ render nếu đang bật -->
   <th:block th:if="${_csrf != null}">
@@ -16,19 +19,37 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   </th:block>
 
-  <!-- CSS & JS -->
+  <!-- CSS Libraries for navbar and footer -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+  <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
+
+  <!-- Payment CSS - must load after homepage CSS to override if needed -->
   <link rel="stylesheet" th:href="@{/payment/css/payment.css}"/>
-  <script th:src="@{/payment/js/payment.js}" defer></script>
+
+  <!-- Đảm bảo header / navbar / footer không bị overlay che -->
+  <style>
+    .payment-body .top-bar,
+    .payment-body .nav-bar,
+    .payment-body .footer {
+      position: relative;
+      z-index: 20;
+    }
+  </style>
+
+  <!-- jQuery must load first for Bootstrap and other scripts -->
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 </head>
 
-<body class="payment-body page-payment"><!-- scope CSS -->
+<body class="payment-body page-payment">
+<div class="wrapper">
 
-  <!-- ====== Fragments ====== -->
+  <!-- ====== Fragments: header + navbar ====== -->
   <div th:replace="fragments/header :: topbar"></div>
   <div th:replace="fragments/navbar :: navbar"></div>
 
   <!-- ====== Payment Content ====== -->
-  <div class="payment-page">
+  <div class="payment-page" style="position: relative; z-index: 1;">
     <!-- Header -->
     <header class="payment-header" role="banner">
       <div class="brand">
@@ -57,43 +78,66 @@
         <div class="bd">
           <div class="summary-row">
             <span>Nhà cung cấp:</span>
-            <strong th:text="${providerCompanyName} ?: 'Đang xử lý'">Tên nhà cung cấp</strong>
+            <strong th:text="${providerCompanyName != null ? providerCompanyName : 'Đang xử lý'}">Tên nhà cung cấp</strong>
           </div>
 
           <div class="summary-row">
             <span>Giá cần thanh toán:</span>
             <strong id="amountValue"
-                    th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</strong>
+                    th:text="${amount != null ? #numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}">0 đ</strong>
+          </div>
+
+          <!-- 🔹 Nội dung chuyển khoản (REQid) để đối soát sao kê -->
+          <div class="summary-row payment-ref-row">
+            <span>Nội dung chuyển khoản:</span>
+            <span class="payment-ref-inline">
+              <code id="paymentRefText"
+                    class="payment-ref-chip"
+                    th:text="${paymentRef != null ? paymentRef : 'REQ123'}">REQ123</code>
+              <button type="button"
+                      id="btnCopyPaymentRef"
+                      class="btn-copy-ref">
+                Copy
+              </button>
+            </span>
+          </div>
+
+          <div class="summary-note small">
+            Vui lòng giữ nguyên nội dung
+            <strong th:text="${paymentRef != null ? paymentRef : 'REQ123'}">REQ123</strong>
+            khi chuyển khoản để hệ thống và nhà cung cấp dễ dàng đối soát trong sao kê ngân hàng.
           </div>
 
           <div class="summary-row">
             <span>Ngày tạo đơn:</span>
-            <span th:text="${#temporals.format(createdAt, 'dd/MM/yyyy HH:mm')}">2025-11-09 10:00</span>
+            <span th:text="${createdAt != null ? #temporals.format(createdAt, 'dd/MM/yyyy HH:mm') : '—'}">
+              2025-11-09 10:00
+            </span>
           </div>
 
           <div class="summary-row">
             <span>Ngày vận chuyển dự kiến:</span>
-            <span th:text="${#temporals.format(expectedDate, 'dd/MM/yyyy')} ?: '-'">-</span>
+            <span th:text="${expectedDate != null ? #temporals.format(expectedDate, 'dd/MM/yyyy') : '—'}">—</span>
           </div>
 
           <div class="summary-row">
             <span>Số lượng đồ:</span>
-            <span th:text="${itemCount} ?: 0">0</span>
+            <span th:text="${itemCount != null ? itemCount : 0}">0</span>
           </div>
 
           <div class="summary-row">
             <span>Số ảnh minh họa:</span>
-            <span th:text="${imageCount} ?: 0">0</span>
+            <span th:text="${imageCount != null ? imageCount : 0}">0</span>
           </div>
 
           <div class="address-block">
             <h3>Điểm nhận hàng</h3>
-            <p th:text="${pickupText} ?: '—'">Địa chỉ nhận…</p>
+            <p th:text="${pickupText != null and !pickupText.isEmpty() ? pickupText : '—'}">Địa chỉ nhận…</p>
           </div>
 
           <div class="address-block">
             <h3>Điểm giao hàng</h3>
-            <p th:text="${deliveryText} ?: '—'">Địa chỉ giao…</p>
+            <p th:text="${deliveryText != null and !deliveryText.isEmpty() ? deliveryText : '—'}">Địa chỉ giao…</p>
           </div>
 
           <div class="summary-note">
@@ -108,12 +152,13 @@
           <h2 id="qrTitle">Thanh toán qua VietQR</h2>
         </div>
         <div class="bd">
+
           <!-- Payment Type Selection -->
           <div class="payment-type-selection" style="margin-bottom: 20px;">
             <h3 style="margin-bottom: 10px; font-size: 16px;">Chọn phương thức thanh toán:</h3>
             <div style="display: flex; gap: 15px;">
               <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="radio" name="paymentType" value="DEPOSIT" id="paymentTypeDeposit" style="margin-right: 8px;">
+                <input type="radio" name="paymentType" value="DEPOSIT_20" id="paymentTypeDeposit" style="margin-right: 8px;">
                 <span>Đặt cọc (20%)</span>
               </label>
               <label style="display: flex; align-items: center; cursor: pointer;">
@@ -138,7 +183,9 @@
           </div>
 
           <div class="actions">
-            <button id="retryButton" type="button" class="btn-outline" aria-label="Tạo lại mã QR">Tạo lại QR</button>
+            <button id="retryButton" type="button" class="btn-outline" aria-label="Tạo lại mã QR">
+              Tạo lại QR
+            </button>
           </div>
 
           <div class="tips">
@@ -147,7 +194,7 @@
               <li>Mở ứng dụng ngân hàng có hỗ trợ VietQR.</li>
               <li>Chọn chức năng quét mã QR.</li>
               <li>Quét mã bên cạnh và xác nhận thanh toán.</li>
-              <li>Giữ nguyên trang đến khi trạng thái chuyển sang <b>“Thanh toán thành công”</b>.</li>
+              <li>Giữ nguyên trang đến khi trạng thái chuyển sang <b>"Thanh toán thành công"</b>.</li>
             </ol>
           </div>
         </div>
@@ -156,7 +203,85 @@
   </div>
 
   <!-- ====== Footer (Fragment) ====== -->
-  <div th:replace="fragments/footer :: footer"></div>
+
+</div> <!-- /.wrapper -->
+
+<!-- ====== JS cho layout chung (navbar/footer) ====== -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/easing/easing.min.js}"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/js/main.js}"></script>
+
+<!-- Initialize Bootstrap components after all scripts load -->
+<script>
+  (function() {
+    // Ensure jQuery is available
+    if (typeof jQuery !== 'undefined') {
+      jQuery(document).ready(function($) {
+        // Initialize WOW.js if available
+        if (typeof WOW !== 'undefined') {
+          try {
+            new WOW().init();
+          } catch(e) {
+            console.warn('WOW.js initialization failed:', e);
+          }
+        }
+
+        // Ensure Bootstrap dropdowns work
+        try {
+          $('.dropdown-toggle').dropdown();
+        } catch(e) {
+          console.warn('Bootstrap dropdown initialization failed:', e);
+        }
+
+        // Back to top button functionality
+        $(window).scroll(function () {
+          if ($(this).scrollTop() > 200) {
+            $('.back-to-top').fadeIn('slow');
+          } else {
+            $('.back-to-top').fadeOut('slow');
+          }
+        });
+        $('.back-to-top').click(function () {
+          $('html, body').animate({scrollTop: 0}, 1500, 'easeInOutExpo');
+          return false;
+        });
+      });
+    } else {
+      console.error('jQuery is not loaded!');
+    }
+  })();
+</script>
+
+<!-- Payment JS - load after all dependencies -->
+<script th:src="@{/payment/js/payment.js}"></script>
+
+<!-- 🔹 JS nhỏ để copy REQ(id) vào clipboard -->
+<script>
+  (function() {
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn  = document.getElementById("btnCopyPaymentRef");
+      const code = document.getElementById("paymentRefText");
+      if (!btn || !code) return;
+
+      btn.addEventListener("click", async function() {
+        const text = code.textContent.trim();
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          const old = btn.textContent;
+          btn.textContent = "Đã copy!";
+          setTimeout(function() {
+            btn.textContent = old;
+          }, 1500);
+        } catch (e) {
+          console.error(e);
+          alert("Không copy được, vui lòng tự ghi: " + text);
+        }
+      });
+    });
+  })();
+</script>
 
 </body>
 </html>
