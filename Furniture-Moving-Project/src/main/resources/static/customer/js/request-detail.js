@@ -19,6 +19,9 @@
   const elContractSigned = root.querySelector(".js-contract-signed");
   const elContractAck = root.querySelector(".js-contract-ack");
 
+  // ✅ Nút thanh toán (được show/hide realtime)
+  const elPaymentBtn = root.querySelector(".js-payment-btn");
+
   // ===== RATING ELEMENTS =====
   const elRatingButton =
     root.querySelector(".js-rating-open") ||
@@ -83,7 +86,7 @@
       case "signed":
         return "Đã ký";
       case "acknowledged":
-        return "đã xác nhận";
+        return "Đơn vị vận chuyển đã xác nhận";
       case "cancelled":
         return "Hợp đồng bị huỷ";
       default:
@@ -108,6 +111,36 @@
       if (cls.startsWith("status-")) el.classList.remove(cls);
     });
     if (status) el.classList.add("status-" + status);
+  }
+
+  // ===== PAYMENT BUTTON LOGIC (realtime) =====
+  // Tính xem ở thời điểm hiện tại có cho phép thanh toán không
+  function canPayFromDetail(d) {
+    if (!d) return false;
+
+    const status = (d.status || "").toLowerCase();
+    const contractStatus = (d.contractStatus || "").toLowerCase();
+    const paymentStatus = d.paymentStatus || null;
+
+    // Logic FE:
+    // - Request phải READY_TO_PAY
+    // - Hợp đồng đã được acknowledged (đơn vị vận chuyển xác nhận)
+    // - Chưa PAID
+    const readyToPay = status === "ready_to_pay";
+    const contractOk = contractStatus === "acknowledged"; // hoặc 'signed' tuỳ bạn
+    const notPaid = !paymentStatus || paymentStatus !== "PAID";
+
+    return readyToPay && contractOk && notPaid;
+  }
+
+  function updatePaymentButton(d) {
+    if (!elPaymentBtn) return;
+
+    if (canPayFromDetail(d)) {
+      elPaymentBtn.style.display = "inline-flex";
+    } else {
+      elPaymentBtn.style.display = "none";
+    }
   }
 
   // ===== RATING: UI helpers =====
@@ -342,6 +375,9 @@
 
         // ---- RATING VISIBILITY ----
         handleRatingVisibility(d);
+
+        // ---- PAYMENT BUTTON REALTIME ----
+        updatePaymentButton(d);
       })
       .catch((err) => console.debug("Realtime detail error:", err));
   }

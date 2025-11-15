@@ -103,7 +103,7 @@ public class CustomerRequestDetailApiController {
         return info;
     }
 
-    // ================== API DETAIL ĐƠN (CŨ) ==================
+    // ================== API DETAIL ĐƠN ==================
 
     @GetMapping("/{requestId}")
     public DetailDTO getRequestDetail(@PathVariable Integer requestId) {
@@ -196,7 +196,7 @@ public class CustomerRequestDetailApiController {
         return dto;
     }
 
-    // ================== DTO DETAIL (CŨ) ==================
+    // ================== DTO DETAIL ==================
 
     public static class DetailDTO {
         public Integer requestId;
@@ -216,27 +216,48 @@ public class CustomerRequestDetailApiController {
             DetailDTO dto = new DetailDTO();
             dto.requestId = r.getRequestId();
             dto.status = r.getStatus();
-            dto.paymentStatus = r.getPaymentStatus();
+
+            // ✅ Ưu tiên paymentStatus lưu trong DB nếu có (PaymentServiceImpl đã set "PAID")
+            String rawPaymentStatus = r.getPaymentStatus();
+            if (rawPaymentStatus != null && !rawPaymentStatus.isBlank()) {
+                dto.paymentStatus = rawPaymentStatus;
+            } else {
+                // Fallback: suy ra từ status của request (để các đơn cũ vẫn hiển thị đúng)
+                String s = dto.status == null ? "" : dto.status.toLowerCase();
+                if ("paid".equals(s) || "completed".equals(s)) {
+                    dto.paymentStatus = "PAID";
+                } else if ("ready_to_pay".equals(s)) {
+                    dto.paymentStatus = "READY_TO_PAY";
+                } else {
+                    dto.paymentStatus = null; // để FE hiển thị "—"
+                }
+            }
+
             dto.paymentType = r.getPaymentType();
 
-            if (r.getTotalCost() != null)
+            if (r.getTotalCost() != null) {
                 dto.totalCostFormatted = String.format("%,.0f đ", r.getTotalCost());
+            }
 
-            if (r.getDepositAmount() != null)
+            if (r.getDepositAmount() != null) {
                 dto.depositFormatted = String.format("%,.0f đ", r.getDepositAmount());
+            }
 
-            if (r.getPaidAt() != null)
+            if (r.getPaidAt() != null) {
                 dto.paidAtFormatted = dtf.format(r.getPaidAt());
+            }
 
             if (c != null) {
                 dto.contractId = c.getContractId();
                 dto.contractStatus = c.getStatus();
 
-                if (c.getSignedAt() != null)
+                if (c.getSignedAt() != null) {
                     dto.contractSignedAtFormatted = dtf.format(c.getSignedAt());
+                }
 
-                if (c.getAcknowledgedAt() != null)
+                if (c.getAcknowledgedAt() != null) {
                     dto.contractAckAtFormatted = dtf.format(c.getAcknowledgedAt());
+                }
             }
 
             return dto;

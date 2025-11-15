@@ -1,32 +1,37 @@
 package SWP301.Furniture_Moving_Project.service.impl;
 
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
-import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderItemDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
+import SWP301.Furniture_Moving_Project.model.Contract;
+import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.repository.ContractRepository;
+import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderDetailProjection;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderItemProjection;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderSummaryProjection;
 import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
-import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.util.StringUtils;
-import SWP301.Furniture_Moving_Project.model.ServiceRequest;
-import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
-import SWP301.Furniture_Moving_Project.model.Contract;
-import SWP301.Furniture_Moving_Project.repository.ContractRepository;
-import java.time.OffsetDateTime;
-import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ProviderOrderServiceImpl implements ProviderOrderService {
 
+    private static final ZoneId ZONE_VN = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private final ServiceRequestRepository srRepo;
     private final ContractRepository contractRepo;
 
-    public ProviderOrderServiceImpl(ServiceRequestRepository srRepo, ContractRepository contractRepo) {
+    public ProviderOrderServiceImpl(ServiceRequestRepository srRepo,
+                                    ContractRepository contractRepo) {
         this.srRepo = srRepo;
         this.contractRepo = contractRepo;
     }
@@ -43,7 +48,8 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
                 r.getRequestDate(),
                 r.getPreferredDate(),
                 (r.getCustomerFirstName() == null && r.getCustomerLastName() == null)
-                        ? "N/A" : (r.getCustomerFirstName() + " " + r.getCustomerLastName()).trim(),
+                        ? "N/A"
+                        : (r.getCustomerFirstName() + " " + r.getCustomerLastName()).trim(),
                 join(r.getPickupStreet(), r.getPickupCity()),
                 join(r.getDeliveryStreet(), r.getDeliveryCity()),
                 r.getTotalCost()
@@ -66,8 +72,10 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
         dto.setCustomerPhone(p.getCustomerPhone());
         dto.setCustomerEmail(p.getCustomerEmail());
 
-        dto.setPickupFull(joinFull(p.getPickupStreet(), p.getPickupCity(), p.getPickupState(), p.getPickupZip()));
-        dto.setDeliveryFull(joinFull(p.getDeliveryStreet(), p.getDeliveryCity(), p.getDeliveryState(), p.getDeliveryZip()));
+        dto.setPickupFull(joinFull(
+                p.getPickupStreet(), p.getPickupCity(), p.getPickupState(), p.getPickupZip()));
+        dto.setDeliveryFull(joinFull(
+                p.getDeliveryStreet(), p.getDeliveryCity(), p.getDeliveryState(), p.getDeliveryZip()));
 
         List<ProviderOrderItemProjection> items = srRepo.findOrderItems(requestId);
         dto.setItems(items.stream()
@@ -130,11 +138,15 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
 
     /**
      * Provider bấm nút "Xác nhận đã thanh toán" sau khi tự kiểm tra sao kê.
-     * Luồng: chỉ cho phép xác nhận nếu:
+     * Chỉ cho phép xác nhận nếu:
      *  - Đơn thuộc về provider này
-     *  - Trạng thái hiện tại đang "ready_to_pay" (hoặc "pending" tuỳ bạn)
-     * Sau đó set status = "paid".
+     *  - Trạng thái hiện tại đang "ready_to_pay"
+     * Sau đó set:
+     *  - status          = "paid"
+     *  - payment_status  = "PAID"
+     *  - paid_at         = thời điểm hiện tại (VN)
      */
+    @Override
     public void confirmPayment(Integer providerId, Integer requestId) {
         ServiceRequest sr = srRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
@@ -147,16 +159,22 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
         String current = sr.getStatus() == null ? "" : sr.getStatus().toLowerCase();
         // Chỉ cho xác nhận khi đang chờ thanh toán
         if (!current.equals("ready_to_pay")) {
-            throw new IllegalStateException("Order is not in ready_to_pay state, cannot confirm payment.");
+            throw new IllegalStateException(
+                    "Order is not in ready_to_pay state, cannot confirm payment."
+            );
         }
 
-        // Đánh dấu đã thanh toán
+        // 🔥 Đánh dấu đã thanh toán: set đủ 3 field
         sr.setStatus("paid");
-        // Nếu sau này bạn có thêm trường paidAt thì có thể set ở đây:
-        // sr.setPaidAt(LocalDateTime.now());
+        sr.setPaymentStatus("PAID");
+        if (sr.getPaidAt() == null) {
+            sr.setPaidAt(LocalDateTime.now(ZONE_VN));
+        }
 
         srRepo.save(sr);
     }
+
+    // ===== helpers =====
 
     private static String join(String a, String b) {
         if (!StringUtils.hasText(a)) return StringUtils.hasText(b) ? b : "";

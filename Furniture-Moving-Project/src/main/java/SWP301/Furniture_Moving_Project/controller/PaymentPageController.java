@@ -1,6 +1,8 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.model.Contract;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.UserRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -24,14 +26,17 @@ public class PaymentPageController {
 
     private final ServiceRequestRepository serviceRequestRepository;
     private final JdbcTemplate jdbc;
-    private final UserRepository userRepository; // ✅ thêm repository để truy user
+    private final UserRepository userRepository;
+    private final ContractRepository contractRepository;
 
     public PaymentPageController(ServiceRequestRepository serviceRequestRepository,
                                  JdbcTemplate jdbcTemplate,
-                                 UserRepository userRepository) {
+                                 UserRepository userRepository,
+                                 ContractRepository contractRepository) {
         this.serviceRequestRepository = serviceRequestRepository;
         this.jdbc = jdbcTemplate;
         this.userRepository = userRepository;
+        this.contractRepository = contractRepository;
     }
 
     @GetMapping("/payment/{id}")
@@ -41,12 +46,16 @@ public class PaymentPageController {
 
         // ✅ (1) Lấy username từ SecurityContext
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để truy cập thanh toán.");
+        if (auth == null || !auth.isAuthenticated()
+                || "anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Bạn cần đăng nhập để truy cập thanh toán."
+            );
         }
         String username = auth.getName();
 
-        // ✅ (2) Chặn nếu đơn không thuộc user hoặc chưa có provider nhận
+        // ✅ (2) Chặn nếu đơn không thuộc user (giữ logic repo cũ)
         boolean allowed = serviceRequestRepository.canAccessPayment(requestId, username) == 1;
         if (!allowed) {
             throw new ResponseStatusException(
@@ -58,29 +67,55 @@ public class PaymentPageController {
         // ✅ (3) Hợp lệ rồi mới load dữ liệu đơn
         ServiceRequest sr = serviceRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Không tìm thấy đơn vận chuyển #" + requestId));
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy đơn vận chuyển #" + requestId
+                ));
 
         String status = sr.getStatus();
+        String paymentStatus = sr.getPaymentStatus(); // nếu có field này trong entity
 
-        // 🔒 TH2: Đơn đã PAID mà user cố vào /payment/{id} -> redirect về homepage
-        if ("paid".equalsIgnoreCase(status)) {
-            return "redirect:/homepage";
+        // 🔒 Nếu đã thanh toán rồi thì không cho quay lại màn thanh toán nữa
+        if ("paid".equalsIgnoreCase(status)
+                || "PAID".equalsIgnoreCase(paymentStatus)) {
+            // Tuỳ bạn: quay về trang chi tiết yêu cầu
+            return "redirect:/customer/requests/" + requestId;
         }
 
-        // 🔒 Cho phép thanh toán khi:
-        // 1. Status là "ready_to_pay" (provider đã accept)
-        // 2. HOẶC status là "pending" nhưng đã có provider assigned (cho phép thanh toán sớm)
-        boolean canPay = "ready_to_pay".equalsIgnoreCase(status) 
-                || ("pending".equalsIgnoreCase(status) && sr.getProviderId() != null);
-        
-        if (!canPay) {
+        // 🔒 (4) Kiểm tra hợp đồng gắn với đơn
+        Integer contractId = sr.getContractId();
+        if (contractId == null) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "Đơn này chưa sẵn sàng để thanh toán. Vui lòng chờ nhà vận chuyển ghi nhận hợp đồng."
+                    "Đơn này chưa có hợp đồng hoàn chỉnh, không thể thanh toán."
             );
         }
 
-        // ---- Thông tin cơ bản khớp HTML
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Không tìm thấy hợp đồng tương ứng với đơn này."
+                ));
+
+        String contractStatus = contract.getStatus();
+
+        // 🔒 (5) Chỉ cho thanh toán khi hợp đồng đã được xác nhận đầy đủ
+        // Ở đây align với UI: status = "acknowledged" (Đơn vị vận chuyển đã xác nhận)
+        if (contractStatus == null || !contractStatus.equalsIgnoreCase("acknowledged")) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Hợp đồng chưa được xác nhận đầy đủ. Vui lòng xem và xác nhận hợp đồng trước khi thanh toán."
+            );
+        }
+
+        // 🔒 (6) Đơn phải đang ở trạng thái sẵn sàng thanh toán
+        if (!"ready_to_pay".equalsIgnoreCase(status)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Đơn này chưa ở trạng thái sẵn sàng thanh toán."
+            );
+        }
+
+        // ---- Thông tin cơ bản khớp HTML ----
         BigDecimal amount = sr.getTotalCost();
         LocalDateTime createdAt = sr.getRequestDate();
         LocalDate expectedDate = sr.getPreferredDate();
@@ -90,11 +125,16 @@ public class PaymentPageController {
 
         String providerCompanyName = null;
         if (sr.getProviderId() != null) {
-            providerCompanyName = queryString("SELECT company_name FROM dbo.providers WHERE provider_id = ?", sr.getProviderId());
+            providerCompanyName = queryString(
+                    "SELECT company_name FROM dbo.providers WHERE provider_id = ?",
+                    sr.getProviderId()
+            );
         }
-        if (providerCompanyName == null || providerCompanyName.isBlank()) providerCompanyName = "Đang xử lý";
+        if (providerCompanyName == null || providerCompanyName.isBlank()) {
+            providerCompanyName = "Đang xử lý";
+        }
 
-        // ---- LẤY ĐỊA CHỈ
+        // ---- LẤY ĐỊA CHỈ ----
         String pickupText = queryString("""
                 SELECT a.street_address
                 FROM dbo.addresses a
@@ -114,7 +154,7 @@ public class PaymentPageController {
         // 🔹 Mã tham chiếu thanh toán dùng cho VietQR / sao kê ngân hàng: REQ(id)
         String paymentRef = "REQ" + requestId;
 
-        // ---- Đẩy model cho payment.html
+        // ---- Đẩy model cho payment.html ----
         model.addAttribute("requestId", requestId);
         model.addAttribute("amount", amount);
         model.addAttribute("createdAt", createdAt);
@@ -125,7 +165,7 @@ public class PaymentPageController {
         model.addAttribute("pickupText", pickupText);
         model.addAttribute("deliveryText", deliveryText);
         model.addAttribute("status", status);
-        model.addAttribute("paymentRef", paymentRef); // ✅ để hiển thị REQ(id) trong payment.html
+        model.addAttribute("paymentRef", paymentRef);
 
         return "payment/payment";
     }
@@ -160,9 +200,9 @@ public class PaymentPageController {
 
             String username = auth.getName();
             if (username != null) {
-                userRepository.findByUsername(username).ifPresent(u -> {
-                    model.addAttribute("currentUser", u);
-                });
+                userRepository.findByUsername(username).ifPresent(u ->
+                        model.addAttribute("currentUser", u)
+                );
             }
         } else {
             model.addAttribute("isLoggedIn", false);

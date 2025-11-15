@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
@@ -91,7 +92,7 @@ public class PaymentServiceImpl implements PaymentService {
         } else {
             sr.setDepositAmount(null);               // không lưu cọc nếu full
         }
-        // Bạn có thể tuỳ chọn set thêm paymentStatus ở đây nếu muốn
+        // Tuỳ bạn muốn set PENDING ngay từ đây hay không
         // sr.setPaymentStatus("PENDING");
 
         serviceRequestRepository.save(sr);
@@ -100,11 +101,9 @@ public class PaymentServiceImpl implements PaymentService {
         OffsetDateTime expireAt = OffsetDateTime.now(ZONE_VN).plusMinutes(expireMinutes);
 
         // Nội dung chuyển khoản: REQ{requestId}
-        // (nếu muốn encode cả kiểu thanh toán có thể dùng REQ{id}-DEPOSIT/FULL)
         String addInfo = addInfoPrefix + serviceRequestId;
 
         // Tạo URL ảnh QR (VietQR public)
-        // Ví dụ: https://img.vietqr.io/image/ICB-106875093681-compact2.png?amount=100000&addInfo=REQ3&accountName=TRAN%20DINH%20DUONG
         String base = "https://img.vietqr.io/image/" + bankCode + "-" + accountNumber + "-compact2.png";
         String query = String.format(
                 "?amount=%d&addInfo=%s&accountName=%s",
@@ -155,12 +154,30 @@ public class PaymentServiceImpl implements PaymentService {
             amountForResponse = sr.getTotalCost();
         }
 
-        PaymentStatusResponse resp = new PaymentStatusResponse();
-resp.setStatus(paymentStatus);
-resp.setAmount(amountForResponse);
-resp.setPaidAt(sr.getPaidAt());          // dùng luôn field paidAt của entity
-resp.setPaymentType(sr.getPaymentType()); // "DEPOSIT" hoặc "FULL"
-return resp;
+        // ✅ Nếu đã PAID mà chưa có paidAt hoặc paymentStatus khác "PAID" -> set & lưu lại
+        if ("PAID".equals(paymentStatus)) {
+            boolean changed = false;
 
+            if (sr.getPaidAt() == null) {
+                sr.setPaidAt(LocalDateTime.now(ZONE_VN));
+                changed = true;
+            }
+            if (sr.getPaymentStatus() == null || !"PAID".equalsIgnoreCase(sr.getPaymentStatus())) {
+                sr.setPaymentStatus("PAID");
+                changed = true;
+            }
+
+            if (changed) {
+                serviceRequestRepository.save(sr);
+            }
+        }
+
+        PaymentStatusResponse resp = new PaymentStatusResponse();
+        resp.setStatus(paymentStatus);
+        resp.setAmount(amountForResponse);
+        resp.setPaidAt(sr.getPaidAt());            // đã được set nếu PAID
+        resp.setPaymentType(sr.getPaymentType());  // "DEPOSIT" hoặc "FULL"
+
+        return resp;
     }
 }
