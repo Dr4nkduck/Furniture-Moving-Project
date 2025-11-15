@@ -45,7 +45,6 @@
     async function fetchJSON(url, options) {
         const res = await fetch(url, options);
         if (!res.ok) {
-            // Try to parse server error to show something meaningful
             const txt = await res.text().catch(() => '');
             throw new Error(txt || 'Request failed');
         }
@@ -70,9 +69,9 @@
             case 'pending':
                 return 'Chờ xác nhận';
             case 'accepted':
-                return 'Ghi nhận hợp đồng';
+                return 'Đã ghi nhận hợp đồng';
             case 'ready_to_pay':
-                return 'Sẵn sàng thanh toán';
+                return 'Chờ khách thanh toán';
             case 'paid':
                 return 'Đã thanh toán';
             case 'in_progress':
@@ -80,11 +79,59 @@
             case 'completed':
                 return 'Hoàn thành';
             case 'declined':
-                return 'Từ chối';
+                return 'Đã từ chối';
             case 'cancelled':
                 return 'Đã hủy';
             default:
                 return s || '';
+        }
+    }
+
+    // 🔹 Helper: đọc message lỗi từ backend (JSON hoặc text)
+    async function readErrorMessage(res, fallback) {
+        let msg = fallback || 'Đã xảy ra lỗi. Vui lòng thử lại.';
+        const ct = res.headers.get('content-type') || '';
+        try {
+            if (ct.includes('application/json')) {
+                const data = await res.json();
+                if (data && typeof data.message === 'string' && data.message.trim()) {
+                    msg = data.message.trim();
+                }
+            } else {
+                const text = await res.text();
+                if (text && text.trim()) {
+                    msg = text.trim();
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+        return msg;
+    }
+
+    // 🔹 Helper: show toast nếu có, fallback alert
+    function showMessage(msg, type) {
+        if (typeof notify === 'function') {
+            notify(msg, type || 'info');
+        } else {
+            alert(msg);
+        }
+    }
+
+    // 🔹 Luật action theo status (đồng bộ với backend)
+    function allowedActionsForStatus(status) {
+        const s = (status || '').toLowerCase();
+        switch (s) {
+            case 'pending':
+                return ['accepted', 'declined', 'cancelled'];
+            case 'ready_to_pay':
+            case 'paid':
+                return ['in_progress', 'cancelled'];
+            case 'in_progress':
+                return ['completed', 'cancelled'];
+            // completed / cancelled / declined: không cho thao tác gì thêm
+            default:
+                return [];
         }
     }
 
@@ -156,37 +203,56 @@
             d.timeline.appendChild(div);
         });
 
-        // Wire actions: status transitions
+        // 🔹 Wire actions: status transitions (theo allowedActionsForStatus)
+        const allowed = new Set(allowedActionsForStatus(dto.status));
+
         document.querySelectorAll('.actions [data-act]').forEach(btn => {
-            btn.onclick = async () => {
-                const act = btn.getAttribute('data-act');
+            const act = btn.getAttribute('data-act');
+            const isAllowed = allowed.has(act);
+
+            btn.disabled = !isAllowed;
+            btn.classList.toggle('disabled', !isAllowed);
+            btn.title = !isAllowed
+                ? 'Trạng thái hiện tại không cho phép thao tác này.'
+                : '';
+
+            btn.onclick = !isAllowed ? null : async () => {
                 let body = {status: act};
                 if (act === 'cancelled') {
                     const reason = prompt('Lý do hủy (tuỳ chọn):', 'Khách thay đổi kế hoạch');
                     if (reason) body.cancelReason = reason;
                 }
-                const res = await fetch(`/api/providers/${providerId}/orders/${orderId}/status`, {
-                    method: 'PUT',
-                    headers: withCsrf({'Content-Type': 'application/json'}),
-                    body: JSON.stringify(body)
-                });
-                if (!res.ok) {
-                    const msg = await res.text();
-                    alert(msg || 'Cập nhật trạng thái thất bại');
-                    return;
+                try {
+                    const res = await fetch(`/api/providers/${providerId}/orders/${orderId}/status`, {
+                        method: 'PUT',
+                        headers: withCsrf({'Content-Type': 'application/json', 'Accept': 'application/json'}),
+                        body: JSON.stringify(body)
+                    });
+                    if (!res.ok) {
+                        const msg = await readErrorMessage(
+                            res,
+                            'Cập nhật trạng thái thất bại. Vui lòng thử lại.'
+                        );
+                        showMessage(msg, res.status === 409 ? 'warn' : 'error');
+                        return;
+                    }
+                    showMessage('Cập nhật trạng thái thành công.', 'success');
+                    await loadDetail(orderId);
+                    await loadList();
+                } catch (e) {
+                    console.error(e);
+                    showMessage('Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.', 'error');
                 }
-                await loadDetail(orderId);
-                await loadList();
             };
         });
 
-        // Wire nút "Xác nhận đã thanh toán"
+        // 🔹 Wire nút "Xác nhận đã thanh toán"
         if (btnConfirmPaid) {
             const canConfirm = dto.status === 'ready_to_pay';
             btnConfirmPaid.disabled = !canConfirm;
             btnConfirmPaid.title = canConfirm
                 ? ''
-                : 'Chỉ xác nhận khi đơn đang ở trạng thái "Sẵn sàng thanh toán".';
+                : 'Chỉ xác nhận khi đơn đang ở trạng thái "Chờ khách thanh toán".';
 
             btnConfirmPaid.onclick = async () => {
                 if (!currentOrderId) return;
@@ -202,16 +268,19 @@
                         }
                     );
                     if (!res.ok) {
-                        const msg = await res.text();
-                        alert(msg || 'Không thể xác nhận thanh toán. Vui lòng thử lại.');
+                        const msg = await readErrorMessage(
+                            res,
+                            'Không thể xác nhận thanh toán. Vui lòng thử lại.'
+                        );
+                        showMessage(msg, res.status === 409 ? 'warn' : 'error');
                         return;
                     }
-                    alert(`Đã đánh dấu đơn #${currentOrderId} là ĐÃ THANH TOÁN.`);
+                    showMessage(`Đã đánh dấu đơn #${currentOrderId} là ĐÃ THANH TOÁN.`, 'success');
                     await loadDetail(currentOrderId);
                     await loadList();
                 } catch (e) {
                     console.error(e);
-                    alert('Có lỗi xảy ra khi gọi API xác nhận thanh toán.');
+                    showMessage('Có lỗi xảy ra khi gọi API xác nhận thanh toán.', 'error');
                 }
             };
         }

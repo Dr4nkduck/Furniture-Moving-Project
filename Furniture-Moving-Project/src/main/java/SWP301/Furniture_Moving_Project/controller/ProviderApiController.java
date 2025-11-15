@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
-
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,7 +47,7 @@ public class ProviderApiController {
         // If no status specified, return all providers (for request form dropdown)
         // If status specified, filter by that status
         List<Map<String, Object>> data;
-        
+
         if (status == null || status.isBlank()) {
             // Use native query to avoid lazy loading issues
             data = providerRepository.findAvailableProvidersLight();
@@ -66,7 +65,7 @@ public class ProviderApiController {
                     })
                     .collect(Collectors.toList());
         }
-        
+
         return Map.of("success", true, "data", data);
     }
 
@@ -130,11 +129,32 @@ public class ProviderApiController {
 
     // PV-004: Cập nhật trạng thái đơn
     @PutMapping("/{providerId}/orders/{orderId}/status")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateOrderStatus(@PathVariable Integer providerId,
-                                  @PathVariable Integer orderId,
-                                  @RequestBody ProviderOrderUpdateStatusDTO body) {
-        providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Integer providerId,
+                                               @PathVariable Integer orderId,
+                                               @RequestBody ProviderOrderUpdateStatusDTO body) {
+        try {
+            providerOrderService.updateOrderStatus(
+                    providerId,
+                    orderId,
+                    body.getStatus(),
+                    body.getCancelReason()
+            );
+            return ResponseEntity.noContent().build(); // 204
+        } catch (IllegalStateException ex) {
+            // Sai luồng trạng thái (ví dụ: completed -> in_progress)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "success", false,
+                            "message", ex.getMessage()
+                    ));
+        } catch (IllegalArgumentException ex) {
+            // Dữ liệu sai / không tìm thấy
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "success", false,
+                            "message", ex.getMessage()
+                    ));
+        }
     }
 
     // === Nút "Xác nhận đã thanh toán" cho Provider ===
@@ -143,10 +163,25 @@ public class ProviderApiController {
     //  - Đơn thuộc providerId này
     //  - Đơn đang ở trạng thái "ready_to_pay"
     @PostMapping("/{providerId}/orders/{orderId}/confirm-payment")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void confirmPayment(@PathVariable Integer providerId,
-                               @PathVariable Integer orderId) {
-        providerOrderService.confirmPayment(providerId, orderId);
+    public ResponseEntity<?> confirmPayment(@PathVariable Integer providerId,
+                                            @PathVariable Integer orderId) {
+        try {
+            providerOrderService.confirmPayment(providerId, orderId);
+            return ResponseEntity.noContent().build(); // 204
+        } catch (IllegalStateException ex) {
+            // Ví dụ: không ở trạng thái ready_to_pay
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "success", false,
+                            "message", ex.getMessage()
+                    ));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "success", false,
+                            "message", ex.getMessage()
+                    ));
+        }
     }
 
     // GET /api/providers/me - Lấy thông tin provider hiện tại

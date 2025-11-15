@@ -17,4 +17,38 @@ public final class RequestStatuses {
             default -> false;
         };
     }
+
+    /** Có phải trạng thái kết thúc (không cho đổi nữa) không? */
+    public static boolean isTerminal(String s) {
+        if (s == null) return false;
+        return COMPLETED.equals(s) || CANCELLED.equals(s);
+    }
+
+    /**
+     * Luật chuyển trạng thái:
+     * - PENDING        -> PENDING_OFFER, CANCELLED
+     * - PENDING_OFFER  -> ASSIGNED, CANCELLED
+     * - ASSIGNED       -> IN_PROGRESS, CANCELLED
+     * - IN_PROGRESS    -> COMPLETED, CANCELLED
+     * - COMPLETED      -> (không được chuyển)
+     * - CANCELLED      -> (không được chuyển)
+     */
+    public static boolean canTransition(String from, String to) {
+        if (!isValid(from) || !isValid(to)) return false;
+        if (from.equals(to)) return true; // không đổi gì thì cho qua
+
+        return switch (from) {
+            case PENDING ->
+                    to.equals(PENDING_OFFER) || to.equals(CANCELLED);
+            case PENDING_OFFER ->
+                    to.equals(ASSIGNED) || to.equals(CANCELLED);
+            case ASSIGNED ->
+                    to.equals(IN_PROGRESS) || to.equals(CANCELLED);
+            case IN_PROGRESS ->
+                    to.equals(COMPLETED) || to.equals(CANCELLED);
+            case COMPLETED, CANCELLED ->
+                    false; // ❌ đã kết thúc, không cho đổi nữa
+            default -> false;
+        };
+    }
 }
