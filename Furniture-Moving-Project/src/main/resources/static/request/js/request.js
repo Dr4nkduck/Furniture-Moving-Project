@@ -24,7 +24,7 @@ function notify(msg, type = 'success', ms = 2500) {
   }, ms);
 }
 
-/* ========= Money helpers (NEW) ========= */
+/* ========= Money helpers ========= */
 function toVNDNumber(x) {
   if (x == null) return NaN;
   if (typeof x === 'number') return x;
@@ -37,7 +37,11 @@ function toVNDNumber(x) {
   const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
 }
-const vndFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+const vndFmt = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 0
+});
 function money(n) {
   const num = toVNDNumber(n);
   return Number.isFinite(num) ? vndFmt.format(num) : '—';
@@ -79,6 +83,7 @@ const fileKey = (f) => `${f.name}::${f.size}::${f.lastModified}`;
 
 function renderThumbs() {
   if (!thumbs) return;
+  // thu hồi URL cũ
   thumbs.querySelectorAll('img[data-url]').forEach(img => {
     try { URL.revokeObjectURL(img.dataset.url); } catch {}
   });
@@ -104,7 +109,8 @@ function renderThumbs() {
       selectedFiles = selectedFiles.filter(x => fileKey(x) !== fileKey(f));
       try { URL.revokeObjectURL(url); } catch {}
       renderThumbs();
-      const sumImgs = $('#sumImgs'); if (sumImgs) sumImgs.textContent = String(selectedFiles.length);
+      const sumImgs = $('#sumImgs');
+      if (sumImgs) sumImgs.textContent = String(selectedFiles.length);
     });
 
     div.appendChild(img);
@@ -176,22 +182,39 @@ clearItemsBtn?.addEventListener('click', () => {
 
 /* ========= Summary & estimate ========= */
 
-// phí nhân công/đồ
+// phí nhân công / đồ (chỉ tính khi có món thực sự)
 function calcMovingEstimate() {
   const base = 200_000;
   const perItem = 50_000;
-  const items = $$('#itemsBody tr');
-  let total = base + perItem * items.length;
 
-  const pickupFloor   = Number($('#pickupFloor')?.value || 0);
-  const dropFloor     = Number($('#dropFloor')?.value || 0);
-  const pickupElevEl  = $('#pickupElevator');
-  const dropElevEl    = $('#dropElevator');
-  const noElevPickup  = !(pickupElevEl?.checked) && pickupFloor > 0;
-  const noElevDrop    = !(dropElevEl?.checked)   && dropFloor > 0;
+  const rows = $$('#itemsBody tr');
 
-  if (noElevPickup) total += pickupFloor * 20_000;
-  if (noElevDrop)   total += dropFloor   * 20_000;
+  // chỉ tính khi có ít nhất 1 món có tên hoặc qty > 0
+  const active = rows.filter(tr => {
+    const name = tr.querySelector('input[name="items.name"]')?.value.trim();
+    const qty  = Number(tr.querySelector('input[name="items.qty"]')?.value || 0);
+    return !!name || qty > 0;
+  });
+
+  if (!active.length) return 0;
+
+  let total = base + perItem * active.length;
+
+  // phụ thu tầng/thang máy: chỉ khi có địa chỉ pickup & drop
+  const pickupLine1 = ($('#pickupLine1')?.value || '').trim();
+  const dropLine1   = ($('#dropLine1')?.value || '').trim();
+
+  if (pickupLine1 && dropLine1) {
+    const pickupFloor   = Number($('#pickupFloor')?.value || 0);
+    const dropFloor     = Number($('#dropFloor')?.value || 0);
+    const pickupElevEl  = $('#pickupElevator');
+    const dropElevEl    = $('#dropElevator');
+    const noElevPickup  = !(pickupElevEl?.checked) && pickupFloor > 0;
+    const noElevDrop    = !(dropElevEl?.checked)   && dropFloor > 0;
+
+    if (noElevPickup) total += pickupFloor * 20_000;
+    if (noElevDrop)   total += dropFloor   * 20_000;
+  }
 
   return total;
 }
@@ -211,17 +234,28 @@ function getDistanceFromAIQuote() {
 
 // phí ship theo quãng đường
 function calcShippingEstimate() {
-  const aiKm = getDistanceFromAIQuote();
-  let km = aiKm;
+  const perKm = 12_000;
 
-  if (!Number.isFinite(km)) {
-    const pc = ($('#pickupCity')?.value || '').trim().toLowerCase();
-    const dc = ($('#dropCity')?.value || '').trim().toLowerCase();
-    if (pc && dc) km = (pc === dc) ? 10 : 120;
-    else km = 10;
+  // ưu tiên km từ AI-Quote
+  const aiKm = getDistanceFromAIQuote();
+  if (Number.isFinite(aiKm)) {
+    const km = aiKm;
+    const fee = Math.max(0, Math.round(km) * perKm);
+    return { fee, km, perKm };
   }
 
-  const perKm = 12_000;
+  const pcRaw = ($('#pickupCity')?.value || '').trim();
+  const dcRaw = ($('#dropCity')?.value || '').trim();
+  const pc = pcRaw.toLowerCase();
+  const dc = dcRaw.toLowerCase();
+
+  // chưa nhập city → chưa tính ship
+  if (!pcRaw || !dcRaw) {
+    return { fee: 0, km: NaN, perKm };
+  }
+
+  // nội thành vs liên tỉnh (ước lượng)
+  let km = (pc === dc) ? 10 : 120;
   const fee = Math.max(0, Math.round(km) * perKm);
   return { fee, km, perKm };
 }
@@ -233,9 +267,9 @@ function calcEstimate() {
   return move + ship;
 }
 
-// === drop-in: updateSummary() – ưu tiên số từ AI-Quote ===
+// updateSummary – ưu tiên số từ AI-Quote, ẩn khi chưa có gì
 function updateSummary() {
-  // ---- tiny helper: read AI-Quote pricing from sessionStorage (NEW)
+  // helper: đọc pricing từ aiquote_draft
   function readAIQuotePricing() {
     try {
       const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
@@ -252,13 +286,24 @@ function updateSummary() {
         tot = (m || s) ? (m + s) : NaN;
       }
 
-      const km  = toVNDNumber(raw?.distanceKm ?? raw?.km ?? raw?.route?.km ?? raw?.route?.distanceKm);
+      const km  = toVNDNumber(
+        raw?.distanceKm ??
+        raw?.km ??
+        raw?.route?.km ??
+        raw?.route?.distanceKm
+      );
       const hasAny = Number.isFinite(mov) || Number.isFinite(shp) || Number.isFinite(tot);
-      return hasAny ? { move: mov, ship: shp, total: tot, km, currency: (raw.currency || 'VND') } : null;
+      return hasAny ? {
+        move: mov,
+        ship: shp,
+        total: tot,
+        km,
+        currency: (raw.currency || 'VND')
+      } : null;
     } catch { return null; }
   }
 
-  // ---- DOM hooks
+  // DOM hooks
   const pkgEl   = document.querySelector('#servicePackage');
   const dateEl  = document.querySelector('#preferredDate');
 
@@ -270,49 +315,68 @@ function updateSummary() {
   const sumShipMeta = document.querySelector('#sumShipMeta');
   const sumTotal    = document.querySelector('#sumCost');
 
-  // ---- static infos
-  if (sumPkg)   sumPkg.textContent   = pkgEl?.selectedOptions?.[0]?.textContent || '—';
-  if (sumItems) sumItems.textContent = `${document.querySelector('#itemsBody')?.querySelectorAll('tr').length || 0} món`;
-  if (sumDate)  sumDate.textContent  = dateEl?.value || '—';
+  // static infos
+  if (sumPkg)
+    sumPkg.textContent = pkgEl?.selectedOptions?.[0]?.textContent || '—';
+  if (sumItems)
+    sumItems.textContent =
+      `${document.querySelector('#itemsBody')?.querySelectorAll('tr').length || 0} món`;
+  if (sumDate)
+    sumDate.textContent = dateEl?.value || '—';
 
-  // ---- prefer AI-Quote pricing if available
+  // prefer AI-Quote pricing nếu có
   const ai = readAIQuotePricing();
 
-  // move (nhân công/đồ)
+  // move
   const moveAmount = Number.isFinite(ai?.move) ? ai.move : calcMovingEstimate();
 
   // ship
-  let shipFee, km, perKm;
+  let shipFee, km, perKm, shipSource;
   if (Number.isFinite(ai?.ship)) {
     shipFee = ai.ship;
     km      = Number.isFinite(ai?.km) ? ai.km : (getDistanceFromAIQuote() ?? NaN);
-    perKm   = NaN; // không cần hiển thị đơn giá khi lấy từ AI
+    perKm   = NaN;
+    shipSource = 'ai';
   } else {
     const s = calcShippingEstimate();
-    shipFee = s.fee; km = s.km; perKm = s.perKm;
+    shipFee   = s.fee;
+    km        = s.km;
+    perKm     = s.perKm;
+    shipSource = 'local';
   }
 
-  // total (ưu tiên số tổng từ AI)
-  const total = Number.isFinite(toVNDNumber(ai?.total))
+  // total – ưu tiên tổng từ AI nếu có
+  const totalNumeric = Number.isFinite(toVNDNumber(ai?.total))
     ? toVNDNumber(ai.total)
     : (toVNDNumber(moveAmount) + toVNDNumber(shipFee));
 
-  // ---- write UI
-  if (sumMove) sumMove.textContent = money(moveAmount);
-  if (sumShip) sumShip.textContent = money(shipFee);
+  const hasMove  = Number.isFinite(moveAmount)   && moveAmount   > 0;
+  const hasShip  = Number.isFinite(shipFee)      && shipFee      > 0;
+  const hasTotal = Number.isFinite(totalNumeric) && totalNumeric > 0;
+
+  // write UI
+  if (sumMove)  sumMove.textContent  = hasMove  ? money(moveAmount)   : '—';
+  if (sumShip)  sumShip.textContent  = hasShip  ? money(shipFee)      : '—';
+  if (sumTotal) sumTotal.textContent = hasTotal ? money(totalNumeric) : '—';
 
   if (sumShipMeta) {
-    if (ai) {
+    if (!hasShip) {
+      sumShipMeta.textContent = '';
+    } else if (shipSource === 'ai') {
       const kmTxt = Number.isFinite(km) ? ` • ~${km} km` : '';
       sumShipMeta.textContent = `(từ AI-Quote${kmTxt})`;
     } else {
-      sumShipMeta.textContent = `(~${km} km × ${Number(perKm || 0).toLocaleString('vi-VN')}đ/km)`;
+      const kmTxt = Number.isFinite(km) ? `~${km} km` : '~? km';
+      sumShipMeta.textContent =
+        `(${kmTxt} × ${Number(perKm || 0).toLocaleString('vi-VN')}đ/km)`;
     }
   }
-  if (sumTotal) sumTotal.textContent = money(total);
 }
 
-['change','keyup','input'].forEach(ev => document.addEventListener(ev, updateSummary));
+// lắng nghe mọi thay đổi để update summary
+['change','keyup','input'].forEach(ev =>
+  document.addEventListener(ev, updateSummary)
+);
 
 /* ========= Save draft (localStorage) ========= */
 const draftKey = 'reqDraft_v1';
@@ -377,9 +441,13 @@ function toTimeHHMM(s) {
   m = t.match(/(\d{1,2})\s*h(?:\s*(sáng|trưa|chiều|tối|pm|am))?/i);
   if (m) {
     let h = +m[1], desc = (m[2]||'').toLowerCase();
-    if (desc === 'chiều' || desc === 'tối' || desc === 'pm') { if (h < 12) h += 12; }
-    else if (desc === 'sáng' || desc === 'am') { if (h === 12) h = 0; }
-    else if (desc === 'trưa') { if (h < 10) h += 12; }
+    if (desc === 'chiều' || desc === 'tối' || desc === 'pm') {
+      if (h < 12) h += 12;
+    } else if (desc === 'sáng' || desc === 'am') {
+      if (h === 12) h = 0;
+    } else if (desc === 'trưa') {
+      if (h < 10) h += 12;
+    }
     return `${String(h%24).padStart(2,'0')}:00`;
   }
   m = t.match(/^(\d{1,2})$/);
@@ -394,27 +462,35 @@ function toTimeHHMM(s) {
 function normalizeAiquoteDraft(raw) {
   if (!raw || typeof raw !== 'object') return null;
 
-  const name  = firstNonEmpty(raw?.customer?.name, raw?.customerName);
+  const name  = firstNonEmpty(raw?.customer?.name,  raw?.customerName);
   const phone = firstNonEmpty(raw?.customer?.phone, raw?.phone);
 
   const pickup = raw.pickup || raw.from || {};
   const drop   = raw.dropoff || raw.to   || {};
 
-  const pickupLine = firstNonEmpty(pickup.formatted, pickup.raw, pickup.address, pickup.addressLine1);
-  const dropLine   = firstNonEmpty(drop.formatted,   drop.raw,   drop.address,   drop.addressLine1);
+  const pickupLine = firstNonEmpty(
+    pickup.formatted, pickup.raw, pickup.address, pickup.addressLine1
+  );
+  const dropLine   = firstNonEmpty(
+    drop.formatted,   drop.raw,   drop.address,   drop.addressLine1
+  );
 
   const pickupParts = pickup.parts || raw.fromParts || {};
   const dropParts   = drop.parts   || raw.toParts   || {};
 
   const pickupDistrict = firstNonEmpty(pickupParts.district, pickup.district);
-  const pickupCity     = firstNonEmpty(pickupParts.city, pickupParts.province, pickup.city, pickup.province);
+  const pickupCity     = firstNonEmpty(
+    pickupParts.city, pickupParts.province, pickup.city, pickup.province
+  );
   const dropDistrict   = firstNonEmpty(dropParts.district, drop.district);
-  const dropCity       = firstNonEmpty(dropParts.city, dropParts.province, drop.city, drop.province);
+  const dropCity       = firstNonEmpty(
+    dropParts.city, dropParts.province, drop.city, drop.province
+  );
 
   const dateVN  = firstNonEmpty(raw?.schedule?.date, raw?.date);
   const timeAny = firstNonEmpty(raw?.schedule?.time, raw?.time);
 
-  // ---- Gom items từ nhiều nguồn khác nhau
+  // items từ nhiều nguồn khác nhau
   const candidateLists = [
     raw.items,
     raw.cart?.items,
@@ -438,13 +514,12 @@ function normalizeAiquoteDraft(raw) {
   return {
     name, phone,
     pickupLine, pickupDistrict, pickupCity,
-    dropLine, dropDistrict, dropCity,
+    dropLine,   dropDistrict,   dropCity,
     dateVN, timeAny,
     items,
     distanceKm
   };
 }
-
 
 function prefillFromAiquoteDraft() {
   let draft = null;
@@ -457,13 +532,13 @@ function prefillFromAiquoteDraft() {
   const d = normalizeAiquoteDraft(draft);
   if (!d) return;
 
-  prefillIfEmpty($('#pickupLine1'),  d.pickupLine);
+  prefillIfEmpty($('#pickupLine1'),   d.pickupLine);
   prefillIfEmpty($('#pickupDistrict'), d.pickupDistrict);
   prefillIfEmpty($('#pickupCity'),     d.pickupCity);
   prefillIfEmpty($('#pickupContact'),  d.name);
   prefillIfEmpty($('#pickupPhone'),    d.phone);
 
-  prefillIfEmpty($('#dropLine1'),   d.dropLine);
+  prefillIfEmpty($('#dropLine1'),    d.dropLine);
   prefillIfEmpty($('#dropDistrict'), d.dropDistrict);
   prefillIfEmpty($('#dropCity'),     d.dropCity);
   prefillIfEmpty($('#dropContact'),  d.name);
@@ -516,7 +591,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     const raw = localStorage.getItem(draftKey);
     if (!raw) {
-      addItemRow({ name: 'Bàn làm việc', qty: 1 });
+      // mặc định 1 dòng trống
+      addItemRow();
       updateSummary();
     } else {
       try {
@@ -527,13 +603,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.pickup) {
           for (const k in data.pickup) {
             const el = document.querySelector(`[name="pickup.${k}"]`);
-            if (el) { if (el.type === 'checkbox') el.checked = !!data.pickup[k]; else el.value = data.pickup[k]; }
+            if (el) {
+              if (el.type === 'checkbox') el.checked = !!data.pickup[k];
+              else el.value = data.pickup[k];
+            }
           }
         }
         if (data.drop) {
           for (const k in data.drop) {
             const el = document.querySelector(`[name="drop.${k}"]`);
-            if (el) { if (el.type === 'checkbox') el.checked = !!data.drop[k]; else el.value = data.drop[k]; }
+            if (el) {
+              if (el.type === 'checkbox') el.checked = !!data.drop[k];
+              else el.value = data.drop[k];
+            }
           }
         }
         if (Array.isArray(data.items) && itemsBody) {
@@ -549,13 +631,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         updateSummary();
       } catch (_) {
-        addItemRow({ name: 'Bàn làm việc', qty: 1 });
+        addItemRow(); // fallback: 1 dòng trống
         updateSummary();
       }
     }
   }
 
-  // ✅ CHỈ CHO PHÉP CHỌN NGÀY >= HÔM NAY (FRONTEND ONLY)
+  // CHỈ CHO PHÉP CHỌN NGÀY >= HÔM NAY (FRONTEND ONLY)
   const dateInput = document.getElementById('preferredDate');
   if (dateInput) {
     const today = new Date();
@@ -564,7 +646,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dd = String(today.getDate()).padStart(2, '0');
     const todayStr = `${yyyy}-${mm}-${dd}`;
 
-    // chỉ cho phép chọn ngày >= hôm nay
     dateInput.min = todayStr;
 
     // nếu nháp/AI-fill đang để ngày < hôm nay thì auto đẩy về hôm nay
@@ -573,7 +654,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // cập nhật lại summary sau khi chỉnh ngày
   updateSummary();
 });
 
@@ -658,7 +738,7 @@ function resetFormUI(){
   form?.reset();
   if (itemsBody) {
     itemsBody.innerHTML = '';
-    addItemRow({ name: 'Bàn làm việc', qty: 1 });
+    addItemRow();      // tạo 1 dòng trống, không preset tên
   }
   if (fileInput) fileInput.value = '';
   if (thumbs) thumbs.innerHTML = '';

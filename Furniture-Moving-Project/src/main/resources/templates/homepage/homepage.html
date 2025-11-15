@@ -43,7 +43,7 @@
     
 
 
-    <!-- Carousel Start -->
+   <!-- Carousel Start -->
     <div id="carousel" class="carousel slide" data-ride="carousel">
         <ol class="carousel-indicators">
             <li data-target="#carousel" data-slide-to="0" class="active"></li>
@@ -68,7 +68,8 @@
                 <div class="carousel-caption">
                     <p class="animated fadeInRight">Đối tác đã xác minh</p>
                     <h1 class="animated fadeInLeft">Chọn đơn vị phù hợp theo đánh giá &amp; giá</h1>
-                    <a class="btn animated fadeInUp" th:href="@{/homepage/providers}">Xem đối tác</a>
+                    <!-- ĐÃ ĐỔI: Xem đối tác -> Đăng yêu cầu, link -> /request -->
+                    <a class="btn animated fadeInUp" th:href="@{/request}">Đăng yêu cầu</a>
                 </div>
             </div>
 
@@ -78,7 +79,8 @@
                 <div class="carousel-caption">
                     <p class="animated fadeInRight">Theo dõi đơn dễ dàng</p>
                     <h1 class="animated fadeInLeft">Hỗ trợ 24/7 – Linh hoạt thời gian</h1>
-                    <a class="btn animated fadeInUp" th:href="@{/homepage/support}">Liên hệ hỗ trợ</a>
+                    <!-- ĐÃ ĐỔI: Liên hệ hỗ trợ -> Đăng yêu cầu, link -> /request -->
+                    <a class="btn animated fadeInUp" th:href="@{/request}">Đăng yêu cầu</a>
                 </div>
             </div>
         </div>
@@ -93,6 +95,7 @@
         </a>
     </div>
     <!-- Carousel End -->
+
 
     <section class="user-actions">
       <div class="container">
@@ -145,8 +148,11 @@
                 </ul>
               </div>
               <div class="action-footer">
-                <button id="btn-manual-start" type="button" class="btn btn-primary">
-                  <i class="fas fa-plus mr-1"></i> Tạo báo giá
+                <button id="btn-manual-start"
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="window.location.href='/request'">
+                    <i class="fas fa-plus mr-1"></i> Tạo báo giá
                 </button>
                 <button id="btn-manual-template" type="button" class="btn btn-outline-dark">
                   <i class="far fa-file-alt mr-1"></i> Xem mẫu

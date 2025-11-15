@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
-    <title>PV-003 • Đơn vận chuyển</title>
+    <title>Đơn vận chuyển</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- CSRF cho các request POST/PUT/DELETE (nếu có _csrf) -->
@@ -15,6 +15,9 @@
     <!-- Vendor -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+    <!-- ✅ Font Awesome để hiện icon sao -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <!-- Layout + Page styles -->
     <link rel="stylesheet" th:href="@{/provider/css/provider-layout.css}">
@@ -133,6 +136,26 @@
 
                         <div class="timeline mb-3" id="d-timeline"></div>
 
+                        <!-- 🔹 KHU VỰC XEM REVIEW CỦA KHÁCH -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                            <h3 class="h6 m-0">Đánh giá của khách hàng</h3>
+                            <button class="btn btn-outline-success btn-sm"
+                                    id="btnViewReview"
+                                    type="button">
+                                Xem đánh giá
+                            </button>
+                        </div>
+
+                        <div id="reviewBox"
+                             class="border rounded p-2 mb-3 d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div id="reviewStars"></div>
+                                <small class="text-muted" id="reviewTime"></small>
+                            </div>
+                            <p class="mb-0 small" id="reviewComment"></p>
+                        </div>
+                        <!-- 🔹 HẾT KHU VỰC REVIEW -->
+
                         <h3 class="h6 mt-4 mb-2">Nội thất vận chuyển</h3>
                         <div class="table-responsive">
                             <table class="table table-sm">
@@ -178,5 +201,7 @@
 <!-- Layout JS then page JS -->
 <script th:src="@{/provider/js/provider-layout.js}"></script>
 <script th:src="@{/provider/js/provider-orders.js}"></script>
+<!-- 🔹 JS xem review cho chi tiết đơn -->
+<script th:src="@{/provider/js/provider-order-review.js}"></script>
 </body>
 </html>

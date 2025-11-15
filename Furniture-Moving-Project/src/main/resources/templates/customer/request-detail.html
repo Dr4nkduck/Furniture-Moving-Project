@@ -110,7 +110,24 @@
                         </div>
                     </div>
 
-                    <!-- 🔇 ĐÃ BỎ PHẦN "Trạng thái thanh toán" Ở ĐÂY -->
+                    <div>
+                        <div class="fm-label">Trạng thái thanh toán</div>
+                        <div>
+                            <!-- ✅ js-payment-status để realtime -->
+                            <span class="fm-badge fm-badge--payment js-payment-status"
+                                  th:if="${request.paymentStatus != null}">
+                                <span class="fm-badge-dot"></span>
+                                <span th:text="${
+                                        request.paymentStatus == 'PENDING' ? 'Chưa thanh toán' :
+                                        request.paymentStatus == 'PAID' ? 'Đã thanh toán' :
+                                        request.paymentStatus == 'FAILED' ? 'Thanh toán thất bại' :
+                                        request.paymentStatus
+                                }">
+                                </span>
+                            </span>
+                            <span th:if="${request.paymentStatus == null}" class="fm-value js-payment-empty">—</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="fm-grid-2col" style="margin-top: 4px;">
@@ -326,24 +343,19 @@
                 <div class="fm-section-title">Hành động</div>
 
                 <div class="fm-actions">
-                    <!-- Nút “Đi đến thanh toán” (JS sẽ tự ẩn/hiện realtime, có thể giữ điều kiện server nếu muốn) -->
-                    <a id="btn-payment"
-                       class="fm-btn-primary js-payment-btn"
-                       th:href="@{|/payment/${request.requestId}|}"
-                       th:attr="data-can-pay=${(request.status == 'ready_to_pay'
-                                                and contract != null
-                                                and contract.status == 'acknowledged') ? 'true' : 'false'}"
-                       th:style="${(request.status == 'ready_to_pay'
-                                    and contract != null
-                                    and contract.status == 'acknowledged')
-                                    ? '' : 'display:none;'}">
+                    <!-- Đi đến thanh toán nếu:
+                         1. Status là ready_to_pay và chưa PAID, HOẶC
+                         2. Status là pending nhưng đã có provider assigned và chưa PAID -->
+                    <a class="fm-btn-primary"
+                       th:if="${(request.status == 'ready_to_pay' or (request.status == 'pending' and request.providerId != null)) and (request.paymentStatus == null or request.paymentStatus != 'PAID')}"
+                       th:href="@{|/payment/${request.requestId}|}">
                         Đi đến thanh toán
                     </a>
 
-                    <!-- Nút "Xem hợp đồng" -->
+                    <!-- Nút "Xem hợp đồng" (xem-only) -->
                     <a class="fm-btn-ghost"
                        th:if="${contract != null}"
-                       th:href="@{|/contract/${contract.contractId}|}">
+                       th:href="@{|/customer/requests/${request.requestId}/contract|}">
                         Xem hợp đồng
                     </a>
 

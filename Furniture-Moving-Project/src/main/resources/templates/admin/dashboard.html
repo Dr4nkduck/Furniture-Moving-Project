@@ -60,17 +60,55 @@
                 <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>AdminOP</h3>
             </a>
 
-            <div class="d-flex align-items-center ms-4 mb-4">
-                <div class="position-relative">
-                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar"
-                         style="width:40px;height:40px;">
-                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
-                </div>
-                <div class="ms-3">
-                    <h6 class="mb-0" th:text="${#authentication?.name}">John Doe</h6>
-                    <span>Admin</span>
-                </div>
-            </div>
+            <!-- User dropdown trong SIDEBAR -->
+<div class="nav-item dropdown ms-4 mb-4">
+    <a href="#" class="nav-link dropdown-toggle d-flex align-items-center"
+       id="sidebarUserDropdown"
+       role="button"
+       data-bs-toggle="dropdown"
+       aria-expanded="false">
+
+        <div class="position-relative">
+            <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar"
+                 style="width:40px;height:40px;">
+            <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+        </div>
+
+        <div class="ms-3">
+            <h6 class="mb-0" th:text="${#authentication?.name}">admin1</h6>
+            <span>Admin</span>
+        </div>
+    </a>
+
+    <div class="dropdown-menu dropdown-menu-start bg-light border-0 rounded shadow"
+         aria-labelledby="sidebarUserDropdown">
+        <h6 class="dropdown-header" th:text="${#authentication?.name}">admin1</h6>
+        <span class="dropdown-item-text">Quyền: Admin</span>
+
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" th:href="@{/admin/profile}">
+            <i class="fa fa-user me-2"></i> Hồ sơ
+        </a>
+        <a class="dropdown-item" th:href="@{/admin/settings}">
+            <i class="fa fa-cog me-2"></i> Cài đặt
+        </a>
+
+        <!-- Chỉ SUPER_ADMIN mới thấy -->
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/super/dashboard}">
+            🔒 Super Admin Area
+        </a>
+
+        <!-- Logout -->
+        <div class="dropdown-divider"></div>
+        <form th:action="@{/logout}" method="post" id="sidebarLogoutForm"></form>
+        <a href="#" class="dropdown-item text-danger"
+           onclick="document.getElementById('sidebarLogoutForm').submit(); return false;">
+            <i class="fa fa-sign-out-alt me-2"></i> Đăng xuất
+        </a>
+    </div>
+</div>
+
 
             <div class="navbar-nav w-100">
 
@@ -78,8 +116,12 @@
                     <i class="fa fa-th me-2"></i>Quản lí tài khoản
                 </a>
 
-                <a th:href="@{/provider-stats}" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Thông tin nhà cung cấp</a>
-                <a th:href="@{/customer-trends}" class="nav-item nav-link"><i class="fa fa-chart-line me-2"></i>Xu hướng khách hàng</a>
+                <a th:href="@{/provider-stats}" class="nav-item nav-link">
+                    <i class="fa fa-chart-bar me-2"></i>Thông tin nhà cung cấp
+                </a>
+                <a th:href="@{/customer-trends}" class="nav-item nav-link">
+                    <i class="fa fa-chart-line me-2"></i>Xu hướng khách hàng
+                </a>
 
             </div>
         </nav>
@@ -134,8 +176,10 @@
                         <span class="d-none d-lg-inline-flex">Notification</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
-                        <a href="#" class="dropdown-item"><h6 class="fw-normal mb-0">Profile updated</h6><small>15
-                            minutes ago</small></a>
+                        <a href="#" class="dropdown-item">
+                            <h6 class="fw-normal mb-0">Profile updated</h6>
+                            <small>15 minutes ago</small>
+                        </a>
                         <hr class="dropdown-divider">
                         <a href="#" class="dropdown-item text-center">See all notifications</a>
                     </div>
@@ -163,7 +207,7 @@
                         <form th:action="@{/logout}" method="post" id="logoutForm"></form>
                         <a href="#" class="dropdown-item"
                            onclick="document.getElementById('logoutForm').submit(); return false;">
-                            Log Out
+                            Đăng xuất
                         </a>
                     </div>
                 </div>
@@ -333,7 +377,9 @@
                     <div class="col-12 col-sm-6 text-center text-sm-start">
                         &copy; <a href="#">Your Site Name</a>, All Right Reserved.
                     </div>
-                    <div class="col-12 col-sm-6 text-center text-sm-end">Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a></div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">
+                        Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -342,7 +388,9 @@
     <!-- Content End -->
 
     <!-- Back to Top -->
-    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top">
+        <i class="bi bi-arrow-up"></i>
+    </a>
 </div>
 
 <!-- JavaScript Libraries (LOCAL) -->
