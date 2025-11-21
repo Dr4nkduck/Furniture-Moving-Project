@@ -22,6 +22,12 @@
   // ✅ Nút thanh toán (được show/hide realtime)
   const elPaymentBtn = root.querySelector(".js-payment-btn");
 
+  // ✅ Nút HỦY ĐƠN trực tiếp (giai đoạn 1 – tùy backend cho phép)
+  const btnCancel = root.querySelector(".js-cancel-request");
+
+  // ✅ Nút YÊU CẦU HỦY ĐƠN (giai đoạn 2 – sau thanh toán, chờ provider duyệt)
+  const btnCancelPaid = root.querySelector(".js-cancel-request-paid");
+
   // ===== RATING ELEMENTS =====
   const elRatingButton =
     root.querySelector(".js-rating-open") ||
@@ -46,9 +52,23 @@
   let currentRating = 0;
   let ratingInitialized = false;
 
+  // ===== CSRF helpers =====
+  const csrfToken =
+    document.querySelector('meta[name="_csrf"]')?.content || null;
+  const csrfHeaderName =
+    document.querySelector('meta[name="_csrf_header"]')?.content || null;
+
+  function buildJsonHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    if (csrfToken && csrfHeaderName) {
+      headers[csrfHeaderName] = csrfToken;
+    }
+    return headers;
+  }
+
   // ===== Friendly text mapping =====
   function friendlyRequestStatus(code) {
-    switch (code) {
+    switch ((code || "").toLowerCase()) {
       case "pending":
         return "Đang chờ xác nhận";
       case "ready_to_pay":
@@ -297,7 +317,108 @@
     }
   }
 
+  // ===== CANCEL: Hủy đơn trực tiếp (giai đoạn 1) =====
+  function setupCancel() {
+    if (!btnCancel) return;
+
+    btnCancel.addEventListener("click", () => {
+      if (!confirm("Bạn có chắc chắn muốn hủy đơn?")) return;
+
+      const reason = (prompt("Nhập lý do hủy (không bắt buộc):") || "").trim();
+
+      fetch(`/api/customer/request/${requestId}/cancel`, {
+        method: "POST",
+        headers: buildJsonHeaders(),
+        body: JSON.stringify({ reason }),
+      })
+        .then((res) =>
+          res
+            .json()
+            .catch(() => ({}))
+            .then((data) => ({ ok: res.ok, status: res.status, data }))
+        )
+        .then(({ ok, data }) => {
+          const msg =
+            data.message ||
+            (ok
+              ? "Hủy đơn thành công."
+              : "Không thể hủy đơn. Vui lòng thử lại.");
+          alert(msg);
+
+          if (ok && data.success) {
+            window.location.reload();
+          }
+        })
+        .catch((err) => {
+          console.error("Cancel request error:", err);
+          alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+        });
+    });
+  }
+
+  // ===== CANCEL REQUEST: Yêu cầu hủy đơn (giai đoạn 2) =====
+  function setupCancelPaid() {
+    if (!btnCancelPaid) return;
+
+    btnCancelPaid.addEventListener("click", () => {
+      if (
+        !confirm(
+          "Bạn muốn gửi yêu cầu hủy đơn? Đơn vị vận chuyển sẽ xem xét và phản hồi."
+        )
+      ) {
+        return;
+      }
+
+      // Lý do hủy: BẮT BUỘC
+      let reason = "";
+      while (!reason) {
+        const input = prompt("Nhập lý do hủy (bắt buộc):") || "";
+        reason = input.trim();
+        if (reason) break;
+
+        const retry = confirm(
+          "Lý do hủy không được để trống. Bạn có muốn nhập lại không?"
+        );
+        if (!retry) {
+          return;
+        }
+      }
+
+      fetch(`/api/customer/request/${requestId}/cancel-request`, {
+        method: "POST",
+        headers: buildJsonHeaders(),
+        body: JSON.stringify({ reason }),
+      })
+        .then((res) =>
+          res
+            .json()
+            .catch(() => ({}))
+            .then((data) => ({ ok: res.ok, status: res.status, data }))
+        )
+        .then(({ ok, data }) => {
+          const msg =
+            data.message ||
+            (ok
+              ? "Đã gửi yêu cầu hủy đơn. Vui lòng chờ đơn vị vận chuyển xét duyệt."
+              : "Không thể gửi yêu cầu hủy. Vui lòng thử lại.");
+          alert(msg);
+
+          if (ok && data.success) {
+            // Reload để hiển thị hasPendingCancel + ẩn nút yêu cầu hủy
+            window.location.reload();
+          }
+        })
+        .catch((err) => {
+          console.error("Cancel-request error:", err);
+          alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+        });
+    });
+  }
+
+  // Gắn event cho rating + cancel
   attachRatingEvents();
+  setupCancel();
+  setupCancelPaid();
 
   function refreshOnce() {
     fetch(`/api/customer/request/${requestId}`, {
@@ -321,7 +442,8 @@
             if (elPayment) {
               elPayment.style.display = "inline-flex";
               const span = elPayment.querySelector("span:last-child");
-              if (span) span.textContent = friendlyPaymentStatus(d.paymentStatus);
+              if (span)
+                span.textContent = friendlyPaymentStatus(d.paymentStatus);
             }
             if (elPaymentEmpty) {
               elPaymentEmpty.style.display = "none";
@@ -359,7 +481,8 @@
           if (d.contractStatus) {
             elContractStatus.style.display = "inline-flex";
             const span = elContractStatus.querySelector("span:last-child");
-            if (span) span.textContent = friendlyContractStatus(d.contractStatus);
+            if (span)
+              span.textContent = friendlyContractStatus(d.contractStatus);
           } else {
             elContractStatus.style.display = "none";
           }

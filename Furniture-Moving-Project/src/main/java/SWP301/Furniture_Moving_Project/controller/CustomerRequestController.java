@@ -1,7 +1,9 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.model.CancellationRequest;
 import SWP301.Furniture_Moving_Project.model.Contract;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.repository.CancellationRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.UserRepository;
@@ -27,15 +29,18 @@ public class CustomerRequestController {
     private final ContractRepository contractRepository;
     private final JdbcTemplate jdbc;
     private final UserRepository userRepository;
+    private final CancellationRequestRepository cancellationRequestRepository;
 
     public CustomerRequestController(ServiceRequestRepository serviceRequestRepository,
                                      ContractRepository contractRepository,
                                      JdbcTemplate jdbc,
-                                     UserRepository userRepository) {
+                                     UserRepository userRepository,
+                                     CancellationRequestRepository cancellationRequestRepository) {
         this.serviceRequestRepository = serviceRequestRepository;
         this.contractRepository = contractRepository;
         this.jdbc = jdbc;
         this.userRepository = userRepository;
+        this.cancellationRequestRepository = cancellationRequestRepository;
     }
 
     /**
@@ -78,7 +83,7 @@ public class CustomerRequestController {
     ) {
         // Add login info for navbar
         addLoginInfo(model);
-        
+
         Integer customerId = getCurrentCustomerId();
 
         List<ServiceRequest> requests;
@@ -117,7 +122,7 @@ public class CustomerRequestController {
     public String viewRequestDetail(@PathVariable("id") Integer requestId, Model model) {
         // Add login info for navbar
         addLoginInfo(model);
-        
+
         Integer customerId = getCurrentCustomerId();
 
         ServiceRequest request = serviceRequestRepository.findById(requestId)
@@ -132,12 +137,34 @@ public class CustomerRequestController {
             contract = contractRepository.findById(request.getContractId()).orElse(null);
         }
 
+        // Giai đoạn 1: hủy trực tiếp nếu đơn còn ở trạng thái cho phép
+        boolean canCancel = request.isCancellableByCustomer();
+
+        // Đã gửi yêu cầu hủy chưa? (giai đoạn 2)
+        boolean hasPendingCancel = cancellationRequestRepository
+                .existsByServiceRequestIdAndStatus(
+                        requestId,
+                        CancellationRequest.STATUS_REQUESTED
+                );
+
+        // Giai đoạn 2:
+        // - Không còn được hủy trực tiếp nữa (canCancel == false)
+        // - Đơn vẫn nằm trong "vùng cho phép yêu cầu hủy" theo rule entity
+        // - Và chưa có yêu cầu hủy nào đang chờ duyệt
+        boolean canRequestCancel =
+                !canCancel
+                        && request.isCancellationRequestAllowedByCustomer()
+                        && !hasPendingCancel;
+
         model.addAttribute("request", request);
         model.addAttribute("contract", contract);
+        model.addAttribute("canCancel", canCancel);
+        model.addAttribute("canRequestCancel", canRequestCancel);
+        model.addAttribute("hasPendingCancel", hasPendingCancel);
 
         return "customer/request-detail";
     }
-    
+
     /**
      * Add login info to model for navbar
      */
