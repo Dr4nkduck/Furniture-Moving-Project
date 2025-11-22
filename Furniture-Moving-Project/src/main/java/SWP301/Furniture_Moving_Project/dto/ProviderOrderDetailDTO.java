@@ -6,21 +6,66 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class ProviderOrderDetailDTO {
+
+    // ===== Thông tin đơn cơ bản =====
     private Integer requestId;
     private String status;
     private LocalDateTime requestDate;
     private LocalDate preferredDate;
 
+    // ===== Thông tin khách hàng =====
     private String customerName;
     private String customerPhone;
     private String customerEmail;
 
+    // ===== Địa chỉ =====
     private String pickupFull;
     private String deliveryFull;
 
+    // ===== Chi phí =====
     private BigDecimal totalCostEstimate;
 
+    // ===== Danh sách item =====
     private List<ProviderOrderItemDTO> items;
+
+    // ===== Thông tin thanh toán (nếu cần cho UI sau này) =====
+    private String paymentStatus; // PENDING / PAID / FAILED ...
+    private String paymentType;   // DEPOSIT / FULL_PAYMENT / null
+
+    // ===== Hủy trực tiếp (giai đoạn 1) =====
+    /**
+     * Lý do hủy được lưu trực tiếp trên service_requests.cancel_reason
+     * (dùng cho case KH chưa thanh toán và tự hủy đơn).
+     */
+    private String cancelReason;
+
+    // ===== YÊU CẦU HỦY (giai đoạn 2 + 3) =====
+    /**
+     * ID của bản ghi trong bảng cancellation_requests (nếu có).
+     */
+    private Integer cancellationId;
+
+    /**
+     * Trạng thái yêu cầu hủy:
+     *  - requested
+     *  - approved
+     *  - rejected
+     *  hoặc null nếu chưa từng có yêu cầu hủy.
+     */
+    private String cancellationStatus;
+
+    /**
+     * Lý do khách nhập khi gửi yêu cầu hủy (cancellation_requests.reason).
+     */
+    private String cancellationReason;
+
+    /**
+     * Ghi chú quyết định của provider khi APPROVE/REJECT
+     * (cancellation_requests.decision_note).
+     */
+    private String cancellationDecisionNote;
+
+    // ================== GETTER / SETTER ==================
 
     public Integer getRequestId() {
         return requestId;
@@ -108,5 +153,61 @@ public class ProviderOrderDetailDTO {
 
     public void setItems(List<ProviderOrderItemDTO> items) {
         this.items = items;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
+    public Integer getCancellationId() {
+        return cancellationId;
+    }
+
+    public void setCancellationId(Integer cancellationId) {
+        this.cancellationId = cancellationId;
+    }
+
+    public String getCancellationStatus() {
+        return cancellationStatus;
+    }
+
+    public void setCancellationStatus(String cancellationStatus) {
+        this.cancellationStatus = cancellationStatus;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    public String getCancellationDecisionNote() {
+        return cancellationDecisionNote;
+    }
+
+    public void setCancellationDecisionNote(String cancellationDecisionNote) {
+        this.cancellationDecisionNote = cancellationDecisionNote;
     }
 }

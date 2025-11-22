@@ -23,5 +23,10 @@ public interface CancellationRequestRepository
     List<CancellationRequest> findByProviderIdAndStatusOrderByCreatedAtDesc(
             Integer providerId,
             String status
+            
+    );
+        Optional<CancellationRequest> findTopByServiceRequestIdAndProviderIdOrderByCreatedAtDesc(
+            Integer serviceRequestId,
+            Integer providerId
     );
 }

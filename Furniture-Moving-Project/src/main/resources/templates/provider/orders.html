@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
-    <title>Đơn vận chuyển</title>
+    <title>PV-003 • Đơn vận chuyển</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- CSRF cho các request POST/PUT/DELETE (nếu có _csrf) -->
@@ -15,7 +15,6 @@
     <!-- Vendor -->
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
-    <!-- ✅ Font Awesome để hiện icon sao -->
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
@@ -39,7 +38,7 @@
         <nav>
             <ul class="nav">
                 <li><a th:href="@{/provider/dashboard}"><i class="bi bi-speedometer2"></i> Tổng quan</a></li>
-                <li><a th:href="@{/provider/services}"><i class="bi bi-gear-wide-connected"></i> Bảng giá & dịch vụ</a></li>
+                <li><a th:href="@{/provider/services}"><i class="bi bi-gear-wide-connected"></i> Bảng giá &amp; dịch vụ</a></li>
                 <li><a th:href="@{/provider/orders}"><i class="bi bi-box-seam"></i> Đơn hàng</a></li>
                 <li><a th:href="@{/provider/analytics}"><i class="bi bi-graph-up"></i> Phân tích</a></li>
             </ul>
@@ -78,6 +77,7 @@
             </div>
 
             <div class="orders-layout">
+                <!-- Danh sách đơn -->
                 <div class="orders card-dark">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle m-0">
@@ -89,7 +89,7 @@
                                 <th>Giao hàng</th>
                                 <th>Ngày chuyển</th>
                                 <th>Trạng thái</th>
-                                <!-- 🔹 Cột mới: mã thanh toán REQ(id) để đối soát sao kê -->
+                                <!-- Mã thanh toán REQ(id) để đối soát sao kê -->
                                 <th>Mã thanh toán (REQ)</th>
                                 <th class="text-end">Ước tính</th>
                             </tr>
@@ -99,6 +99,7 @@
                     </div>
                 </div>
 
+                <!-- Chi tiết đơn -->
                 <div class="detail card-dark">
                     <div id="emptyDetail" class="p-3 text-muted">Chọn một đơn để xem chi tiết.</div>
                     <div id="detailContent" class="p-3 d-none">
@@ -107,7 +108,6 @@
                                 <h2 class="h6 mb-1">
                                     Đơn #<span id="d-id"></span>
                                 </h2>
-                                <!-- 🔹 Hiển thị REQ(id) trong panel chi tiết -->
                                 <div class="small text-muted">
                                     Mã thanh toán: <code id="d-paymentRef">REQ123</code>
                                 </div>
@@ -136,7 +136,35 @@
 
                         <div class="timeline mb-3" id="d-timeline"></div>
 
-                        <!-- 🔹 KHU VỰC XEM REVIEW CỦA KHÁCH -->
+                        <!-- KHU VỰC YÊU CẦU HỦY ĐƠN -->
+                        <div id="cancelSection" class="border rounded p-2 mb-3 d-none">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="small text-muted">Yêu cầu hủy đơn</div>
+                                    <div class="fw-semibold" id="cancelStatusText"></div>
+                                    <div class="small mt-1">
+                                        <strong>Lý do khách hủy:</strong>
+                                        <span id="cancelReasonText"></span>
+                                    </div>
+                                    <div class="small text-muted mt-1" id="cancelDecisionNoteText"></div>
+                                </div>
+                                <div class="d-flex flex-column gap-1 ms-3">
+                                    <button class="btn btn-sm btn-outline-success mb-1"
+                                            id="btnApproveCancel"
+                                            type="button">
+                                        Chấp nhận hủy
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            id="btnRejectCancel"
+                                            type="button">
+                                        Từ chối yêu cầu
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- HẾT KHU VỰC YÊU CẦU HỦY -->
+
+                        <!-- KHU VỰC XEM REVIEW CỦA KHÁCH -->
                         <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
                             <h3 class="h6 m-0">Đánh giá của khách hàng</h3>
                             <button class="btn btn-outline-success btn-sm"
@@ -154,7 +182,7 @@
                             </div>
                             <p class="mb-0 small" id="reviewComment"></p>
                         </div>
-                        <!-- 🔹 HẾT KHU VỰC REVIEW -->
+                        <!-- HẾT KHU VỰC REVIEW -->
 
                         <h3 class="h6 mt-4 mb-2">Nội thất vận chuyển</h3>
                         <div class="table-responsive">
@@ -176,7 +204,7 @@
                             <button class="btn btn-outline-primary" data-act="in_progress">Bắt đầu vận chuyển</button>
                             <button class="btn btn-success" data-act="completed">Hoàn thành</button>
 
-                            <!-- NÚT MỚI: Provider xác nhận đã nhận tiền -->
+                            <!-- Provider xác nhận đã nhận tiền -->
                             <button class="btn btn-warning" id="btnConfirmPaid" type="button">
                                 Xác nhận đã thanh toán
                             </button>
@@ -192,8 +220,36 @@
     </main>
 </div>
 
-<!-- Backdrop (auto-created in JS nếu thiếu) -->
+<!-- Backdrop sidebar -->
 <div id="sidebar-backdrop"></div>
+
+<!-- Dialog overlay đẹp thay cho alert/confirm/prompt -->
+<div id="dialog-backdrop" class="fm-dialog-backdrop d-none">
+    <div class="fm-dialog card-dark">
+        <h5 id="dialog-title" class="mb-2">Xác nhận</h5>
+        <p id="dialog-message" class="mb-2 small text-muted"></p>
+
+        <textarea id="dialog-input"
+                  class="form-control mb-2 d-none"
+                  rows="3"></textarea>
+
+        <div id="dialog-error"
+             class="fm-dialog-error text-danger mb-2 d-none"></div>
+
+        <div class="text-end">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary me-2"
+                    id="dialog-btn-cancel">
+                Hủy
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-primary"
+                    id="dialog-btn-ok">
+                Xác nhận
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Vendor -->
 <script th:src="@{/dashbooard/js/main.js}"></script>
@@ -201,7 +257,6 @@
 <!-- Layout JS then page JS -->
 <script th:src="@{/provider/js/provider-layout.js}"></script>
 <script th:src="@{/provider/js/provider-orders.js}"></script>
-<!-- 🔹 JS xem review cho chi tiết đơn -->
 <script th:src="@{/provider/js/provider-order-review.js}"></script>
 </body>
 </html>

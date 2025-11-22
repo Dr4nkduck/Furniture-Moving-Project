@@ -334,11 +334,10 @@
 
                     <!-- HỦY ĐƠN: dùng boolean canCancel từ backend (giai đoạn 1) -->
                     <button type="button"
-                            class="fm-btn-danger js-cancel-request"
+                            class="btn btn-danger btn-sm fm-btn-danger js-cancel-request"
                             th:if="${canCancel}">
                         Hủy đơn
                     </button>
-
                     <!-- YÊU CẦU HỦY ĐƠN: giai đoạn 2 (sau khi đã thanh toán, chờ provider xét duyệt) -->
                     <button type="button"
                             class="fm-btn-ghost js-cancel-request-paid"

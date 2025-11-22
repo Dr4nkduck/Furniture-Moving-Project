@@ -3,8 +3,10 @@ package SWP301.Furniture_Moving_Project.service.impl;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderItemDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
+import SWP301.Furniture_Moving_Project.model.CancellationRequest;
 import SWP301.Furniture_Moving_Project.model.Contract;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
+import SWP301.Furniture_Moving_Project.repository.CancellationRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.repository.projection.ProviderOrderDetailProjection;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +32,14 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
 
     private final ServiceRequestRepository srRepo;
     private final ContractRepository contractRepo;
+    private final CancellationRequestRepository cancellationRequestRepository;
 
     public ProviderOrderServiceImpl(ServiceRequestRepository srRepo,
-                                    ContractRepository contractRepo) {
+                                    ContractRepository contractRepo,
+                                    CancellationRequestRepository cancellationRequestRepository) {
         this.srRepo = srRepo;
         this.contractRepo = contractRepo;
+        this.cancellationRequestRepository = cancellationRequestRepository;
     }
 
     @Override
@@ -58,8 +64,11 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
 
     @Override
     public ProviderOrderDetailDTO getOrderDetail(Integer providerId, Integer requestId) {
+        // ✅ 1. Lấy projection chi tiết để đảm bảo đơn thuộc provider này
         ProviderOrderDetailProjection p = srRepo.findOrderDetail(providerId, requestId);
-        if (p == null) throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc đơn không thuộc về nhà cung cấp này.");
+        if (p == null) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc đơn không thuộc về nhà cung cấp này.");
+        }
 
         ProviderOrderDetailDTO dto = new ProviderOrderDetailDTO();
         dto.setRequestId(p.getRequestId());
@@ -77,6 +86,7 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
         dto.setDeliveryFull(joinFull(
                 p.getDeliveryStreet(), p.getDeliveryCity(), p.getDeliveryState(), p.getDeliveryZip()));
 
+        // ✅ 2. Lấy danh sách item
         List<ProviderOrderItemProjection> items = srRepo.findOrderItems(requestId);
         dto.setItems(items.stream()
                 .map(i -> new ProviderOrderItemDTO(
@@ -87,6 +97,32 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
                         Boolean.TRUE.equals(i.getIsFragile()))
                 )
                 .collect(Collectors.toList()));
+
+        // ✅ 3. Lấy thêm thông tin từ entity ServiceRequest (payment + cancelReason)
+        ServiceRequest sr = srRepo.findById(requestId)
+                .orElse(null);
+        if (sr != null) {
+            dto.setPaymentStatus(sr.getPaymentStatus());
+            dto.setPaymentType(sr.getPaymentType());
+            dto.setCancelReason(sr.getCancelReason());
+        }
+
+        // ✅ 4. Lấy yêu cầu hủy mới nhất (nếu có) cho đơn này của provider này
+        if (sr != null && sr.getProviderId() != null) {
+            Optional<CancellationRequest> optCr =
+                    cancellationRequestRepository
+                            .findTopByServiceRequestIdAndProviderIdOrderByCreatedAtDesc(
+                                    sr.getRequestId(), sr.getProviderId());
+
+            if (optCr.isPresent()) {
+                CancellationRequest cr = optCr.get();
+                dto.setCancellationId(cr.getCancellationId());
+                dto.setCancellationStatus(cr.getStatus());
+                dto.setCancellationReason(cr.getReason());
+                dto.setCancellationDecisionNote(cr.getDecisionNote());
+            }
+        }
+
         return dto;
     }
 
