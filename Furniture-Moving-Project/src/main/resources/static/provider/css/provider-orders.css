@@ -149,3 +149,37 @@
 .fm-dialog-error {
     font-size: .85rem;
 }
+/* ===== Fix màu chữ bị tối trong panel chi tiết ===== */
+
+/* Toàn bộ text trong card tối cho sáng hơn một chút */
+.card-dark {
+    color: var(--text);
+}
+
+/* Đặc biệt là các heading như:
+   - Đánh giá của khách hàng
+   - Nội thất vận chuyển
+   - Xác nhận đã thanh toán
+*/
+.card-dark h1,
+.card-dark h2,
+.card-dark h3,
+.card-dark h4,
+.card-dark h5,
+.card-dark h6 {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Nếu muốn chỉ ảnh hưởng riêng page này thôi thì có thể dùng .detail: */
+/* 
+.detail h1,
+.detail h2,
+.detail h3,
+.detail h4,
+.detail h5,
+.detail h6 {
+    color: var(--text);
+    font-weight: 600;
+}
+*/

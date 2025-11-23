@@ -114,17 +114,20 @@
                     <div>
                         <div class="fm-label">Trạng thái thanh toán</div>
                         <div>
+                            <!-- Badge thanh toán: luôn có trong DOM, JS sẽ ẩn/hiện -->
                             <span class="fm-badge fm-badge--payment js-payment-status"
-                                  th:if="${request.paymentStatus != null}">
+                                  th:classappend="${request.paymentStatus != null} ? '' : ' d-none'">
                                 <span class="fm-badge-dot"></span>
                                 <span th:text="${
                                         request.paymentStatus == 'PENDING' ? 'Chưa thanh toán' :
                                         request.paymentStatus == 'PAID' ? 'Đã thanh toán' :
                                         request.paymentStatus == 'FAILED' ? 'Thanh toán thất bại' :
+                                        request.paymentStatus == 'READY_TO_PAY' ? 'Chờ thanh toán' :
                                         request.paymentStatus
                                 }"></span>
                             </span>
-                            <span th:if="${request.paymentStatus == null}" class="fm-value js-payment-empty">—</span>
+                            <span class="fm-value js-payment-empty"
+                                  th:classappend="${request.paymentStatus == null} ? '' : ' d-none'">—</span>
                         </div>
                     </div>
                 </div>
@@ -323,25 +326,28 @@
                 <div class="fm-section-title">Hành động</div>
 
                 <div class="fm-actions">
-                    <!-- Đi đến thanh toán nếu:
-                         1. Status là ready_to_pay và chưa PAID, HOẶC
-                         2. Status là pending nhưng đã có provider assigned và chưa PAID -->
-                    <a class="fm-btn-primary"
-                       th:if="${(request.status == 'ready_to_pay' or (request.status == 'pending' and request.providerId != null)) and (request.paymentStatus == null or request.paymentStatus != 'PAID')}"
-                       th:href="@{|/payment/${request.requestId}|}">
+                    <!-- Đi đến thanh toán: luôn render, ẩn/hiện bằng JS -->
+                    <a class="fm-btn-primary js-payment-btn"
+                       th:href="@{|/payment/${request.requestId}|}"
+                       th:classappend="${
+                           (request.status == 'ready_to_pay'
+                               or (request.status == 'pending' and request.providerId != null))
+                           and (request.paymentStatus == null or request.paymentStatus != 'PAID')
+                       } ? '' : ' d-none'">
                         Đi đến thanh toán
                     </a>
 
                     <!-- HỦY ĐƠN: dùng boolean canCancel từ backend (giai đoạn 1) -->
                     <button type="button"
                             class="btn btn-danger btn-sm fm-btn-danger js-cancel-request"
-                            th:if="${canCancel}">
+                            th:classappend="${canCancel} ? '' : ' d-none'">
                         Hủy đơn
                     </button>
+
                     <!-- YÊU CẦU HỦY ĐƠN: giai đoạn 2 (sau khi đã thanh toán, chờ provider xét duyệt) -->
                     <button type="button"
                             class="fm-btn-ghost js-cancel-request-paid"
-                            th:if="${canRequestCancel}">
+                            th:classappend="${canRequestCancel} ? '' : ' d-none'">
                         Yêu cầu hủy đơn
                     </button>
 
@@ -362,7 +368,8 @@
                 </div>
 
                 <!-- Thông báo nếu đã gửi yêu cầu hủy và đang chờ xử lý -->
-                <div class="fm-note fm-note-warning" th:if="${hasPendingCancel}">
+                <div class="fm-note fm-note-warning js-pending-cancel-note"
+                     th:classappend="${hasPendingCancel} ? '' : ' d-none'">
                     Bạn đã gửi yêu cầu hủy đơn. Đơn vị vận chuyển sẽ xem xét và phản hồi.
                 </div>
             </div>

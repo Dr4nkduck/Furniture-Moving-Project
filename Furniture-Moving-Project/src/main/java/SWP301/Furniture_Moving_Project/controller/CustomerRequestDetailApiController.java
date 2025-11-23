@@ -132,7 +132,21 @@ public class CustomerRequestDetailApiController {
             c = contractRepository.findById(r.getContractId()).orElse(null);
         }
 
-        return DetailDTO.from(r, c, dtf);
+        // ---- TÍNH CÁC FLAG HÀNH ĐỘNG (GIỐNG TRANG HTML) ----
+        boolean canCancel = r.isCancellableByCustomer();
+
+        boolean hasPendingCancel = cancellationRequestRepository
+                .existsByServiceRequestIdAndStatus(
+                        requestId,
+                        CancellationRequest.STATUS_REQUESTED
+                );
+
+        boolean canRequestCancel =
+                !canCancel
+                        && r.isCancellationRequestAllowedByCustomer()
+                        && !hasPendingCancel;
+
+        return DetailDTO.from(r, c, dtf, canCancel, canRequestCancel, hasPendingCancel);
     }
 
     // ================== API CANCEL (HỦY TRỰC TIẾP – GIAI ĐOẠN 1) ==================
@@ -340,7 +354,17 @@ public class CustomerRequestDetailApiController {
         public String contractSignedAtFormatted;
         public String contractAckAtFormatted;
 
-        public static DetailDTO from(ServiceRequest r, Contract c, DateTimeFormatter dtf) {
+        // 🔥 Thêm 3 flag cho phần hành động
+        public boolean canCancel;
+        public boolean canRequestCancel;
+        public boolean hasPendingCancel;
+
+        public static DetailDTO from(ServiceRequest r,
+                                     Contract c,
+                                     DateTimeFormatter dtf,
+                                     boolean canCancel,
+                                     boolean canRequestCancel,
+                                     boolean hasPendingCancel) {
             DetailDTO dto = new DetailDTO();
             dto.requestId = r.getRequestId();
             dto.status = r.getStatus();
@@ -387,6 +411,11 @@ public class CustomerRequestDetailApiController {
                     dto.contractAckAtFormatted = dtf.format(c.getAcknowledgedAt());
                 }
             }
+
+            // set 3 flag
+            dto.canCancel = canCancel;
+            dto.canRequestCancel = canRequestCancel;
+            dto.hasPendingCancel = hasPendingCancel;
 
             return dto;
         }

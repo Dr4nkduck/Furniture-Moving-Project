@@ -10,11 +10,11 @@
 
   function mapStatusToStepIndex(code) {
     const s = (code || "").toLowerCase();
-    if (s === "pending") return 0;                         // 1. Hợp đồng & Yêu cầu
-    if (s === "ready_to_pay" || s === "paid") return 1;    // 2. Thanh toán
-    if (s === "in_progress") return 2;                     // 3. Thực hiện
-    if (s === "completed") return 3;                       // 4. Hoàn tất
-    // nếu sau này có trạng thái "reviewed" thì có thể return 4 cho bước Đánh giá
+    if (s === "pending") return 0;                          // 1. Hợp đồng & Yêu cầu
+    if (s === "ready_to_pay" || s === "paid") return 1;     // 2. Thanh toán
+    if (s === "in_progress") return 2;                      // 3. Thực hiện
+    if (s === "completed") return 3;                        // 4. Hoàn tất
+    // nếu sau này có trạng thái "reviewed" thì return 4 cho bước Đánh giá
     return -1;
   }
 
@@ -23,9 +23,8 @@
     const idx = mapStatusToStepIndex(status);
 
     stepEls.forEach((el, i) => {
-      // hiển thị 1 step active duy nhất
       el.classList.toggle("fm-step--active", i === idx);
-      // nếu muốn có "đã hoàn thành" thì thêm class khác, VD:
+      // nếu muốn step đã hoàn thành thì thêm class khác, ví dụ:
       // el.classList.toggle("fm-step--done", i < idx);
     });
   }
@@ -52,6 +51,9 @@
 
   // ✅ Nút YÊU CẦU HỦY ĐƠN (giai đoạn 2 – sau thanh toán, chờ provider duyệt)
   const btnCancelPaid = root.querySelector(".js-cancel-request-paid");
+
+  // ✅ Note "Bạn đã gửi yêu cầu hủy..."
+  const notePendingCancel = root.querySelector(".js-pending-cancel-note");
 
   // ===== RATING ELEMENTS =====
   const elRatingButton =
@@ -119,6 +121,8 @@
         return "Đã thanh toán";
       case "FAILED":
         return "Thanh toán thất bại";
+      case "READY_TO_PAY":
+        return "Chờ thanh toán";
       default:
         return code || "";
     }
@@ -182,9 +186,26 @@
     if (!elPaymentBtn) return;
 
     if (canPayFromDetail(d)) {
-      elPaymentBtn.style.display = "inline-flex";
+      elPaymentBtn.classList.remove("d-none");
     } else {
-      elPaymentBtn.style.display = "none";
+      elPaymentBtn.classList.add("d-none");
+    }
+  }
+
+  // ===== ACTION BUTTON VISIBILITY (Hủy / Yêu cầu hủy / Note) =====
+  function applyActionVisibility(d) {
+    if (!d) return;
+
+    if (btnCancel) {
+      btnCancel.classList.toggle("d-none", !d.canCancel);
+    }
+
+    if (btnCancelPaid) {
+      btnCancelPaid.classList.toggle("d-none", !d.canRequestCancel);
+    }
+
+    if (notePendingCancel) {
+      notePendingCancel.classList.toggle("d-none", !d.hasPendingCancel);
     }
   }
 
@@ -529,6 +550,9 @@
 
         // ---- PAYMENT BUTTON REALTIME ----
         updatePaymentButton(d);
+
+        // ---- ACTION BUTTONS REALTIME (Hủy / Yêu cầu hủy / Note) ----
+        applyActionVisibility(d);
       })
       .catch((err) => console.debug("Realtime detail error:", err));
   }
