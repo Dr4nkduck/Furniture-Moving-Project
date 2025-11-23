@@ -2,7 +2,6 @@ package SWP301.Furniture_Moving_Project.service;
 
 import SWP301.Furniture_Moving_Project.dto.BankTransactionDTO;
 import SWP301.Furniture_Moving_Project.model.ServiceRequest;
-import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,16 +14,28 @@ import java.util.regex.Pattern;
 @Service
 public class PaymentReconcileService {
 
-    private final ServiceRequestRepository serviceRequestRepository;
+    private final ServiceRequestService serviceRequestService;
 
     private static final Pattern REQ_PATTERN = Pattern.compile("REQ(\\d+)", Pattern.CASE_INSENSITIVE);
 
-    public PaymentReconcileService(ServiceRequestRepository serviceRequestRepository) {
-        this.serviceRequestRepository = serviceRequestRepository;
+    public PaymentReconcileService(ServiceRequestService serviceRequestService) {
+        this.serviceRequestService = serviceRequestService;
     }
 
+    /**
+     * Đối soát sao kê ngân hàng:
+     *  - Tìm REQ{id} trong description
+     *  - So sánh amount với:
+     *      + 100% total_cost => FULL
+     *      + 20% total_cost  => DEPOSIT_20
+     *  - Gọi ServiceRequestService.markAsPaid(...) để cập nhật
+     *
+     *  Không còn sửa ServiceRequest.status = 'paid' / 'deposit_paid' nữa.
+     */
     @Transactional
     public void reconcile(List<BankTransactionDTO> txns) {
+        if (txns == null || txns.isEmpty()) return;
+
         for (BankTransactionDTO tx : txns) {
             try {
                 Integer requestId = extractRequestId(tx.getDescription());
@@ -33,12 +44,12 @@ public class PaymentReconcileService {
                     continue;
                 }
 
-                ServiceRequest sr = serviceRequestRepository.findById(requestId)
-                        .orElse(null);
+                ServiceRequest sr = serviceRequestService.findById(requestId).orElse(null);
                 if (sr == null) continue;
 
-                // Nếu đã paid rồi thì bỏ qua
-                if ("paid".equalsIgnoreCase(sr.getStatus())) {
+                // Nếu đã đánh dấu thanh toán rồi thì bỏ qua
+                if ("PAID".equalsIgnoreCase(sr.getPaymentStatus())
+                        || "DEPOSIT_PAID".equalsIgnoreCase(sr.getPaymentStatus())) {
                     continue;
                 }
 
@@ -49,19 +60,19 @@ public class PaymentReconcileService {
                 BigDecimal full   = total.setScale(0, RoundingMode.HALF_UP);
                 BigDecimal deposit20 = full.multiply(new BigDecimal("0.20")).setScale(0, RoundingMode.HALF_UP);
 
-                // So sánh amount: nếu bằng 100% hoặc 20% thì coi là hợp lệ
-                // (có thể cho phép lệch vài đồng nếu cần)
+                String paymentType;
                 if (amount.compareTo(full) == 0) {
-                    sr.setStatus("paid");
-                    // TODO: nếu sau này có thêm paymentType or paidAt thì set ở đây
+                    paymentType = "FULL";
                 } else if (amount.compareTo(deposit20) == 0) {
-                    sr.setStatus("deposit_paid");
+                    paymentType = "DEPOSIT_20";
                 } else {
                     // Số tiền không khớp, bỏ qua (hoặc log lại)
                     continue;
                 }
 
-                serviceRequestRepository.save(sr);
+                // Ghi nhận thanh toán qua service (cập nhật payment_status, paid_at, deposit_amount, ...)
+                serviceRequestService.markAsPaid(requestId, amount, paymentType);
+
             } catch (Exception ignored) {
                 // Có thể log ra nếu cần
             }

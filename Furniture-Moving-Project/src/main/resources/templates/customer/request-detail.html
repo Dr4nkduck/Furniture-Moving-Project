@@ -264,11 +264,11 @@
                 <div class="fm-section-title">Hành động</div>
 
                 <div class="fm-actions">
-                    <!-- Đi đến thanh toán nếu:
-                         1. Status là ready_to_pay và chưa PAID, HOẶC
-                         2. Status là pending nhưng đã có provider assigned và chưa PAID -->
+                    <!-- ✅ Đi đến thanh toán:
+                         Chỉ khi status là ready_to_pay và chưa PAID
+                         (trạng thái này sẽ có sau khi Provider bấm "Ghi nhận hợp đồng") -->
                     <a class="fm-btn-primary"
-                       th:if="${(request.status == 'ready_to_pay' or (request.status == 'pending' and request.providerId != null)) and (request.paymentStatus == null or request.paymentStatus != 'PAID')}"
+                       th:if="${request.status == 'ready_to_pay' and (request.paymentStatus == null or request.paymentStatus != 'PAID')}"
                        th:href="@{|/payment/${request.requestId}|}">
                         Đi đến thanh toán
                     </a>

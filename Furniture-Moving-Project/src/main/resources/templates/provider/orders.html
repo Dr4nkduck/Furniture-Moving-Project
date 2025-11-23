@@ -63,7 +63,8 @@
                     <select id="statusFilter" class="form-select">
                         <option value="">Tất cả trạng thái</option>
                         <option value="pending">Chờ xác nhận</option>
-                        <option value="accepted">Ghi nhận hợp đồng</option>
+                        <option value="ready_to_pay">Chờ thanh toán (đã ghi nhận HĐ)</option>
+                        <option value="paid">Đã thanh toán</option>
                         <option value="in_progress">Đang vận chuyển</option>
                         <option value="completed">Hoàn thành</option>
                         <option value="declined">Từ chối</option>
@@ -85,7 +86,7 @@
                                 <th>Giao hàng</th>
                                 <th>Ngày chuyển</th>
                                 <th>Trạng thái</th>
-                                <!-- 🔹 Cột mới: mã thanh toán REQ(id) để đối soát sao kê -->
+                                <!-- 🔹 Cột mã thanh toán REQ(id) để đối soát sao kê -->
                                 <th>Mã thanh toán (REQ)</th>
                                 <th class="text-end">Ước tính</th>
                             </tr>
@@ -151,11 +152,6 @@
                             <button class="btn btn-outline-secondary" data-act="accepted">Ghi nhận hợp đồng</button>
                             <button class="btn btn-outline-primary" data-act="in_progress">Bắt đầu vận chuyển</button>
                             <button class="btn btn-success" data-act="completed">Hoàn thành</button>
-
-                            <!-- NÚT MỚI: Provider xác nhận đã nhận tiền -->
-                            <button class="btn btn-warning" id="btnConfirmPaid" type="button">
-                                Xác nhận đã thanh toán
-                            </button>
 
                             <button class="btn btn-danger" data-act="cancelled">Hủy đơn</button>
                             <button class="btn btn-outline-danger ms-auto" data-act="declined">Từ chối</button>

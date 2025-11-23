@@ -102,6 +102,11 @@
   }
 
   // ============== polling status ==============
+  // Backend trả về data.status = paymentStatus của service_request
+  //   UNPAID           : đã được provider ghi nhận hợp đồng, nhưng chưa thấy tiền
+  //   PENDING_CONFIRM  : nghi ngờ đã chuyển, chờ admin đối soát sao kê
+  //   PAID             : admin đã xác nhận tiền về (lúc này provider thấy "Đã thanh toán")
+  //   FAILED / EXPIRED : phiên QR lỗi / hết hạn
   function startPolling(){
     if (!requestId) return;
     pollTimer && clearInterval(pollTimer);
@@ -112,38 +117,40 @@
         if (!res.ok) return;
         const data = await res.json();
 
-        if (data?.amount != null && amountEl) amountEl.textContent = formatCurrency(data.amount);
+        if (data?.amount != null && amountEl) {
+          amountEl.textContent = formatCurrency(data.amount);
+        }
         const st = String(data?.status || "").toUpperCase();
 
-        if (st === "PAID") {
+        if (st === "UNPAID" || st === "READY_TO_PAY") {
+          // Provider đã ghi nhận hợp đồng, chờ khách quét QR và chuyển khoản
+          setStatus("Vui lòng quét mã VietQR và chuyển khoản đúng số tiền.");
+          enableRetry(true);
+        } else if (st === "PENDING_CONFIRM") {
+          // Khách đã báo đã chuyển, admin đang đối soát
+          setStatus("Đã nhận yêu cầu thanh toán. Đang chờ quản trị viên xác nhận tiền về.");
+          enableRetry(false);
+        } else if (st === "PAID") {
+          // ✅ Chỉ ADMIN mới set trạng thái này
           clearTimers();
-          setStatus("Thanh toán thành công.");
+          setStatus("Thanh toán đã được xác nhận.");
           enableRetry(false);
 
-          // ✅ Hiện notification trên cùng rồi chuyển về /homepage
-          showTopNotification("Đã chuyển khoản thành công");
+          showTopNotification("Thanh toán thành công, đơn hàng đã được kích hoạt");
+          // Sau khi admin xác nhận xong thì redirect về trang chi tiết đơn cho user
           setTimeout(() => {
-            window.location.href = "/homepage";
+            window.location.href = `/customer/requests/${requestId}`;
           }, 1200);
-
-        } else if (st === "COMPLETED") {
-            clearTimers();
-            setStatus("Đã xác nhận");
-            if (statusEl) {
-              statusEl.style.color = '#10b981';
-            }
-            enableRetry(false);
-            showTopNotification("Đơn hàng đã được xác nhận");
         } else if (st === "FAILED") {
           clearTimers();
-          setStatus("Thanh toán thất bại. Vui lòng thử lại.");
+          setStatus("Thanh toán thất bại. Vui lòng tạo lại QR hoặc liên hệ hỗ trợ.");
           enableRetry(true);
         } else if (st === "EXPIRED") {
           clearTimers();
-          setStatus("Phiên thanh toán đã hết hạn.");
+          setStatus("Phiên thanh toán đã hết hạn. Vui lòng tạo lại mã QR.");
           enableRetry(true);
         }
-        // PENDING / READY_TO_PAY -> giữ nguyên, tiếp tục poll
+        // Các trạng thái khác (null, v.v.) -> giữ nguyên, tiếp tục poll
       } catch (_) {
         // bỏ qua lỗi tạm thời
       }

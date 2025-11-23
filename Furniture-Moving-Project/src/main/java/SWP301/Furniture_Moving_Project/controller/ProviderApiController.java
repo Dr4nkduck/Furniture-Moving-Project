@@ -4,16 +4,15 @@ import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
 import SWP301.Furniture_Moving_Project.dto.ProviderOrderUpdateStatusDTO;
 import SWP301.Furniture_Moving_Project.model.Provider;
+import SWP301.Furniture_Moving_Project.model.ServiceRequest;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
 import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
-
 
 import java.time.LocalDate;
 import java.util.*;
@@ -48,7 +47,7 @@ public class ProviderApiController {
         // If no status specified, return all providers (for request form dropdown)
         // If status specified, filter by that status
         List<Map<String, Object>> data;
-        
+
         if (status == null || status.isBlank()) {
             // Use native query to avoid lazy loading issues
             data = providerRepository.findAvailableProvidersLight();
@@ -66,7 +65,7 @@ public class ProviderApiController {
                     })
                     .collect(Collectors.toList());
         }
-        
+
         return Map.of("success", true, "data", data);
     }
 
@@ -131,17 +130,29 @@ public class ProviderApiController {
     // PV-004: Cập nhật trạng thái đơn
     @PutMapping("/{providerId}/orders/{orderId}/status")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
     public void updateOrderStatus(@PathVariable Integer providerId,
                                   @PathVariable Integer orderId,
                                   @RequestBody ProviderOrderUpdateStatusDTO body) {
+
+        // 1) Gọi service chuyên xử lý logic cho provider (log, validate, quyền hạn,...)
         providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
+
+        // 2) ✅ Đồng bộ status sang service_requests cho phía customer
+        //    để /customer/requests và /api/customer/requests nhìn thấy trạng thái mới
+        serviceRequestRepository.findById(orderId).ifPresent(sr -> {
+            // Nếu cần chuẩn hoá lowercase/uppercase thì xử lý ở đây
+            String newStatus = body.getStatus();
+            if (newStatus != null) {
+                newStatus = newStatus.trim();
+            }
+            sr.setStatus(newStatus);
+            serviceRequestRepository.save(sr);
+        });
     }
 
     // === Nút "Xác nhận đã thanh toán" cho Provider ===
-    // Provider đã tự kiểm tra sao kê ngân hàng, sau đó bấm nút trên UI.
-    // Chỉ đổi trạng thái order sang "paid" nếu:
-    //  - Đơn thuộc providerId này
-    //  - Đơn đang ở trạng thái "ready_to_pay"
+    // (nếu sau này bạn chuyển chức năng này sang Admin thì có thể xoá hoặc disable endpoint này)
     @PostMapping("/{providerId}/orders/{orderId}/confirm-payment")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmPayment(@PathVariable Integer providerId,
