@@ -67,14 +67,10 @@
                   <div class="col-6">
                     <label for="servicePackage">Gói dịch vụ</label>
                     <select id="servicePackage" name="servicePackageCode" required>
-                      <option value="" disabled selected>— Chọn gói —</option>
-                      <option value="HOME_FULL">Chuyển nhà trọn gói</option>
-                      <option value="OFFICE">Chuyển văn phòng</option>
-                      <option value="LOADING">Bốc xếp & kho bãi</option>
-                      <option value="INSTALL">Tháo lắp & đóng gói</option>
-                      <option value="INTERCITY">Vận chuyển liên tỉnh</option>
-                      <option value="TRUCK_RENT">Cho thuê xe tải</option>
-                    </select>
+  <!-- sẽ được JS đổ từ /api/service-packages -->
+                <option value="" disabled selected>Đang tải gói…</option>
+                </select>
+
                   </div>
                   <div class="col-6">
                     <label for="providerId">Nhà cung cấp (tuỳ chọn)</label>

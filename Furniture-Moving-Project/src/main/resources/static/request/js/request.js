@@ -1,3 +1,12 @@
+/* =====================================================================
+ *  REQUEST.JS – Tạo yêu cầu dịch vụ vận chuyển
+ *  - Load nhà cung cấp từ /api/providers
+ *  - Load gói dịch vụ từ /api/service-packages (từ DB)
+ *  - Preview ảnh, bảng đồ đạc, ước tính chi phí
+ *  - Bridge từ AI Quote (sessionStorage/localStorage)
+ *  - Lưu nháp form (localStorage)
+ * ===================================================================== */
+
 /* ========= Helpers ========= */
 const $  = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -24,7 +33,7 @@ function notify(msg, type = 'success', ms = 2500) {
   }, ms);
 }
 
-/* ========= Money helpers (NEW) ========= */
+/* ========= Money helpers ========= */
 function toVNDNumber(x) {
   if (x == null) return NaN;
   if (typeof x === 'number') return x;
@@ -37,7 +46,11 @@ function toVNDNumber(x) {
   const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
 }
-const vndFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+const vndFmt = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 0
+});
 function money(n) {
   const num = toVNDNumber(n);
   return Number.isFinite(num) ? vndFmt.format(num) : '—';
@@ -50,7 +63,7 @@ async function loadProviders() {
   const sel = document.getElementById('providerId');
   if (!sel) return;
   try {
-    const res = await fetch('/api/providers'); // mặc định ?status=verified
+    const res = await fetch('/api/providers');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const payload = await res.json();
     const list = payload.data || [];
@@ -68,7 +81,37 @@ async function loadProviders() {
     console.error('Load providers failed:', e);
   }
 }
-document.addEventListener('DOMContentLoaded', loadProviders);
+
+/* ========= Service packages: load từ DB ========= */
+async function loadServicePackages() {
+  const sel = document.getElementById('servicePackage');
+  if (!sel) return;
+
+  // trạng thái đang tải
+  sel.innerHTML = '<option value="" disabled selected>Đang tải gói…</option>';
+
+  try {
+    const res = await fetch('/api/service-packages');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const payload = await res.json();
+    const list = payload.data || [];
+
+    if (!list.length) {
+      sel.innerHTML = '<option value="" disabled selected>Chưa có gói dịch vụ</option>';
+      return;
+    }
+
+    let html = '<option value="" disabled selected>— Chọn gói —</option>';
+    list.forEach(p => {
+      // p.code = HOME_MOVE / OFFICE_MOVE..., p.name = tên gói
+      html += `<option value="${p.code}">${p.name}</option>`;
+    });
+    sel.innerHTML = html;
+  } catch (e) {
+    console.error('Load service packages failed:', e);
+    sel.innerHTML = '<option value="" disabled selected>Lỗi tải gói dịch vụ</option>';
+  }
+}
 
 /* ========= Images preview (multi + remove) ========= */
 const fileInput = $('#images');
@@ -104,7 +147,8 @@ function renderThumbs() {
       selectedFiles = selectedFiles.filter(x => fileKey(x) !== fileKey(f));
       try { URL.revokeObjectURL(url); } catch {}
       renderThumbs();
-      const sumImgs = $('#sumImgs'); if (sumImgs) sumImgs.textContent = String(selectedFiles.length);
+      const sumImgs = $('#sumImgs');
+      if (sumImgs) sumImgs.textContent = String(selectedFiles.length);
     });
 
     div.appendChild(img);
@@ -176,7 +220,7 @@ clearItemsBtn?.addEventListener('click', () => {
 
 /* ========= Summary & estimate ========= */
 
-// phí nhân công/đồ
+// phí nhân công/đồ (fallback)
 function calcMovingEstimate() {
   const base = 200_000;
   const perItem = 50_000;
@@ -209,7 +253,7 @@ function getDistanceFromAIQuote() {
   } catch { return null; }
 }
 
-// phí ship theo quãng đường
+// phí ship theo quãng đường (fallback)
 function calcShippingEstimate() {
   const aiKm = getDistanceFromAIQuote();
   let km = aiKm;
@@ -233,9 +277,8 @@ function calcEstimate() {
   return move + ship;
 }
 
-// === drop-in: updateSummary() – ưu tiên số từ AI-Quote ===
+// === updateSummary() – ưu tiên số từ AI-Quote ===
 function updateSummary() {
-  // ---- tiny helper: read AI-Quote pricing from sessionStorage (NEW)
   function readAIQuotePricing() {
     try {
       const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
@@ -414,7 +457,6 @@ function normalizeAiquoteDraft(raw) {
   const dateVN  = firstNonEmpty(raw?.schedule?.date, raw?.date);
   const timeAny = firstNonEmpty(raw?.schedule?.time, raw?.time);
 
-  // ---- Gom items từ nhiều nguồn khác nhau
   const candidateLists = [
     raw.items,
     raw.cart?.items,
@@ -444,7 +486,6 @@ function normalizeAiquoteDraft(raw) {
     distanceKm
   };
 }
-
 
 function prefillFromAiquoteDraft() {
   let draft = null;
@@ -481,26 +522,30 @@ function prefillFromAiquoteDraft() {
   }
 
   if (Array.isArray(d.items) && d.items.length && itemsBody) {
-  // luôn ghi đè bảng khi có dữ liệu từ AI
-  itemsBody.innerHTML = '';
-  d.items.forEach(it => addItemRow({
-    name: it.name ?? it.item ?? '',
-    qty:  Math.max(1, Number(it.qty || it.quantity) || 1),
-    len:  Number(it.len || it.lengthCm || it.length || 0),
-    wid:  Number(it.wid || it.widthCm  || it.width  || 0),
-    hgt:  Number(it.hgt || it.heightCm || it.height || 0),
-    wgt:  Number(it.wgt || it.weightKg || it.weight || 0),
-    fragile: !!it.fragile
-  }));
-}
-
+    itemsBody.innerHTML = '';
+    d.items.forEach(it => addItemRow({
+      name: it.name ?? it.item ?? '',
+      qty:  Math.max(1, Number(it.qty || it.quantity) || 1),
+      len:  Number(it.len || it.lengthCm || it.length || 0),
+      wid:  Number(it.wid || it.widthCm  || it.width  || 0),
+      hgt:  Number(it.hgt || it.heightCm || it.height || 0),
+      wgt:  Number(it.wgt || it.weightKg || it.weight || 0),
+      fragile: !!it.fragile
+    }));
+  }
 
   updateSummary();
 }
 
 /* ========= Load draft/bridge + init ========= */
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadProviders();
+  // load provider + gói dịch vụ song song
+  await Promise.all([
+    loadProviders(),
+    loadServicePackages()
+  ]);
+
+  // sau khi có options thì mới prefill từ AI Quote
   prefillFromAiquoteDraft();
 
   const bridgeKey = 'aiquote_payload_v1';
@@ -528,13 +573,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.pickup) {
           for (const k in data.pickup) {
             const el = document.querySelector(`[name="pickup.${k}"]`);
-            if (el) { if (el.type === 'checkbox') el.checked = !!data.pickup[k]; else el.value = data.pickup[k]; }
+            if (el) {
+              if (el.type === 'checkbox') el.checked = !!data.pickup[k];
+              else el.value = data.pickup[k];
+            }
           }
         }
         if (data.drop) {
           for (const k in data.drop) {
             const el = document.querySelector(`[name="drop.${k}"]`);
-            if (el) { if (el.type === 'checkbox') el.checked = !!data.drop[k]; else el.value = data.drop[k]; }
+            if (el) {
+              if (el.type === 'checkbox') el.checked = !!data.drop[k];
+              else el.value = data.drop[k];
+            }
           }
         }
         if (Array.isArray(data.items) && itemsBody) {
@@ -558,8 +609,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ========= Serialize to JSON cho API ========= */
-
-// đọc tổng từ AI-Quote nếu có
 function readAIQuoteTotal() {
   try {
     const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
@@ -609,7 +658,6 @@ function serialize(){
     items,
     preferredDate: fd.get('preferredDate') || '',
     preferredTime: fd.get('preferredTime') || '',
-    // ƯU TIÊN tổng từ AI-Quote, fallback sang ước tính FE
     estimatedCost: Number.isFinite(aiTotal) ? aiTotal : Number(calcEstimate())
   };
 }

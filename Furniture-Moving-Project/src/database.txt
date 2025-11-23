@@ -167,6 +167,12 @@ CREATE TABLE service_requests (
     preferred_date      DATE NOT NULL,
     status              VARCHAR(20) NOT NULL DEFAULT 'pending',
     total_cost          DECIMAL(10,2) NULL,
+    -- ===== CÁC CỘT THANH TOÁN ĐƯỢC THÊM TRỰC TIẾP TRONG DDL =====
+    deposit_amount      DECIMAL(18,2) NULL,
+    payment_type        VARCHAR(20)   NULL,  -- FULL / DEPOSIT / ...
+    payment_status      VARCHAR(20)   NULL,  -- PENDING / PAID / REFUNDED / ...
+    paid_at             DATETIME2     NULL,
+    -- =============================================================
     contract_id         INT NULL,
     created_at          DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     cancel_reason       NVARCHAR(255) NULL,
@@ -435,7 +441,6 @@ UPDATE authentication SET password_hash = '{noop}User@123'  WHERE user_id = 2;
 UPDATE authentication SET password_hash = '{noop}Prov@123'  WHERE user_id = 3;
 UPDATE authentication SET password_hash = '{noop}Prov2@123' WHERE user_id = 4;
 UPDATE authentication SET password_hash = '{noop}Prov3@123' WHERE user_id = 5;
-
 GO
 
 /* ============================================================
@@ -788,15 +793,13 @@ CREATE UNIQUE INDEX UX_products_price_base_size
 GO
 
 /* SEED cơ bản + thêm nhiều sản phẩm như file bạn gửi trước đó
-   (giữ nguyên để AI Quote dùng, mình giữ nguyên toàn bộ block seed dài) */
-
--- (Để tiết kiệm, mình không rút gọn: copy nguyên phần INSERT ... VALUES ... rất dài
---  giống hệt bạn gửi ở trên – bạn chỉ cần dán vào đây)
+   (giữ nguyên để AI Quote dùng, bạn tự dán block INSERT cũ vào đây) */
 
 -- >>> BẮT ĐẦU KHỐI INSERT SẢN PHẨM GỐC CỦA BẠN <<<
--- (Toàn bộ các INSERT INTO dbo.products_price ... VALUES ... ở script cũ)
--- Bạn dán nguyên khối insert sản phẩm ở đây, vì nó rất dài nên mình không rút gọn.
+-- INSERT INTO dbo.products_price(base_name, size_label, is_bulky, unit_price) VALUES
+-- (... toàn bộ block cũ của bạn ...);
 -- >>> KẾT THÚC KHỐI INSERT SẢN PHẨM GỐC CỦA BẠN <<<
+GO
 
 /* ============================================================
    11) AI_QUOTE_SETTINGS
