@@ -5,6 +5,31 @@
 
   const requestId = root.getAttribute("data-request-id");
 
+  // ====== STEPPER (5 BƯỚC TRÊN ĐẦU) ======
+  const stepEls = root.querySelectorAll(".fm-stepper .fm-step");
+
+  function mapStatusToStepIndex(code) {
+    const s = (code || "").toLowerCase();
+    if (s === "pending") return 0;                         // 1. Hợp đồng & Yêu cầu
+    if (s === "ready_to_pay" || s === "paid") return 1;    // 2. Thanh toán
+    if (s === "in_progress") return 2;                     // 3. Thực hiện
+    if (s === "completed") return 3;                       // 4. Hoàn tất
+    // nếu sau này có trạng thái "reviewed" thì có thể return 4 cho bước Đánh giá
+    return -1;
+  }
+
+  function applyStepper(status) {
+    if (!stepEls || !stepEls.length) return;
+    const idx = mapStatusToStepIndex(status);
+
+    stepEls.forEach((el, i) => {
+      // hiển thị 1 step active duy nhất
+      el.classList.toggle("fm-step--active", i === idx);
+      // nếu muốn có "đã hoàn thành" thì thêm class khác, VD:
+      // el.classList.toggle("fm-step--done", i < idx);
+    });
+  }
+
   const elStatus = root.querySelector(".js-status");
   const elPayment = root.querySelector(".js-payment-status");
   const elPaymentEmpty = root.querySelector(".js-payment-empty"); // khi paymentStatus null
@@ -427,6 +452,9 @@
       .then((r) => r.json())
       .then((d) => {
         if (!d) return;
+
+        // ====== CẬP NHẬT STEPPER THEO STATUS ======
+        applyStepper(d.status);
 
         // ---- REQUEST STATUS ----
         if (elStatus) {

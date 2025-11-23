@@ -166,6 +166,47 @@ public class CustomerRequestController {
     }
 
     /**
+     * API cho trang chi tiết: trả về trạng thái hiện tại (dùng cho polling)
+     * GET /customer/requests/{id}/status
+     */
+    @GetMapping("/requests/{id}/status")
+    @ResponseBody
+    public Map<String, Object> getRequestStatus(@PathVariable("id") Integer requestId) {
+        Integer customerId = getCurrentCustomerId();
+
+        ServiceRequest request = serviceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!customerId.equals(request.getCustomerId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        // Tính lại các flag giống viewRequestDetail để nút bấm cũng có thể realtime nếu muốn
+        boolean canCancel = request.isCancellableByCustomer();
+
+        boolean hasPendingCancel = cancellationRequestRepository
+                .existsByServiceRequestIdAndStatus(
+                        requestId,
+                        CancellationRequest.STATUS_REQUESTED
+                );
+
+        boolean canRequestCancel =
+                !canCancel
+                        && request.isCancellationRequestAllowedByCustomer()
+                        && !hasPendingCancel;
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", request.getStatus());                 // pending / ready_to_pay / ...
+        res.put("paymentStatus", request.getPaymentStatus());   // PENDING / PAID / FAILED / ...
+        res.put("paidAt", request.getPaidAt());                 // để JS hiển thị lại "Thời điểm thanh toán"
+        res.put("canCancel", canCancel);
+        res.put("canRequestCancel", canRequestCancel);
+        res.put("hasPendingCancel", hasPendingCancel);
+
+        return res;
+    }
+
+    /**
      * Add login info to model for navbar
      */
     private void addLoginInfo(Model model) {
