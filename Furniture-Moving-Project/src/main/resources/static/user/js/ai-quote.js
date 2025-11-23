@@ -440,7 +440,7 @@ async function calcDistance(orig, dest) {
 }
 
 /* ========= Gemini ========= */
-const API_KEY = "AIzaSyBuov9ALwMdUv_75bCm0bz9acq9p0Ou3qc"; // <-- Nên chuyển về BE/proxy
+const API_KEY = "AIzaSyBOPLfJpizsnHwB9WCOqs6EFtpVUz06ndw"; // <-- Nên chuyển về BE/proxy
 let MODEL = "gemini-2.0-flash";
 const FALLBACK_MODEL = "gemini-2.5-flash";
 const buildApiUrl = () => `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
@@ -1168,50 +1168,39 @@ function findWeightRuleForName(name) {
 
 /* ========= Config ========= */
 const CFG_KEY = "ai_quote_cfg_v8_books_append_cart_corrections";
-function defaultSettings(){ 
-  return {
-    currency:"VND",
-    pricePerKm: 10000,
-    minFare: 50000,
-    basePrompt:
-`Bạn là “Trợ lý Báo giá Vận chuyển”.
-Chỉ trả lời trong phạm vi vận chuyển. Không trả JSON/code.
+// cấu hình dùng toàn file
+let SETTINGS = {
+  currency: "VND",
+  pricePerKm: 10000,
+  minFare: 50000,
+  maxDaysAhead: 30,
+};
 
-Người dùng có thể nói chuyện tự nhiên, dùng xưng hô (em, anh, chị, mình...), nói lan man.
-Hãy bỏ qua phần xã giao, chỉ tập trung vào nội dung liên quan tới:
-- Đồ vật cần chuyển, số lượng, đặc điểm (to, nhỏ, nặng, cồng kềnh...).
-- Thông tin vận chuyển (ngày giờ, địa chỉ đi/đến, tên, số điện thoại).
+// Hàm đọc từ backend
+async function loadSettingsFromServer() {
+  try {
+    const res = await fetch("/api/ai/settings", { cache: "no-store" });
+    if (!res.ok) return; // giữ nguyên default nếu API lỗi
 
-Nhiệm vụ chính khi có ảnh:
-- Nhận diện đồ nội thất, thiết bị, thùng carton, đồ gia dụng trong ảnh.
-- Đếm số lượng từng hạng mục và gộp theo loại (vd: "tủ quần áo 3 cánh", "giường đôi", "bàn làm việc", "ghế xoay", "thùng carton nhỏ"...).
+    const data = await res.json();
 
-ĐẶC BIỆT với SÁCH:
-- Nhận diện sách, quyển sách, cuốn sách, thùng sách, chồng sách,...
-- Ước lượng SỐ QUYỂN SÁCH (không cần chính xác 100%, chỉ cần hợp lý).
-- KHÔNG gộp sách chung với đồ khác.
+    SETTINGS.currency     = data.currency     ?? SETTINGS.currency;
+    SETTINGS.pricePerKm   = Number(data.pricePerKm ?? SETTINGS.pricePerKm);
+    SETTINGS.minFare      = Number(data.minFare ?? SETTINGS.minFare);
+    SETTINGS.maxDaysAhead = Number(data.maxDaysAhead ?? SETTINGS.maxDaysAhead);
 
-Nếu không chắc tên, ghi tên mô tả (vd: "thùng carton nhỏ", "tủ gỗ 3 cánh", "kệ để đồ", "sách lẫn lộn trên bàn").
-
-Định dạng trả về:
-- Với mỗi hạng mục, in 1 dòng:
-
-  <Tên>: <SL> cái — đơn giá <X> VND — tạm tính <Y> VND
-
-  (Đối với sách và đồ tính theo kg, vẫn dùng định dạng trên; FE sẽ tự quy đổi số lượng sang kg và tính tiền theo kg.)
-
-- Cuối cùng in dòng:
-  Tổng tạm tính: <Số tiền> VND
-
-QUY TẮC:
-- KHÔNG dùng Markdown đậm hoặc bullet đặc biệt.
-- KHÔNG in JSON, KHÔNG in code.
-- KHÔNG trả lời các câu hỏi ngoài chủ đề vận chuyển.
-
-Sau khi liệt kê xong, kết thúc bằng một câu gợi ý người dùng kiểm tra lại danh sách và xác nhận.`,
-    items:[]
-  };
+    console.log("Loaded AI settings from server:", SETTINGS);
+  } catch (e) {
+    console.error("Cannot load AI settings, fallback to default", e);
+  }
 }
+
+// Nếu bạn vẫn muốn giữ API cũ defaultSettings() thì:
+function defaultSettings() {
+  // dùng bản copy từ SETTINGS để mỗi request có object riêng
+  return { ...SETTINGS };
+}
+
 function loadSettings(){
   try { 
     return JSON.parse(localStorage.getItem(CFG_KEY)) || defaultSettings();
@@ -2432,7 +2421,7 @@ if (sendMessage) {
 
 /* ========= Bootstrap products (lấy trực tiếp từ DB) ========= */
 (async function bootstrapProducts() {
-  const s = loadSettings();
+    await loadSettingsFromServer();  
   let loaded = [];
   try {
     const r = await fetch(PRODUCTS_URL, { cache: "no-store" });
@@ -2459,7 +2448,7 @@ if (sendMessage) {
 
     normalized.push({ name, price });
   }
-
+const s = loadSettings();
   s.items = normalized;
   saveSettings(s);
 })();
