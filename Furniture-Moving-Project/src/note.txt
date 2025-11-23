@@ -2,3 +2,21 @@
 
 git reset --hard HEAD
 git clean -fd
+
+
+
+
+
+
+-- 
+SELECT 
+    product_price_id,
+    base_name,
+    size_label,
+    unit_price,
+    is_bulky,
+    is_active,
+    created_at
+FROM dbo.products_price
+ORDER BY base_name, size_label;
+// lay danh sách san pham

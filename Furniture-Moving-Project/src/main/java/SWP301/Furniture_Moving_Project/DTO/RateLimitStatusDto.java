@@ -1,4 +1,4 @@
-package SWP301.Furniture_Moving_Project.DTO;
+package SWP301.Furniture_Moving_Project.dto;
 
 public class RateLimitStatusDto {
     private Integer userId;

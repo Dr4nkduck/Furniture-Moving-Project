@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hợp đồng & Yêu cầu của tôi</title>
+
+    <!-- CSS Libraries for navbar and footer -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/homepage/css/style.css}" rel="stylesheet">
+    
+    <!-- CSS chung của project -->
+    <link rel="stylesheet" th:href="@{/dashboard/css/main.css}">
+    <!-- CSS riêng cho trang danh sách -->
+    <link rel="stylesheet" th:href="@{/customer/css/my-requests.css}">
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<div class="fm-page">
+
+    <!-- Stepper (flow của user) -->
+    <div class="fm-stepper">
+        <div class="fm-step fm-step--active"><span>1. Hợp đồng & Yêu cầu</span></div>
+        <div class="fm-step"><span>2. Thanh toán</span></div>
+        <div class="fm-step"><span>3. Thực hiện</span></div>
+        <div class="fm-step"><span>4. Hoàn tất</span></div>
+        <div class="fm-step"><span>5. Đánh giá</span></div>
+    </div>
+
+    <div class="fm-layout">
+
+        <!-- Cột trái: danh sách yêu cầu -->
+        <section class="fm-card">
+
+            <div class="fm-card-header">
+                <div>
+                    <div class="fm-card-title">Danh sách</div>
+                    <div class="fm-card-subtitle">Hợp đồng & Yêu cầu của tôi</div>
+                </div>
+            </div>
+
+            <!-- Filter bằng chip (text đã thân thiện) -->
+            <div class="fm-filter-row">
+                <a th:href="@{/customer/requests}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'ALL'} ? ' fm-chip--active'">Tất cả</a>
+
+                <a th:href="@{/customer/requests(status='pending')}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'pending'} ? ' fm-chip--active'">Đang chờ xác nhận</a>
+
+                <a th:href="@{/customer/requests(status='ready_to_pay')}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'ready_to_pay'} ? ' fm-chip--active'">Chờ thanh toán</a>
+
+                <a th:href="@{/customer/requests(status='paid')}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'paid'} ? ' fm-chip--active'">Đã thanh toán</a>
+
+                <a th:href="@{/customer/requests(status='in_progress')}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'in_progress'} ? ' fm-chip--active'">Đang thực hiện</a>
+
+                <a th:href="@{/customer/requests(status='completed')}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'completed'} ? ' fm-chip--active'">Hoàn tất dịch vụ</a>
+
+                <a th:href="@{/customer/requests(status='cancelled')}" class="fm-chip"
+                   th:classappend="${selectedStatus == 'cancelled'} ? ' fm-chip--active'">Đã huỷ</a>
+            </div>
+
+            <!-- Nếu không có request -->
+            <div class="fm-empty" th:if="${#lists.isEmpty(requests)}">
+                Bạn chưa có hợp đồng / yêu cầu nào.
+            </div>
+
+            <!-- Danh sách request -->
+            <div class="fm-request-list"
+                 th:attr="data-selected-status=${selectedStatus}">
+
+                <div class="fm-request-item"
+                     th:each="r : ${requests}"
+                     th:attr="data-request-id=${r.requestId}">
+
+                    <!-- Column 1 -->
+                    <div class="fm-req-main">
+
+                        <div class="fm-req-id">
+                            Yêu cầu #<span th:text="${r.requestId}">1</span>
+                        </div>
+
+                        <div class="fm-req-row">
+                            <div>
+                                <div class="fm-req-label">Ngày yêu cầu</div>
+                                <div class="fm-req-val"
+                                     th:text="${#temporals.format(r.requestDate, 'dd/MM/yyyy HH:mm')}">01/11/2025</div>
+                            </div>
+
+                            <div>
+                                <div class="fm-req-label">Ngày ưu tiên</div>
+                                <div class="fm-req-val"
+                                     th:text="${#temporals.format(r.preferredDate, 'dd/MM/yyyy')}">02/11/2025</div>
+                            </div>
+                        </div>
+
+                        <div class="fm-req-row" style="margin-top: 8px;">
+
+                            <!-- CONTRACT BADGE -->
+                            <div class="fm-badge fm-badge--contract">
+                                <span class="fm-badge-dot"></span>
+                                <span>
+                                    HĐ:
+                                    <span class="js-contract-text"
+                                          th:if="${r.contractId != null && contractsMap[r.contractId] != null}"
+                                          th:text="${
+                                              contractsMap[r.contractId].status == 'draft' ? 'Chưa ký #' + r.contractId :
+                                              contractsMap[r.contractId].status == 'signed' ? 'Đã ký #' + r.contractId :
+                                              contractsMap[r.contractId].status == 'acknowledged' ? 'Đơn vị vận chuyển đã xác nhận #' + r.contractId :
+                                              contractsMap[r.contractId].status == 'cancelled' ? 'Hợp đồng bị huỷ #' + r.contractId :
+                                              contractsMap[r.contractId].status + ' #' + r.contractId
+                                          }">
+                                    </span>
+                                    <span class="js-contract-text"
+                                          th:unless="${r.contractId != null && contractsMap[r.contractId] != null}">
+                                        Chưa tạo
+                                    </span>
+                                </span>
+                            </div>
+
+                            <!-- REQUEST STATUS (hiển thị thân thiện, vẫn giữ class status-* cho màu + realtime) -->
+                            <div class="fm-badge js-status-badge"
+                                 th:classappend="' status-' + ${r.status}">
+                                <span class="fm-badge-dot"></span>
+                                <span th:text="${
+                                        r.status == 'pending' ? 'Đang chờ xác nhận' :
+                                        r.status == 'ready_to_pay' ? 'Chờ thanh toán' :
+                                        r.status == 'paid' ? 'Đã thanh toán' :
+                                        r.status == 'in_progress' ? 'Đang thực hiện' :
+                                        r.status == 'completed' ? 'Hoàn tất dịch vụ' :
+                                        r.status == 'cancelled' ? 'Đã huỷ' :
+                                        r.status
+                                }"></span>
+                            </div>
+
+                            <!-- PAYMENT (hiển thị thân thiện) -->
+                            <div class="fm-badge js-payment-badge"
+                                 th:if="${r.paymentStatus != null}">
+                                <span class="fm-badge-dot"></span>
+                                <span th:text="${
+                                        r.paymentStatus == 'PENDING' ? 'Thanh toán: Chưa thanh toán' :
+                                        r.paymentStatus == 'PAID' ? 'Thanh toán: Đã thanh toán' :
+                                        r.paymentStatus == 'FAILED' ? 'Thanh toán: Thanh toán thất bại' :
+                                        'Thanh toán: ' + r.paymentStatus
+                                }"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2 -->
+                    <div class="fm-req-main">
+                        <div class="fm-req-label">Tổng chi phí (ước tính)</div>
+                        <div class="fm-req-amount js-total-cost"
+                             th:text="${r.totalCost != null ? #numbers.formatDecimal(r.totalCost, 0, 'COMMA', 0, 'POINT') + ' đ' : '—'}">
+                            600.000 đ
+                        </div>
+
+                        <div class="fm-req-row" style="margin-top: 10px;">
+                            <div>
+                                <div class="fm-req-label">Ngày ký HĐ</div>
+                                <div class="fm-req-val js-contract-signed-at">
+                                    <span th:if="${r.contractId != null &&
+                                                  contractsMap[r.contractId] != null &&
+                                                  contractsMap[r.contractId].signedAt != null}"
+                                          th:text="${#temporals.format(contractsMap[r.contractId].signedAt, 'dd/MM/yyyy HH:mm')}">
+                                    </span>
+                                    <span th:unless="${r.contractId != null &&
+                                                      contractsMap[r.contractId] != null &&
+                                                      contractsMap[r.contractId].signedAt != null}">
+                                        —
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3 (actions) -->
+                    <div style="text-align: right;">
+                        <a th:href="@{|/customer/requests/${r.requestId}|}" class="fm-link-detail">
+                            Xem chi tiết
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Cột phải: tổng quan -->
+        <aside class="fm-card">
+            <div class="fm-card-header">
+                <div class="fm-card-title">Tổng quan</div>
+                <div class="fm-card-subtitle">Tóm tắt & Gợi ý</div>
+            </div>
+
+            <p style="font-size: 13px; color: #a5afce; margin-bottom: 8px;">
+                Trang này hiển thị toàn bộ <strong>hợp đồng</strong> và
+                <strong>yêu cầu dịch vụ</strong> mà bạn đã tạo.
+            </p>
+
+            <ul style="font-size: 13px; color: #c3c9ea; padding-left: 18px; margin-top: 6px;">
+                <li>Bấm vào <strong>chip trạng thái</strong> để lọc nhanh.</li>
+                <li>Nhấn <strong>Xem chi tiết</strong> để xem địa chỉ, lịch hẹn, gói dịch vụ.</li>
+                <li>Nếu trạng thái là <strong>Chờ thanh toán</strong>, bạn sẽ thấy nút thanh toán trong trang chi tiết.</li>
+            </ul>
+        </aside>
+    </div>
+</div>
+
+<!-- JS realtime -->
+<script th:src="@{/customer/js/my-requests.js}"></script>
+
+<!-- Footer -->
+<div th:replace="fragments/footer :: footer"></div>
+
+<!-- JavaScript Libraries for navbar and footer -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/homepage/lib/wow/wow.min.js}"></script>
+<script th:src="@{/homepage/js/main.js}"></script>
+
+</body>
+</html>

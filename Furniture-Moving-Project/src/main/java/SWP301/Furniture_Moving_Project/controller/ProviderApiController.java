@@ -1,22 +1,19 @@
 package SWP301.Furniture_Moving_Project.controller;
 
-import SWP301.Furniture_Moving_Project.dto.ProviderDTO;
-import SWP301.Furniture_Moving_Project.dto.ProviderPricingDTO;
-import SWP301.Furniture_Moving_Project.dto.ProviderPackagePricingDTO;
-import SWP301.Furniture_Moving_Project.dto.FurniturePriceDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderDetailDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderSummaryDTO;
+import SWP301.Furniture_Moving_Project.dto.ProviderOrderUpdateStatusDTO;
 import SWP301.Furniture_Moving_Project.model.Provider;
-import SWP301.Furniture_Moving_Project.model.Review;
 import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
-import SWP301.Furniture_Moving_Project.repository.ReviewRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
-import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
-import SWP301.Furniture_Moving_Project.service.ProviderCatalogService;
-// import SWP301.Furniture_Moving_Project.service.ProviderOrderService; // <- Uncomment if you already added PV-003
+import SWP301.Furniture_Moving_Project.service.ProviderOrderService;
 
-import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+
 
 import java.time.LocalDate;
 import java.util.*;
@@ -29,85 +26,80 @@ public class ProviderApiController {
 
     private final ProviderRepository providerRepository;
     private final ServiceRequestRepository serviceRequestRepository;
-    private final ReviewRepository reviewRepository;
-
-    // PV-002 (existing global pricing)
-    private final ProviderPricingService providerPricingService;
-
-    // PV-002 (new package + furniture catalog)
-    private final ProviderCatalogService providerCatalogService;
-
-    // PV-003/004/005 (orders) – inject when you’re ready
-    // private final ProviderOrderService providerOrderService;
+    private final ProviderOrderService providerOrderService;
 
     public ProviderApiController(ProviderRepository providerRepository,
-                                 ProviderPricingService providerPricingService,
-                                 ProviderCatalogService providerCatalogService,
                                  ServiceRequestRepository serviceRequestRepository,
-                                 ReviewRepository reviewRepository
-                                 // , ProviderOrderService providerOrderService
-    ) {
+                                 ProviderOrderService providerOrderService) {
         this.providerRepository = providerRepository;
-        this.providerPricingService = providerPricingService;
-        this.providerCatalogService = providerCatalogService;
         this.serviceRequestRepository = serviceRequestRepository;
-        this.reviewRepository = reviewRepository;
-        // this.providerOrderService = providerOrderService;
+        this.providerOrderService = providerOrderService;
     }
 
-    // -------------------------------------------------------------------------
-    // BASIC LIST
-    // -------------------------------------------------------------------------
+    /** (Tuỳ chọn) Endpoint nhẹ cho dropdown: /api/providers/available */
+    @GetMapping("/available")
+    public List<Map<String, Object>> getAvailableProvidersLight() {
+        return providerRepository.findAvailableProvidersLight();
+    }
+
     @GetMapping
-    public ResponseEntity<Map<String, Object>> list() {
-        List<Provider> entities = providerRepository.findAll();
-
-        List<ProviderDTO> data = entities.stream()
-                .map(p -> new ProviderDTO(
-                        p.getProviderId(),
-                        p.getCompanyName(),
-                        p.getRating()
-                ))
-                .collect(Collectors.toList());
-
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("success", true);
-        resp.put("data", data);
-        return ResponseEntity.ok(resp);
+    @Transactional(readOnly = true)
+    public Map<String, Object> list(@RequestParam(required = false) String status) {
+        // If no status specified, return all providers (for request form dropdown)
+        // If status specified, filter by that status
+        List<Map<String, Object>> data;
+        
+        if (status == null || status.isBlank()) {
+            // Use native query to avoid lazy loading issues
+            data = providerRepository.findAvailableProvidersLight();
+        } else {
+            // Filter by status using entity query
+            data = providerRepository
+                    .findByVerificationStatusOrderByCompanyNameAsc(status)
+                    .stream()
+                    .map(p -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("providerId", p.getProviderId());
+                        m.put("companyName", p.getCompanyName());
+                        m.put("rating", p.getRating());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+        }
+        
+        return Map.of("success", true, "data", data);
     }
 
-    // Search providers by name: GET /api/providers/search?name=...
+    // SEARCH: GET /api/providers/search?name=...
     @GetMapping("/search")
-    public ResponseEntity<Map<String, Object>> search(@RequestParam("name") String name) {
-        List<Provider> entities = (name == null || name.isBlank())
+    public ResponseEntity<Map<String, Object>> search(@RequestParam(required = false) String name) {
+        var list = (name == null || name.isBlank())
                 ? providerRepository.findAll()
                 : providerRepository.findByCompanyNameContainingIgnoreCase(name.trim());
 
-        List<ProviderDTO> data = entities.stream()
-                .map(p -> new ProviderDTO(
-                        p.getProviderId(),
-                        p.getCompanyName(),
-                        p.getRating()
-                ))
-                .collect(Collectors.toList());
+        var data = list.stream().map(p -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("providerId", p.getProviderId());
+            m.put("companyName", p.getCompanyName());
+            m.put("rating", p.getRating());
+            return m;
+        }).collect(Collectors.toList());
 
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("success", true);
-        resp.put("data", data);
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
-    // Availability by date: GET /api/providers/availability?date=YYYY-MM-DD
+    // AVAILABILITY: GET /api/providers/availability?date=YYYY-MM-DD
     @GetMapping("/availability")
     public ResponseEntity<Map<String, Object>> availability(@RequestParam("date") String dateStr) {
         LocalDate date = LocalDate.parse(dateStr);
-        List<Provider> providers = providerRepository.findAll();
         List<String> busyStatuses = Arrays.asList("assigned", "in_progress");
 
-        List<Map<String, Object>> data = new ArrayList<>();
-        for (Provider p : providers) {
+        var data = new ArrayList<Map<String, Object>>();
+        for (Provider p : providerRepository.findAll()) {
             long busyCount = serviceRequestRepository
-                    .countByProviderIdAndPreferredDateAndStatusIn(p.getProviderId(), date, busyStatuses);
+                    .countByProviderIdAndPreferredDateAndStatusIn(
+                            p.getProviderId(), date, busyStatuses);
+
             Map<String, Object> m = new HashMap<>();
             m.put("providerId", p.getProviderId());
             m.put("companyName", p.getCompanyName());
@@ -117,129 +109,60 @@ public class ProviderApiController {
             data.add(m);
         }
 
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("success", true);
-        resp.put("data", data);
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
-    // -------------------------------------------------------------------------
-    // PV-002 (A) – Your existing GLOBAL provider pricing (keep as default)
-    // Paths are FIXED to be relative to /api/providers
-    // -------------------------------------------------------------------------
-
-    // GET /api/providers/pricing
-    @GetMapping("/pricing")
-    public ResponseEntity<ProviderPricingDTO> getGlobalPricing(Authentication auth,
-                                                               @RequestParam(required = false) Integer providerId) {
-        Integer pid = resolveProviderId(auth, providerId);
-        return ResponseEntity.ok(providerPricingService.getPricing(pid));
+    // PV-003: List/Search orders của provider
+    // GET /api/providers/{providerId}/orders?status=...&q=...
+    @GetMapping("/{providerId}/orders")
+    public List<ProviderOrderSummaryDTO> listOrders(@PathVariable Integer providerId,
+                                                    @RequestParam(required = false) String status,
+                                                    @RequestParam(required = false, name = "q") String q) {
+        return providerOrderService.listOrders(providerId, status, q);
     }
 
-    // PUT /api/providers/pricing
-    @PutMapping("/pricing")
-    public ResponseEntity<ProviderPricingDTO> upsertGlobalPricing(@Valid @RequestBody ProviderPricingDTO dto,
-                                                                  Authentication auth,
-                                                                  @RequestParam(required = false) Integer providerId) {
-        Integer pid = resolveProviderId(auth, providerId);
-        return ResponseEntity.ok(providerPricingService.upsertPricing(pid, dto));
+    // GET /api/providers/{providerId}/orders/{orderId}
+    @GetMapping("/{providerId}/orders/{orderId}")
+    public ProviderOrderDetailDTO getOrderDetail(@PathVariable Integer providerId,
+                                                 @PathVariable Integer orderId) {
+        return providerOrderService.getOrderDetail(providerId, orderId);
     }
 
-    // -------------------------------------------------------------------------
-    // PV-002 (B) – NEW: Package dropdown + per-package route fees + furniture prices
-    // These do NOT replace your global pricing; they add per-package detail.
-    // -------------------------------------------------------------------------
+    // PV-004: Cập nhật trạng thái đơn
+    @PutMapping("/{providerId}/orders/{orderId}/status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateOrderStatus(@PathVariable Integer providerId,
+                                  @PathVariable Integer orderId,
+                                  @RequestBody ProviderOrderUpdateStatusDTO body) {
+        providerOrderService.updateOrderStatus(providerId, orderId, body.getStatus(), body.getCancelReason());
+    }
 
-    // GET /api/providers/packages  -> dropdown data (id, code, name)
-    @GetMapping("/packages")
-    public ResponseEntity<List<Map<String, Object>>> listPackages() {
-        var list = providerCatalogService.listActivePackages();
-        var out = new ArrayList<Map<String, Object>>();
-        for (var sp : list) {
-            var m = new HashMap<String, Object>();
-            m.put("packageId", sp.getPackageId());
-            m.put("code", sp.getCode());
-            m.put("name", sp.getName());
-            out.add(m);
+    // === Nút "Xác nhận đã thanh toán" cho Provider ===
+    // Provider đã tự kiểm tra sao kê ngân hàng, sau đó bấm nút trên UI.
+    // Chỉ đổi trạng thái order sang "paid" nếu:
+    //  - Đơn thuộc providerId này
+    //  - Đơn đang ở trạng thái "ready_to_pay"
+    @PostMapping("/{providerId}/orders/{orderId}/confirm-payment")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmPayment(@PathVariable Integer providerId,
+                               @PathVariable Integer orderId) {
+        providerOrderService.confirmPayment(providerId, orderId);
+    }
+
+    // GET /api/providers/me - Lấy thông tin provider hiện tại
+    @GetMapping("/me")
+    public Map<String, Object> me(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalArgumentException("Chưa đăng nhập");
         }
-        return ResponseEntity.ok(out);
-    }
+        String username = auth.getName();
+        Integer providerId = providerRepository
+                .findProviderIdByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
 
-    // GET /api/providers/packages/pricing?packageId=...&providerId=...
-    @GetMapping("/packages/pricing")
-    public ResponseEntity<ProviderPackagePricingDTO> getPackagePricing(Authentication auth,
-                                                                       @RequestParam Integer packageId,
-                                                                       @RequestParam(required = false) Integer providerId) {
-        Integer pid = resolveProviderId(auth, providerId);
-        return ResponseEntity.ok(providerCatalogService.getPackagePricing(pid, packageId));
-    }
-
-    // PUT /api/providers/packages/pricing?providerId=...
-    @PutMapping("/packages/pricing")
-    public ResponseEntity<ProviderPackagePricingDTO> upsertPackagePricing(Authentication auth,
-                                                                          @Valid @RequestBody ProviderPackagePricingDTO dto,
-                                                                          @RequestParam(required = false) Integer providerId) {
-        Integer pid = resolveProviderId(auth, providerId);
-        return ResponseEntity.ok(providerCatalogService.upsertPackagePricing(pid, dto));
-    }
-
-    // GET /api/providers/furniture-prices?providerId=...
-    @GetMapping("/furniture-prices")
-    public ResponseEntity<List<FurniturePriceDTO>> getFurniturePrices(Authentication auth,
-                                                                      @RequestParam(required = false) Integer providerId) {
-        Integer pid = resolveProviderId(auth, providerId);
-        return ResponseEntity.ok(providerCatalogService.listFurniturePrices(pid));
-    }
-
-    // PUT /api/providers/furniture-prices?providerId=...
-    @PutMapping("/furniture-prices")
-    public ResponseEntity<List<FurniturePriceDTO>> upsertFurniturePrices(Authentication auth,
-                                                                         @RequestBody List<FurniturePriceDTO> items,
-                                                                         @RequestParam(required = false) Integer providerId) {
-        Integer pid = resolveProviderId(auth, providerId);
-        return ResponseEntity.ok(providerCatalogService.upsertFurniturePrices(pid, items));
-    }
-
-    // -------------------------------------------------------------------------
-    // Reviews API – customer feedback per provider
-    // -------------------------------------------------------------------------
-    @GetMapping("/{providerId}/reviews")
-    public ResponseEntity<List<Map<String, Object>>> listReviews(@PathVariable Integer providerId) {
-        List<Review> reviews = reviewRepository.findByProviderIdOrderByCreatedAtDesc(providerId);
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (Review r : reviews) {
-            Map<String, Object> m = new HashMap<>();
-            m.put("reviewId", r.getReviewId());
-            m.put("rating", r.getRating());
-            m.put("comment", r.getComment());
-            m.put("createdAt", r.getCreatedAt());
-            out.add(m);
-        }
-        return ResponseEntity.ok(out);
-    }
-
-    // -------------------------------------------------------------------------
-    // PV-003/004/005 (optional – uncomment when service is ready)
-    // -------------------------------------------------------------------------
-
-    // // GET /api/providers/orders?status=assigned&status=in_progress&providerId=...
-    // @GetMapping("/orders")
-    // public ResponseEntity<List<ProviderOrderListItemDTO>> listOrders(
-    //         Authentication auth,
-    //         @RequestParam(required = false) Integer providerId,
-    //         @RequestParam(required = false, name = "status") List<String> statuses) {
-    //     Integer pid = resolveProviderId(auth, providerId);
-    //     return ResponseEntity.ok(providerOrderService.listOrders(pid, statuses));
-    // }
-
-    // -------------------------------------------------------------------------
-    // Helper to resolve providerId (temporary)
-    // Later map from Authentication → providerId in your own way.
-    // -------------------------------------------------------------------------
-    private Integer resolveProviderId(Authentication auth, Integer providerId) {
-        if (providerId != null) return providerId;
-        // TODO: Map from auth.getName() to your User -> Provider (e.g., via repository)
-        // Throw for now so you can test with ?providerId=
-        throw new IllegalArgumentException("Missing providerId (for quick testing pass ?providerId=...)");
+        return Map.of(
+                "success", true,
+                "providerId", providerId
+        );
     }
 }

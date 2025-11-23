@@ -1,3 +1,4 @@
+// src/main/java/SWP301/Furniture_Moving_Project/config/SecurityConfig.java
 package SWP301.Furniture_Moving_Project.config;
 
 import SWP301.Furniture_Moving_Project.service.CustomUserDetailsService;
@@ -6,14 +7,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableMethodSecurity 
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
@@ -43,25 +42,41 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-   @Bean
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/homepage", "/login", "/register",
-                                 "/forgot/**",
-                                 "/css/**", "/js/**", "/images/**",
-                                 "/accountmanage/**", "/homepage/**", "/chatbot/**",
-                                 "/superadmin/**",
-                                 "/dashbooard/**","/customer-trends/**",
-                                 "/provider-stats/**" //✅ static của superadmin (css/js)
+                // Các URL public (không cần login)
+                .requestMatchers(
+                    "/", "/homepage", "/login", "/register",
+                    "/forgot/**",
+                    "/css/**", "/js/**", "/images/**",
+                    "/accountmanage/**",
+                    "/homepage/**",
+                    "/chatbot/**",
+                    "/superadmin/**",
+                    "/dashbooard/**",
+                    "/customer-trends/**",
+                    "/provider-stats/**",
+                    "/userdashboard",
+                    "/payment/css/**", "/payment/js/**", "/payment/images/**",
+                    "/services/**",
+                    "/orders/**",
+                    "/request/**"
                 ).permitAll()
-                .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
+
+                // API provider GET public
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers/**").permitAll()
+
+                // Các khu vực cần role
+                .requestMatchers("/superadmin/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers").permitAll()
+
+                // Các request còn lại bắt buộc phải login
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login
@@ -69,13 +84,16 @@ public class SecurityConfig {
                 .loginProcessingUrl("/perform_login")
                 .successHandler(successHandler)
                 .failureUrl("/login?error=true")
-                .permitAll())
+                .permitAll()
+            )
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/homepage")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-                .permitAll());
+                .permitAll()
+            );
+
         return http.build();
     }
 }

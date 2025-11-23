@@ -19,6 +19,7 @@ public class ServiceRequest {
     @Column(name = "customer_id", nullable = false)
     private Integer customerId;
 
+    // Provider được chỉ định (chính là assigned provider)
     @Column(name = "provider_id")
     private Integer providerId;
 
@@ -45,11 +46,30 @@ public class ServiceRequest {
     @Column(name = "created_at", columnDefinition = "datetime2")
     private LocalDateTime createdAt;
 
+    @Column(name = "contract_id")
+    private Integer contractId;
+
+    @Transient
+    private String cancelReason;
+
     @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FurnitureItem> furnitureItems = new ArrayList<>();
 
-    public ServiceRequest() {
-    }
+    // ==== Bổ sung cho thanh toán ====
+    @Column(name = "payment_status")
+    private String paymentStatus; // PENDING | PAID | FAILED | EXPIRED
+
+    @Column(name = "paid_at", columnDefinition = "datetime2")
+    private LocalDateTime paidAt;
+
+    @Column(name = "deposit_amount", precision = 10, scale = 2)
+    private BigDecimal depositAmount; // nếu chọn DEPOSIT_20 thì lưu số tiền đặt cọc
+
+    @Column(name = "payment_type")
+    private String paymentType; // DEPOSIT_20 | FULL
+
+    // ===== Constructor =====
+    public ServiceRequest() {}
 
     @PrePersist
     public void prePersist() {
@@ -58,36 +78,140 @@ public class ServiceRequest {
         if (status == null) status = "pending";
     }
 
-    @ManyToOne
-    @JoinColumn(name="assigned_provider_id")
-    private Provider assignedProvider;
+    // ===== Getters & Setters =====
+    public Integer getRequestId() {
+        return requestId;
+    }
 
-    // Optional: thời gian dự kiến
-    private java.time.LocalDateTime eta;
-    private String providerNote;
+    public void setRequestId(Integer requestId) {
+        this.requestId = requestId;
+    }
 
+    public Integer getCustomerId() {
+        return customerId;
+    }
 
-    // getters & setters
-    public Integer getRequestId() { return requestId; }
-    public void setRequestId(Integer requestId) { this.requestId = requestId; }
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
-    public Integer getProviderId() { return providerId; }
-    public void setProviderId(Integer providerId) { this.providerId = providerId; }
-    public Address getPickupAddress() { return pickupAddress; }
-    public void setPickupAddress(Address pickupAddress) { this.pickupAddress = pickupAddress; }
-    public Address getDeliveryAddress() { return deliveryAddress; }
-    public void setDeliveryAddress(Address deliveryAddress) { this.deliveryAddress = deliveryAddress; }
-    public LocalDateTime getRequestDate() { return requestDate; }
-    public void setRequestDate(LocalDateTime requestDate) { this.requestDate = requestDate; }
-    public LocalDate getPreferredDate() { return preferredDate; }
-    public void setPreferredDate(LocalDate preferredDate) { this.preferredDate = preferredDate; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public BigDecimal getTotalCost() { return totalCost; }
-    public void setTotalCost(BigDecimal totalCost) { this.totalCost = totalCost; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public List<FurnitureItem> getFurnitureItems() { return furnitureItems; }
-    public void setFurnitureItems(List<FurnitureItem> furnitureItems) { this.furnitureItems = furnitureItems; }
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
+
+    public Integer getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
+    }
+
+    public Address getPickupAddress() {
+        return pickupAddress;
+    }
+
+    public void setPickupAddress(Address pickupAddress) {
+        this.pickupAddress = pickupAddress;
+    }
+
+    public Address getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public void setDeliveryAddress(Address deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
+    }
+
+    public LocalDateTime getRequestDate() {
+        return requestDate;
+    }
+
+    public void setRequestDate(LocalDateTime requestDate) {
+        this.requestDate = requestDate;
+    }
+
+    public LocalDate getPreferredDate() {
+        return preferredDate;
+    }
+
+    public void setPreferredDate(LocalDate preferredDate) {
+        this.preferredDate = preferredDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public BigDecimal getTotalCost() {
+        return totalCost;
+    }
+
+    public void setTotalCost(BigDecimal totalCost) {
+        this.totalCost = totalCost;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Integer getContractId() {
+        return contractId;
+    }
+
+    public void setContractId(Integer contractId) {
+        this.contractId = contractId;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
+    public List<FurnitureItem> getFurnitureItems() {
+        return furnitureItems;
+    }
+
+    public void setFurnitureItems(List<FurnitureItem> furnitureItems) {
+        this.furnitureItems = furnitureItems;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public BigDecimal getDepositAmount() {
+        return depositAmount;
+    }
+
+    public void setDepositAmount(BigDecimal depositAmount) {
+        this.depositAmount = depositAmount;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
+    }
 }

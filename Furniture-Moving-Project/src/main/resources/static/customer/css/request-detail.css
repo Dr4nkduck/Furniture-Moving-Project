@@ -1,0 +1,290 @@
+/* ==== GLOBAL (detail page) ==== */
+body {
+    background: #050814;
+    color: #f5f5f5;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.fm-page {
+    max-width: 1200px;
+    margin: 32px auto 64px;
+    padding: 0 16px 40px;
+}
+
+/* ==== STEPPER (reuse style) ==== */
+.fm-stepper {
+    background: #0d111f;
+    border-radius: 24px;
+    padding: 16px 24px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+}
+
+.fm-step {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-align: left;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #f5f5f5;
+    background: #141a2a;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.fm-step span {
+    font-weight: 600;
+}
+
+.fm-step--active {
+    background: #ffb400;
+    color: #111;
+    opacity: 1;
+}
+
+/* ==== LAYOUT ==== */
+.fm-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .fm-detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==== CARD ==== */
+.fm-card {
+    background: #0d111f;
+    border-radius: 24px;
+    padding: 20px 22px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
+.fm-card--primary {
+    border: 1px solid #1f2937;
+}
+
+.fm-card--side {
+    border: 1px solid #242b3c;
+}
+
+/* ==== CARD HEADER ==== */
+.fm-card-header {
+    margin-bottom: 16px;
+}
+
+.fm-card-title {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 13px;
+    color: #ffb400;
+    font-weight: 700;
+}
+
+.fm-card-subtitle {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* ==== SECTION BLOCKS ==== */
+.fm-section {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #161d2e;
+}
+
+.fm-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.fm-section-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #a5b0d8;
+    margin-bottom: 6px;
+}
+
+/* ==== ROWS (label + value) ==== */
+.fm-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .fm-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.fm-label {
+    color: #9ca3c7;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+}
+
+.fm-value {
+    color: #e7ecff;
+    font-size: 13px;
+    text-align: right;
+}
+
+@media (max-width: 768px) {
+    .fm-value {
+        text-align: left;
+    }
+}
+
+/* ==== MULTI COLUMN GRID ==== */
+.fm-grid-2col {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 16px;
+}
+
+@media (max-width: 768px) {
+    .fm-grid-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==== BADGES & STATUS ==== */
+.fm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid transparent;
+    background: #151b2b;
+    color: #cbd5ff;
+}
+
+.fm-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.fm-badge--request {
+    border-color: #27324a;
+}
+
+.fm-badge--payment {
+    border-color: #3b2b1a;
+    background: #1f1306;
+    color: #fed7aa;
+}
+
+.fm-badge--contract {
+    border-color: #2f3b5c;
+}
+
+/* Status colors (reuse với list) */
+.status-pending { color: #facc15; }
+.status-ready_to_pay { color: #f97316; }
+.status-paid { color: #4ade80; }
+.status-in_progress { color: #38bdf8; }
+.status-completed { color: #22c55e; }
+.status-cancelled { color: #f87171; }
+
+/* ==== PRICE & HIGHLIGHT ==== */
+.fm-price-main {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffb400;
+}
+
+.fm-price-sub {
+    font-size: 12px;
+    color: #a5afce;
+}
+
+.fm-highlight-box {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: #111627;
+    border: 1px dashed #27324a;
+    font-size: 12px;
+    color: #c3c9ea;
+}
+
+/* ==== BUTTONS ==== */
+.fm-actions {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.fm-btn-primary {
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background: #ffb400;
+    color: #111827;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fm-btn-primary:hover {
+    background: #f59e0b;
+}
+
+.fm-btn-ghost {
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #4b5563;
+    background: transparent;
+    color: #e5e7eb;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.fm-btn-ghost:hover {
+    border-color: #9ca3af;
+}
+
+/* ==== BACK LINK ==== */
+.fm-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 20px;
+    font-size: 13px;
+    color: #9ca3c7;
+    text-decoration: none;
+}
+
+.fm-back-link:hover {
+    color: #ffb400;
+}

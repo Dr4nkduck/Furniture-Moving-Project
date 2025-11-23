@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>PV-003 • Đơn vận chuyển</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSRF cho các request POST/PUT/DELETE (nếu có _csrf) -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+
+    <!-- (tuỳ) inject providerId nếu bạn đã có từ backend -->
+    <meta name="provider-id" th:content="${providerId}"/>
+
+    <!-- Vendor -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+
+    <!-- Layout + Page styles -->
+    <link rel="stylesheet" th:href="@{/provider/css/provider-layout.css}">
+    <link rel="stylesheet" th:href="@{/provider/css/provider-orders.css}">
+</head>
+<body>
+
+<div class="page-app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand"><i class="bi bi-hash"></i> ProviderOP</div>
+        <div class="avatar">
+            <img th:src="@{/images/loginbg.jpg}" alt="avatar" style="width:36px;height:36px;border-radius:50%">
+            <div>
+                <div th:text="${#authentication?.name}">provider1</div>
+                <small style="color:var(--muted)">Provider</small>
+            </div>
+        </div>
+        <nav>
+            <ul class="nav">
+                <li><a th:href="@{/provider/dashboard}"><i class="bi bi-speedometer2"></i> Tổng quan</a></li>
+                <li><a th:href="@{/provider/services}"><i class="bi bi-gear-wide-connected"></i> Bảng giá & dịch vụ</a></li>
+                <li><a th:href="@{/provider/orders}"><i class="bi bi-box-seam"></i> Đơn hàng</a></li>
+                <li><a th:href="@{/provider/analytics}"><i class="bi bi-graph-up"></i> Phân tích</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+        <!-- Topbar -->
+        <div class="topbar">
+            <button class="sidebar-toggler" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
+            <div class="search"><input type="search" placeholder="Tìm kiếm nhanh…"></div>
+            <button id="theme-toggle" type="button">🌙 Dark</button>
+            <div class="ms-auto"></div>
+            <a href="/logout" class="btn btn-sm btn-outline-secondary">Đăng xuất</a>
+        </div>
+
+        <!-- Page body -->
+        <div class="container-xl py-4">
+            <div class="header d-flex align-items-center justify-content-between mb-3">
+                <h1 class="h4 m-0">Đơn vận chuyển</h1>
+                <div class="d-flex gap-2">
+                    <input id="searchInput" class="form-control" placeholder="Tìm theo #ID, tên KH, địa chỉ...">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="pending">Chờ xác nhận</option>
+                        <option value="accepted">Ghi nhận hợp đồng</option>
+                        <option value="in_progress">Đang vận chuyển</option>
+                        <option value="completed">Hoàn thành</option>
+                        <option value="declined">Từ chối</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                    <button id="btnRefresh" class="btn btn-primary">Lọc</button>
+                </div>
+            </div>
+
+            <div class="orders-layout">
+                <div class="orders card-dark">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0">
+                            <thead>
+                            <tr>
+                                <th>#ID</th>
+                                <th>Khách hàng</th>
+                                <th>Lấy hàng</th>
+                                <th>Giao hàng</th>
+                                <th>Ngày chuyển</th>
+                                <th>Trạng thái</th>
+                                <!-- 🔹 Cột mới: mã thanh toán REQ(id) để đối soát sao kê -->
+                                <th>Mã thanh toán (REQ)</th>
+                                <th class="text-end">Ước tính</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ordersTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="detail card-dark">
+                    <div id="emptyDetail" class="p-3 text-muted">Chọn một đơn để xem chi tiết.</div>
+                    <div id="detailContent" class="p-3 d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <h2 class="h6 mb-1">
+                                    Đơn #<span id="d-id"></span>
+                                </h2>
+                                <!-- 🔹 Hiển thị REQ(id) trong panel chi tiết -->
+                                <div class="small text-muted">
+                                    Mã thanh toán: <code id="d-paymentRef">REQ123</code>
+                                </div>
+                            </div>
+                            <span class="badge" id="d-status"></span>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="small text-muted">Khách hàng</div>
+                                <div id="d-customer"></div>
+                                <div class="small text-muted" id="d-contact"></div>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <div class="small text-muted">Ngày chuyển</div>
+                                <div id="d-date"></div>
+                                <div class="small text-muted">Ước tính</div>
+                                <div id="d-cost" class="fw-semibold"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div><strong>Lấy:</strong> <span id="d-pickup"></span></div>
+                            <div><strong>Giao:</strong> <span id="d-delivery"></span></div>
+                        </div>
+
+                        <div class="timeline mb-3" id="d-timeline"></div>
+
+                        <h3 class="h6 mt-4 mb-2">Nội thất vận chuyển</h3>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>Kích thước</th>
+                                    <th>Số lượng</th>
+                                    <th>Fragile</th>
+                                </tr>
+                                </thead>
+                                <tbody id="d-items"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="actions d-flex gap-2 mt-3">
+                            <button class="btn btn-outline-secondary" data-act="accepted">Ghi nhận hợp đồng</button>
+                            <button class="btn btn-outline-primary" data-act="in_progress">Bắt đầu vận chuyển</button>
+                            <button class="btn btn-success" data-act="completed">Hoàn thành</button>
+
+                            <!-- NÚT MỚI: Provider xác nhận đã nhận tiền -->
+                            <button class="btn btn-warning" id="btnConfirmPaid" type="button">
+                                Xác nhận đã thanh toán
+                            </button>
+
+                            <button class="btn btn-danger" data-act="cancelled">Hủy đơn</button>
+                            <button class="btn btn-outline-danger ms-auto" data-act="declined">Từ chối</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Page body -->
+    </main>
+</div>
+
+<!-- Backdrop (auto-created in JS nếu thiếu) -->
+<div id="sidebar-backdrop"></div>
+
+<!-- Vendor -->
+<script th:src="@{/dashbooard/js/main.js}"></script>
+
+<!-- Layout JS then page JS -->
+<script th:src="@{/provider/js/provider-layout.js}"></script>
+<script th:src="@{/provider/js/provider-orders.js}"></script>
+</body>
+</html>

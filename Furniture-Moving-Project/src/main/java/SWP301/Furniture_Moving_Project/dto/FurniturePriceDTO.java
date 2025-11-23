@@ -1,16 +1,9 @@
 package SWP301.Furniture_Moving_Project.dto;
 
-import jakarta.validation.constraints.NotNull;
-
-import java.math.BigDecimal;
-
 public class FurniturePriceDTO {
-    @NotNull
     private Integer furnitureTypeId;
-    private String furnitureName; // for UI
-    private String unit;          // for UI
-    @NotNull
-    private BigDecimal price;
+    private String furnitureTypeName;
+    private Double price;
 
     public Integer getFurnitureTypeId() {
         return furnitureTypeId;
@@ -20,27 +13,19 @@ public class FurniturePriceDTO {
         this.furnitureTypeId = furnitureTypeId;
     }
 
-    public String getFurnitureName() {
-        return furnitureName;
+    public String getFurnitureTypeName() {
+        return furnitureTypeName;
     }
 
-    public void setFurnitureName(String furnitureName) {
-        this.furnitureName = furnitureName;
+    public void setFurnitureTypeName(String furnitureTypeName) {
+        this.furnitureTypeName = furnitureTypeName;
     }
 
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    public BigDecimal getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 }

@@ -30,7 +30,7 @@
         <div class="container">
           <h2>Báo giá bằng AI</h2>
           <a th:href="@{/homepage}">Trang chủ</a>
-          <a href="javascript:void(0)">AI Quote</a>
+          <a href="javascript:void(0)">Báo giá AI</a>
         </div>
       </div>
 
@@ -102,20 +102,23 @@
                   <div class="table-responsive">
                     <table class="table table-sm mb-0" id="items-table">
                       <thead class="thead-light">
-                        <tr>
-                          <th style="width:42%">Sản phẩm</th>
-                          <th class="text-center" style="width:26%">Số lượng</th>
-                          <th class="text-right" style="width:22%">Đơn giá</th>
-                          <th class="text-right" style="width:10%"></th>
-                        </tr>
-                      </thead>
+  <tr>
+    <th style="width:35%">Sản phẩm</th>
+    <th class="text-center" style="width:18%">Kích thước</th>
+    <th class="text-center" style="width:22%">Số lượng</th>
+    <th class="text-right" style="width:15%">Đơn giá</th>
+    <th class="text-right" style="width:10%"></th>
+  </tr>
+</thead>
+
                       <tbody id="items-tbody">
-                        <tr class="empty-row">
-                          <td colspan="4" class="text-muted text-center py-3">
-                            Chưa có sản phẩm. Gửi ảnh để AI nhận diện hoặc thêm thủ công.
-                          </td>
-                        </tr>
-                      </tbody>
+  <tr class="empty-row">
+    <td colspan="5" class="text-muted text-center py-3">
+      Chưa có sản phẩm. Gửi ảnh để AI nhận diện hoặc thêm thủ công.
+    </td>
+  </tr>
+</tbody>
+
                     </table>
                   </div>
                 </div>
@@ -189,6 +192,11 @@
     <script th:src="@{/homepage/lib/slick/slick.min.js}"></script>
 
     <script th:src="@{/homepage/js/main.js}"></script>
+
+    <script th:inline="javascript">
+  const CONTRACT_URL = /*[[@{/contract}]]*/ "/contract";  // fallback khi chạy ngoài Thymeleaf
+</script>
+
     <script th:src="@{/user/js/ai-quote.js}"></script>
   </body>
 </html>
