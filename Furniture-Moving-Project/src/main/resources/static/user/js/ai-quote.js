@@ -38,7 +38,9 @@ const SLOT = {
     durationText: null,
     routeText: null,
     routeSeconds: null,
-    draftReady: false
+    draftReady: false,
+    // ✅ đánh dấu đã từng hiển thị hợp đồng nháp chưa
+    hasDraftShown: false
   }
 };
 
@@ -438,9 +440,9 @@ async function calcDistance(orig, dest) {
 }
 
 /* ========= Gemini ========= */
-const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // <-- Nên chuyển về BE/proxy
+const API_KEY = "AIzaSyBuov9ALwMdUv_75bCm0bz9acq9p0Ou3qc"; // <-- Nên chuyển về BE/proxy
 let MODEL = "gemini-2.0-flash";
-const FALLBACK_MODEL = "gemini-2.0-flash-lite";
+const FALLBACK_MODEL = "gemini-2.5-flash";
 const buildApiUrl = () => `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
 
 /* ========= State ========= */
@@ -507,7 +509,8 @@ function resetSlot() {
     date:null, time:null, datetime:null,
     _dateObj:null, _datetimeObj:null,
     km:null, durationText:null, routeText:null, routeSeconds:null,
-    draftReady: false
+    draftReady: false,
+    hasDraftShown: false // ✅ reset cờ này
   };
   ASKING_DATE = false;
   updateSlotDateBarVisibility();
@@ -535,100 +538,191 @@ function askSlotQuestion(key) {
   updateSlotDateBarVisibility();
 }
 
-/* ========= Cho phép SỬA GIỮA CHỪNG ========= */
+/* ========= Cho phép SỬA GIỮA CHỪNG (đã fix) ========= */
+/* ========= Cho phép SỬA GIỮA CHỪNG (đã fix) ========= */
 function detectAndApplyCorrections(rawText){
-  const t = (rawText||"").trim();
+  const t = (rawText || "").trim();
   if (!t) return false;
 
-  let changed = false;
-  let updatedPhoneThisTurn = false;
-  let updatedNameThisTurn = false;
-  let updatedFromThisTurn = false;
-  let updatedToThisTurn = false;
-  let updatedDateThisTurn = false;
-  let updatedTimeThisTurn = false;
+  // ✅ 0) Chỉ cho phép sửa SAU KHI đã có hợp đồng nháp
+  if (!isDraftReady()) {
+    if (/\b(đổi|sửa)\b/i.test(t) &&
+        /\b(tên|họ\s*tên|sđt|số\s*điện\s*thoại|địa\s*chỉ|ngày|giờ|time|thời\s*gian)\b/i.test(t)) {
+      renderSlotReply(
+        'Sau khi mình tạo xong <b>TÓM TẮT YÊU CẦU &amp; BÁO GIÁ</b> (hợp đồng nháp), ' +
+        'bạn hãy yêu cầu sửa thông tin (tên, SĐT, địa chỉ, ngày giờ) nhé.'
+      );
+    }
+    return false;
+  }
 
-  // đổi/sửa tên
+  // handled = đã nhận ra đây là câu "sửa thông tin" (dù có sửa thành công hay không)
+  // changed = state đã thay đổi (dùng để xoá draft & build lại tóm tắt nếu cần)
+  let handled = false;
+  let changed = false;
+  let needRebuildNow = false; // chỉ dùng cho các sửa đồng bộ (name/phone/date/time)
+
+  let updatedPhoneThisTurn = false;
+  let updatedNameThisTurn  = false;
+  let updatedFromThisTurn  = false;
+  let updatedToThisTurn    = false;
+  let updatedDateThisTurn  = false;
+  let updatedTimeThisTurn  = false;
+
+  // ===== 1) Đổi / sửa tên =====
   let m =
     t.match(/\b(?:đổi|sửa)\s*tên\s*(?:thành|lại)?\s*[:\-]?\s*(.+)$/i) ||
     t.match(/\b(?:tên|họ\s*tên)\s*(của tôi|của em|của anh|của chị|là|:)\s*(.+)$/i);
   if (m) {
+    handled = true;
     const name = (m[2] || m[1] || "").trim();
     if (name) {
-      SLOT.data.name = name.slice(0,80);
+      SLOT.data.name = name.slice(0, 80);
       updatedNameThisTurn = true;
       changed = true;
+      needRebuildNow = true;
       renderSlotReply(`Đã cập nhật tên thành: <b>${escapeHTML(SLOT.data.name)}</b>.`);
     }
   }
 
-  // đổi/sửa số điện thoại
+  // ===== 2) Đổi / sửa SĐT =====
   m =
     t.match(/\b(?:đổi|sửa)\s*(?:số\s*điện\s*thoại|sđt)\s*(?:thành|lại)?\s*[:\-]?\s*([+0-9()\s\.\-]+)/i) ||
     t.match(/\b(?:sđt|số\s*điện\s*thoại)\s*(?:mới\s*|đúng\s*|là|:)\s*([+0-9()\s\.\-]+)/i);
   if (m) {
+    handled = true;
     const phone = normalizePhone(m[1]);
     if (phone) {
       SLOT.data.phone = phone;
       updatedPhoneThisTurn = true;
       changed = true;
+      needRebuildNow = true;
       renderSlotReply(`Đã cập nhật SĐT: <b>${escapeHTML(phone)}</b>.`);
     } else {
       renderSlotReply("SĐT bạn cung cấp chưa hợp lệ, bạn nhập lại giúp mình nhé (vd: 0912345678 hoặc +84 912345678).");
     }
   }
 
-  // đổi ngày (có ngày mới) – hỗ trợ cả 20/11
+  // ===== 3) Đổi NGÀY (có check quá khứ + 1 tháng) =====
   m = t.match(/\b(?:đổi|sửa)\s*ngày\s*(?:thành|sang)?\s*(.+)$/i);
   if (m) {
+    handled = true;
     const parsed = parseFlexibleDate(m[1]);
     if (parsed) {
       const { dt } = parsed;
-      SLOT.data._dateObj = dt;
-      SLOT.data.date = formatDateOnlyVN(dt);
-      SLOT.data._datetimeObj = null;
-      SLOT.data.datetime = null;
-      updatedDateThisTurn = true;
-      changed = true;
-      renderSlotReply(`Đã cập nhật <b>ngày</b> thành: ${escapeHTML(SLOT.data.date)}.`);
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
+      const limit = new Date(today.getTime());
+      limit.setMonth(limit.getMonth() + 1);
+
+      if (dt.getTime() < today.getTime()) {
+        renderSlotReply("Ngày bạn đổi đang ở <b>trong quá khứ</b>. Bạn chọn ngày từ hôm nay trở đi giúp mình nhé.");
+      } else if (dt.getTime() > limit.getTime()) {
+        renderSlotReply("Chỉ nhận lịch trong vòng <b>1 tháng</b> tới.");
+      } else {
+        // Nếu đã có GIỜ thì ghép lại để tránh cùng ngày + giờ quá khứ
+        let newDateTime = null;
+        if (SLOT.data.time) {
+          const [hhStr, mmStr] = String(SLOT.data.time).split(":");
+          const hh = parseInt(hhStr, 10);
+          const mm = parseInt(mmStr, 10);
+          if (!Number.isNaN(hh) && !Number.isNaN(mm)) {
+            const dtWithTime = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), hh, mm, 0, 0);
+            const limitDt = new Date(now.getTime());
+            limitDt.setMonth(limitDt.getMonth() + 1);
+
+            if (dtWithTime.getTime() < now.getTime()) {
+              renderSlotReply(
+                "Thời điểm lấy hàng mới đang ở <b>trước thời điểm hiện tại</b>. Bạn chọn giờ muộn hơn hoặc ngày khác nhé."
+              );
+            } else if (dtWithTime.getTime() > limitDt.getTime()) {
+              renderSlotReply("Chỉ nhận lịch trong vòng <b>1 tháng</b> tới.");
+            } else {
+              newDateTime = dtWithTime;
+            }
+          }
+        }
+
+        if (!SLOT.data.time || newDateTime) {
+          SLOT.data._dateObj = dt;
+          SLOT.data.date = formatDateOnlyVN(dt);
+
+          if (newDateTime) {
+            SLOT.data._datetimeObj = newDateTime;
+            SLOT.data.datetime = formatDateTimeVN(newDateTime);
+          } else {
+            SLOT.data._datetimeObj = null;
+            SLOT.data.datetime = null;
+          }
+
+          updatedDateThisTurn = true;
+          changed = true;
+          needRebuildNow = true;
+          renderSlotReply(`Đã cập nhật <b>ngày</b> thành: ${escapeHTML(SLOT.data.date)}.`);
+        }
+      }
     } else {
       renderSlotReply("Mình chưa đọc được ngày mới, bạn nhập dạng <b>dd/mm</b> hoặc <b>dd/mm/yyyy</b>, hoặc 'ngày mai' nhé.");
     }
   }
 
-  // đổi giờ
+  // ===== 4) Đổi GIỜ (check quá khứ + 1 tháng nếu đã có ngày) =====
   m = t.match(/\b(?:đổi|sửa)\s*giờ\s*(?:thành|sang)?\s*(.+)$/i);
   if (m) {
+    handled = true;
     const ti = parseTimeFromText(m[1]);
     if (ti) {
-      if (!SLOT.data._dateObj) {
+      const now = new Date();
+      const limit = new Date(now.getTime());
+      limit.setMonth(limit.getMonth() + 1);
+
+      if (SLOT.data._dateObj) {
+        // đã có ngày -> kiểm tra luôn date+time mới
+        const dt = new Date(SLOT.data._dateObj.getTime());
+        dt.setHours(ti.hour, ti.minute, 0, 0);
+
+        if (dt.getTime() < now.getTime()) {
+          renderSlotReply(
+            "Giờ bạn đổi đang ở <b>trước thời điểm hiện tại</b>. Bạn chọn giờ muộn hơn nhé."
+          );
+        } else if (dt.getTime() > limit.getTime()) {
+          renderSlotReply("Chỉ nhận lịch trong vòng <b>1 tháng</b> tới.");
+        } else {
+          SLOT.data.time = formatTimeVN(ti.hour, ti.minute);
+          SLOT.data.datetime = formatDateTimeVN(dt);
+          SLOT.data._datetimeObj = dt;
+
+          updatedTimeThisTurn = true;
+          changed = true;
+          needRebuildNow = true;
+          renderSlotReply(`Đã cập nhật <b>giờ</b> thành: ${escapeHTML(SLOT.data.time)}.`);
+        }
+      } else {
+        // chưa có ngày -> chỉ cập nhật giờ
         SLOT.data.time = formatTimeVN(ti.hour, ti.minute);
         SLOT.data.datetime = null;
         SLOT.data._datetimeObj = null;
-      } else {
-        const dt = new Date(SLOT.data._dateObj.getTime());
-        dt.setHours(ti.hour, ti.minute, 0, 0);
-        SLOT.data.time = formatTimeVN(ti.hour, ti.minute);
-        SLOT.data.datetime = formatDateTimeVN(dt);
-        SLOT.data._datetimeObj = dt;
+
+        updatedTimeThisTurn = true;
+        changed = true;
+        needRebuildNow = true;
+        renderSlotReply(`Đã cập nhật <b>giờ</b> thành: ${escapeHTML(SLOT.data.time)}.`);
       }
-      updatedTimeThisTurn = true;
-      changed = true;
-      renderSlotReply(`Đã cập nhật <b>giờ</b> thành: ${escapeHTML(SLOT.data.time)}.`);
     } else {
       renderSlotReply("Mình chưa đọc được giờ mới, bạn thử dạng '9h', '9:15', '5h chiều'…");
     }
   }
 
-  // đổi địa chỉ đi
-  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*đi|địa\s*chỉ\s*lấy|đi|lấy)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
+  // ===== 5) Đổi địa chỉ ĐI (pickup – có thêm “nhận hàng”) =====
+  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*(?:đi|lấy|nhận)|chỗ\s*(?:lấy|nhận)|(?:đi|lấy|nhận)\s*hàng?)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
   if (m) {
+    handled = true;
     const addr = m[1].trim();
     if (addr.length >= 4) {
-      changed = true;
       updatedFromThisTurn = true;
       renderSlotReply("Đang kiểm tra địa chỉ LẤY hàng mới…");
-      resolveAddressWithFallback(addr).then(g=>{
+      resolveAddressWithFallback(addr).then(g => {
         if (!g.ok) {
           if (g.reason === "out_of_area") {
             renderSlotReply("Hiện tại hệ thống chỉ hỗ trợ địa chỉ trong <b>Hà Nội</b>. Bạn gửi lại địa chỉ nằm trong Hà Nội giúp mình nhé.");
@@ -637,26 +731,40 @@ function detectAndApplyCorrections(rawText){
           }
           return;
         }
-        SLOT.data.fromAddr = addr;
+
+        SLOT.data.fromAddr  = addr;
         SLOT.data.fromPlace = { formatted: g.formatted, lat: g.lat, lng: g.lng };
         SLOT.data.fromParts = g.parts || null;
+
         const note = g.missingHouse
           ? `Chưa xác định số nhà, sẽ lấy khu vực gần: <b>${escapeHTML(g.formatted)}</b>`
           : `Địa chỉ lấy hàng đã xác thực: <b>${escapeHTML(g.formatted)}</b>`;
         renderSlotReply(note);
+
+        // xoá draft cũ + build lại nếu đủ slot
+        SLOT.data.draftReady = false;
+        try { sessionStorage.removeItem("aiquote_draft"); } catch {}
+
+        if (hasAtLeastOneItem() && hasAllRequiredSlots()) {
+          renderFinalCombinedSummary();
+        } else {
+          persistAiQuoteState();
+        }
       });
+    } else {
+      renderSlotReply("Bạn nhập địa chỉ rõ hơn giúp mình nhé (có số/đường/thôn/xã...).");
     }
   }
 
-  // đổi địa chỉ đến
-  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*đến|địa\s*chỉ\s*giao|đến|giao)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
+  // ===== 6) Đổi địa chỉ ĐẾN (dropoff – có thêm “giao hàng”) =====
+  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*(?:đến|giao)|chỗ\s*giao|(?:đến|giao)\s*hàng?)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
   if (m) {
+    handled = true;
     const addr = m[1].trim();
     if (addr.length >= 4) {
-      changed = true;
       updatedToThisTurn = true;
       renderSlotReply("Đang kiểm tra địa chỉ GIAO hàng mới…");
-      resolveAddressWithFallback(addr).then(g=>{
+      resolveAddressWithFallback(addr).then(g => {
         if (!g.ok) {
           if (g.reason === "out_of_area") {
             renderSlotReply("Hiện tại hệ thống chỉ hỗ trợ địa chỉ trong <b>Hà Nội</b>. Bạn gửi lại địa chỉ nằm trong Hà Nội giúp mình nhé.");
@@ -665,35 +773,51 @@ function detectAndApplyCorrections(rawText){
           }
           return;
         }
-        SLOT.data.toAddr = addr;
+
+        SLOT.data.toAddr  = addr;
         SLOT.data.toPlace = { formatted: g.formatted, lat: g.lat, lng: g.lng };
         SLOT.data.toParts = g.parts || null;
+
         const note = g.missingHouse
           ? `Chưa xác định số nhà, sẽ lấy khu vực gần: <b>${escapeHTML(g.formatted)}</b>`
           : `Địa chỉ giao hàng đã xác thực: <b>${escapeHTML(g.formatted)}</b>`;
         renderSlotReply(note);
+
+        SLOT.data.draftReady = false;
+        try { sessionStorage.removeItem("aiquote_draft"); } catch {}
+
+        if (hasAtLeastOneItem() && hasAllRequiredSlots()) {
+          renderFinalCombinedSummary();
+        } else {
+          persistAiQuoteState();
+        }
       });
+    } else {
+      renderSlotReply("Bạn nhập địa chỉ rõ hơn giúp mình nhé (có số/đường/thôn/xã...).");
     }
   }
 
-  // ===== Các trường hợp "bị sai / nhầm" nhưng KHÔNG đưa giá trị mới =====
+  // ===== 7) Các trường hợp "bị sai / nhầm" nhưng KHÔNG đưa giá trị mới =====
   const hasWrongWord = /\b(sai|nhầm|nhập sai|nhập nhầm|bị nhầm|bị sai)\b/i.test(t);
 
   if (!updatedNameThisTurn && hasWrongWord && /\b(tên|họ\s*tên)\b/i.test(t)) {
+    handled = true;
     SLOT.data.name = null;
     changed = true;
     renderSlotReply("Không sao, bạn cho mình xin lại <b>HỌ TÊN chính xác</b> nhé.");
   }
 
   if (!updatedPhoneThisTurn && hasWrongWord && /\b(sđt|số\s*điện\s*thoại)\b/i.test(t)) {
+    handled = true;
     SLOT.data.phone = null;
     changed = true;
     renderSlotReply("Không sao, bạn gửi lại giúp mình <b>SĐT đúng</b> nhé (vd: 0912345678 hoặc +84 912345678).");
   }
 
   if (!updatedFromThisTurn && hasWrongWord &&
-      /\b(địa\s*chỉ\s*(đi|lấy)|chỗ lấy|lấy hàng)\b/i.test(t)) {
-    SLOT.data.fromAddr = null;
+      /\b(địa\s*chỉ\s*(đi|lấy|nhận)|chỗ\s*(lấy|nhận)|lấy\s*hàng|nhận\s*hàng)\b/i.test(t)) {
+    handled = true;
+    SLOT.data.fromAddr  = null;
     SLOT.data.fromPlace = null;
     SLOT.data.fromParts = null;
     changed = true;
@@ -701,8 +825,9 @@ function detectAndApplyCorrections(rawText){
   }
 
   if (!updatedToThisTurn && hasWrongWord &&
-      /\b(địa\s*chỉ\s*(đến|giao)|chỗ giao|giao hàng)\b/i.test(t)) {
-    SLOT.data.toAddr = null;
+      /\b(địa\s*chỉ\s*(đến|giao)|chỗ\s*giao|giao\s*hàng)\b/i.test(t)) {
+    handled = true;
+    SLOT.data.toAddr  = null;
     SLOT.data.toPlace = null;
     SLOT.data.toParts = null;
     changed = true;
@@ -710,6 +835,7 @@ function detectAndApplyCorrections(rawText){
   }
 
   if (!updatedDateThisTurn && hasWrongWord && /\b(ngày)\b/i.test(t)) {
+    handled = true;
     SLOT.data.date = null;
     SLOT.data._dateObj = null;
     changed = true;
@@ -717,26 +843,32 @@ function detectAndApplyCorrections(rawText){
   }
 
   if (!updatedTimeThisTurn && hasWrongWord && /\b(giờ|time|thời gian)\b/i.test(t)) {
+    handled = true;
     SLOT.data.time = null;
     SLOT.data.datetime = null;
+    SLOT.data._datetimeObj = null;
     changed = true;
     renderSlotReply("Không sao, bạn nhập lại giúp mình <b>GIỜ vận chuyển</b> (vd: '9h', '9:15', '5h chiều', '10 rưỡi'...).");
   }
 
-  SLOT.data.draftReady = false;
-  try { sessionStorage.removeItem('aiquote_draft'); } catch {}
-
-  // Nếu đã có đầy đủ slot + có hàng hóa → render lại tóm tắt luôn
-  if (changed && hasAtLeastOneItem() && hasAllRequiredSlots()) {
-    renderFinalCombinedSummary();
-  }
-
+  // ===== 8) Sau khi có bất kỳ thay đổi ĐỒNG BỘ nào =====
   if (changed) {
-    persistAiQuoteState();
+    // draft cũ không còn chính xác
+    SLOT.data.draftReady = false;
+    try { sessionStorage.removeItem("aiquote_draft"); } catch {}
+
+    if (needRebuildNow && hasAtLeastOneItem() && hasAllRequiredSlots()) {
+      // build lại hợp đồng nháp (tính lại km, ship fee, lưu sessionStorage)
+      renderFinalCombinedSummary();
+    } else {
+      persistAiQuoteState();
+    }
   }
 
-  return changed;
+  return handled;
 }
+
+
 
 /* ========= Date/Time helpers ========= */
 // Hỗ trợ cả dd/mm và dd/mm/yyyy
@@ -1855,6 +1987,7 @@ async function renderFinalCombinedSummary() {
   <table class="table table-sm mt-2 mb-2">
     <tbody>
       <tr><td>Tên khách hàng</td><td><b>${escapeHTML(d.name || "")}</b></td></tr>
+       <tr><td>Số điện thoại</td><td>${escapeHTML(d.phone || "—")}</td></tr>
       <tr><td>Địa chỉ nhận hàng</td><td>${escapeHTML(fromFmt)}</td></tr>
       <tr><td>Địa chỉ giao hàng</td><td>${escapeHTML(toFmt)}</td></tr>
       <tr><td>Thời gian lấy hàng</td><td>${escapeHTML(pickupText || "—")}</td></tr>
@@ -1909,6 +2042,8 @@ async function renderFinalCombinedSummary() {
 
   try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
   SLOT.data.draftReady = true;
+  // ✅ đánh dấu: từ giờ cho phép sửa thông tin
+  SLOT.data.hasDraftShown = true;
   window.AIQUOTE_DRAFT_READY = true;
 
   renderSlotReply(html);
@@ -1947,7 +2082,13 @@ function handleOutgoingMessage(e) {
   }
   if (!chatBody) return;
 
-  detectAndApplyCorrections(text);
+  const handledCorrection = detectAndApplyCorrections(text);
+
+  // Nếu câu này là để SỬA thông tin (tên/SĐT/địa chỉ/ngày/giờ)
+  // thì dừng tại đây: không thêm/xoá hàng, không gọi AI trả lời lan man.
+  if (handledCorrection) {
+    return;
+  }
 
   if (SLOT.mode !== "collect") {
     autofillSlotFromFreeText(text);
@@ -2180,9 +2321,7 @@ function handleOutgoingMessage(e) {
     );
   }
 
-
   // Nếu có món bị loại, báo lại cho user
-    // Nếu có món bị loại (không phải nội thất) thì báo lại đúng thông điệp yêu cầu
   if (rejectedNames.length) {
     const unique = Array.from(
       new Set(rejectedNames.map(n => n.trim()).filter(Boolean))
@@ -2202,7 +2341,6 @@ function handleOutgoingMessage(e) {
 
     renderSlotReply(html);
   }
-
 
   // Thêm / xoá thực tế
   if (toAdd.length && window.AIQUOTE?.upsertItem) {
@@ -2419,7 +2557,8 @@ window.AIQUOTE_SLOT = SLOT;
         date:null, time:null, datetime:null,
         _dateObj:null, _datetimeObj:null,
         km:null, durationText:null, routeText:null, routeSeconds:null,
-        draftReady:false
+        draftReady:false,
+        hasDraftShown:false // ✅ default nếu bản cũ chưa có field này
       },
       state.slot.data || {}
     );
