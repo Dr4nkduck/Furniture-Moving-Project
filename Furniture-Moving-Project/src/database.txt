@@ -1157,3 +1157,67 @@ FROM users u
 LEFT JOIN providers p ON p.user_id = u.user_id
 WHERE u.username = 'username_vua_dang_ky';
 
+
+
+
+
+
+/* =========================================================
+   BẢNG GIÁ SẢN PHẨM: products_price
+   - Phân biệt theo base_name + size_label
+   ========================================================= */
+IF OBJECT_ID('dbo.products_price', 'U') IS NOT NULL
+BEGIN
+    DROP TABLE dbo.products_price;
+END;
+GO
+
+CREATE TABLE dbo.products_price (
+    product_price_id INT IDENTITY(1,1) PRIMARY KEY,
+
+    -- tên sản phẩm cơ bản: "Giường đơn", "Giường đôi", "Bàn làm việc", ...
+    base_name        NVARCHAR(200) NOT NULL,
+
+    -- nhãn kích thước: "mini", "nhỏ", "trung bình", "lớn", "người lớn", "em bé", ...
+    size_label       NVARCHAR(50)  NOT NULL,
+
+    -- có phải đồ cồng kềnh không (để JS có thể tính phí kiểu bulky nếu cần)
+    is_bulky         BIT           NOT NULL DEFAULT 0,
+
+    -- đơn giá 1 đơn vị
+    unit_price       DECIMAL(18,0) NOT NULL,
+
+    -- trạng thái
+    is_active        BIT           NOT NULL DEFAULT 1,
+    created_at       DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+-- đảm bảo 1 (base_name, size_label) chỉ có 1 dòng
+CREATE UNIQUE INDEX UX_products_price_base_size
+    ON dbo.products_price(base_name, size_label);
+GO
+
+/* =========================================================
+   SEED DỮ LIỆU GIÁ MẪU
+   ========================================================= */
+INSERT INTO dbo.products_price (base_name, size_label, unit_price, is_bulky, is_active)
+VALUES
+    (N'Giường đơn',        N'Nhỏ',        250000, 1, 1),
+    (N'Giường đơn',        N'Vừa',        320000, 1, 1),
+    (N'Giường đơn',        N'Lớn',        390000, 1, 1),
+
+    (N'Giường người lớn',  N'Nhỏ',        350000, 1, 1),
+    (N'Giường người lớn',  N'Trung bình', 420000, 1, 1),
+    (N'Giường người lớn',  N'Lớn',        500000, 1, 1),
+
+    (N'Giường em bé',      N'Nhỏ',        180000, 0, 1),
+    (N'Giường em bé',      N'Vừa',        230000, 0, 1),
+
+    (N'Bàn làm việc đơn',  N'Nhỏ',        150000, 0, 1),
+    (N'Bàn làm việc đơn',  N'Vừa',        210000, 0, 1),
+    (N'Bàn làm việc đơn',  N'Lớn',        280000, 0, 1),
+
+    (N'Sofa 3 chỗ',        N'Nhỏ',        400000, 1, 1),
+    (N'Sofa 3 chỗ',        N'Vừa',        480000, 1, 1),
+    (N'Sofa 3 chỗ',        N'Lớn',        550000, 1, 1);
+GO

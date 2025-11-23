@@ -1,9 +1,8 @@
 /* ===== AI Quote – Chat + Cart + Slot-filling + OSM/OSRM (NO KEY) =====
- * Bản đã sửa theo yêu cầu:
- * - Cho phép SỬA GIỮA CHỪNG (tên, SĐT, ngày, giờ, địa chỉ…)
- * - Thanh chọn ngày chỉ hiện khi hỏi “ngày vận chuyển”
- * - Địa chỉ tách cấp (fromParts/toParts) dựa vào Nominatim/Photon
- * - Tóm tắt cuối: Tên KH, Địa chỉ nhận, Địa chỉ giao, Quãng đường, Thời gian ước tính, Tổng tiền
+ * - Chat + AI xem ảnh, đếm hàng, thêm vào giỏ
+ * - Slot-filling: hỏi Họ tên, SĐT, địa chỉ đi/đến, ngày, giờ
+ * - Geocode bằng Nominatim + Photon, tính km bằng OSRM (không cần API key)
+ * - Tạo draft hợp đồng + lưu vào sessionStorage.aiquote_draft
  */
 
 /* ========= DOM hooks ========= */
@@ -119,47 +118,7 @@ function normPlace(obj, provider) {
   return { ok:false };
 }
 
-async function geocodeNominatim(q) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&accept-language=vi&q=${encodeURIComponent(q)}`;
-  try {
-    const r = await fetchWithTimeout(url, {}, 6000);
-    if (!r.ok) throw new Error(`Nominatim HTTP ${r.status}`);
-    const arr = await r.json();
-    if (!Array.isArray(arr) || arr.length === 0) return { ok:false };
-    return normPlace(arr[0], "nominatim");
-  } catch (e) {
-    console.warn("Nominatim fail:", e?.message || e);
-    return { ok:false, error:e };
-  }
-}
-
-async function geocodePhoton(q) {
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lang=vi&limit=1`;
-  try {
-    const r = await fetchWithTimeout(url, {}, 6000);
-    if (!r.ok) throw new Error(`Photon HTTP ${r.status}`);
-    const data = await r.json();
-    if (!data || !Array.isArray(data.features) || data.features.length === 0) return { ok:false };
-    return normPlace(data.features[0], "photon");
-  } catch (e) {
-    console.warn("Photon fail:", e?.message || e);
-    return { ok:false, error:e };
-  }
-}
-
-async function geocodeAddress(query) {
-  const q = String(query || "").trim();
-  if (q.length < 3) return { ok:false };
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    const n = await geocodeNominatim(q);
-    if (n.ok) return n;
-    const p = await geocodePhoton(q);
-    if (p.ok) return p;
-  }
-  return { ok:false };
-}
-
-/* --- Fallback: bỏ số nhà nếu full địa chỉ không tìm được --- */
+/* --- Fallback helpers cho địa chỉ --- */
 function stripHouseNumber(addr) {
   if (!addr) return "";
   let s = String(addr).trim();
@@ -175,16 +134,13 @@ function stripHouseNumber(addr) {
 /* Cắt địa chỉ từ cấp thôn/xóm/ấp/tổ... trở về sau (VN-friendly) */
 function stripToHamletLevel(addr) {
   if (!addr) return "";
-  // Chia theo dấu phẩy trước, nếu không có phẩy thì chia theo khoảng trắng nhiều
   let parts = String(addr).split(",").map(s => s.trim()).filter(Boolean);
   if (parts.length <= 1) {
-    // fallback: tách theo khoảng trắng, gom khối bằng cách phát hiện từ khóa hành chính
     const tokens = String(addr).trim().split(/\s+/);
     parts = [];
     let buf = [];
     for (const tk of tokens) {
       buf.push(tk);
-      // heuristic: khi gặp tỉnh/thành/quận/huyện/phường/xã/…, chốt 1 “phần”
       if (/(tỉnh|thành|thành phố|tp\.?|quận|huyện|thị xã|thị trấn|phường|xã|thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)/i.test(tk)) {
         parts.push(buf.join(" "));
         buf = [];
@@ -193,89 +149,218 @@ function stripToHamletLevel(addr) {
     if (buf.length) parts.push(buf.join(" "));
   }
 
-  // Từ khóa cấp thôn/xóm/ấp/tổ…
   const hamletRx = /(thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)/i;
 
-  // Tìm phần tử đầu tiên chứa từ khóa hamlet
   let startIdx = parts.findIndex(p => hamletRx.test(p));
   if (startIdx === -1) {
-    // Nếu không có, thử tìm từ cấp xã/phường trở lên
     startIdx = parts.findIndex(p => /(phường|xã|thị trấn)/i.test(p));
   }
   if (startIdx === -1) {
-    // Nếu vẫn không có, thử từ cấp quận/huyện
     startIdx = parts.findIndex(p => /(quận|huyện|thị xã)/i.test(p));
   }
   if (startIdx === -1) {
-    // Cuối cùng thử từ cấp tỉnh/thành phố
     startIdx = parts.findIndex(p => /(tỉnh|thành|thành phố|tp\.?)/i.test(p));
   }
 
   if (startIdx === -1) {
-    // Không nhận ra cấp hành chính nào → trả về chuỗi gốc (để caller tự quyết)
     return String(addr).trim();
   }
   return parts.slice(startIdx).join(", ").trim();
 }
 
+/* ========= Helper normalize & chấm điểm địa chỉ theo cấp hành chính ========= */
+// Bỏ dấu tiếng Việt để so sánh
+function stripVNAccents(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
 
+// Dùng trong địa chỉ / từ khoá
+function _normalize(s) {
+  return stripVNAccents(String(s || "")).toLowerCase().trim();
+}
 
-/** geocode với fallback bỏ số nhà */
-/** geocode với fallback:
- *  1) Dùng đầy đủ địa chỉ user nhập
- *  2) Nếu fail → cắt từ cấp thôn/xóm/ấp/tổ... trở đi rồi geocode
- *  3) Nếu vẫn fail → bỏ số nhà / phần đầu rồi geocode
- */
+function extractAdminHintsFromQuery(q){
+  const t = _normalize(q);
+
+  const mHamlet   = t.match(/\b(thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)\s+([a-z0-9\s\-]+)/i);
+  const mWard     = t.match(/\b(phường|xã|thị trấn)\s+([a-z0-9\s\-]+)/i);
+  const mDistrict = t.match(/\b(quận|huyện|thị xã)\s+([a-z0-9\s\-]+)/i);
+  const mCityProv = t.match(/\b(thành phố|tỉnh|tp\.?)\s+([a-z0-9\s\.\-]+)/i);
+
+  return {
+    hamlet:   mHamlet   ? _normalize(mHamlet[2])   : "",
+    ward:     mWard     ? _normalize(mWard[2])     : "",
+    district: mDistrict ? _normalize(mDistrict[2]) : "",
+    cityprov: mCityProv ? _normalize(mCityProv[2]) : ""
+  };
+}
+
+function scorePlaceByParts(parts, qHints){
+  const hamlet   = _normalize(parts.hamlet   || "");
+  const ward     = _normalize(parts.ward     || "");
+  const commune  = _normalize(parts.commune  || "");
+  const district = _normalize(parts.district || "");
+  const city     = _normalize(parts.city     || "");
+  const prov     = _normalize(parts.province || "");
+
+  if (!hamlet && !ward && !commune && !district && !city && !prov) {
+    return -1e9;
+  }
+
+  let s = 10;
+
+  if (ward || commune) s += 15;
+  if (hamlet) s += 8;
+
+  if (qHints.hamlet && hamlet && hamlet.includes(qHints.hamlet)) {
+    s += 35;
+  }
+
+  if (qHints.ward) {
+    if ((ward && ward.includes(qHints.ward)) ||
+        (commune && commune.includes(qHints.ward))) {
+      s += 25;
+    }
+  }
+
+  if (qHints.district && district && district.includes(qHints.district)) {
+    s += 15;
+  }
+
+  if (qHints.cityprov && ((city && city.includes(qHints.cityprov)) ||
+                          (prov && prov.includes(qHints.cityprov)))) {
+    s += 10;
+  }
+
+  if (district) s += 4;
+  if (city)     s += 2;
+  if (prov)     s += 2;
+
+  return s;
+}
+
+// Chỉ chấp nhận địa chỉ thuộc Hà Nội
+function isHanoiParts(parts) {
+  const city = _normalize(parts.city || "");
+  const prov = _normalize(parts.province || "");
+  const district = _normalize(parts.district || "");
+
+  const combo = `${city} ${prov} ${district}`;
+  return combo.includes("ha noi");
+}
+
+/* ========= Lấy NHIỀU ứng viên từ Nominatim/Photon ========= */
+async function geocodeNominatimMulti(q, limit = 6){
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&addressdetails=1&accept-language=vi&q=${encodeURIComponent(q)}`;
+  try {
+    const r = await fetchWithTimeout(url, {}, 7000);
+    if (!r.ok) throw new Error(`Nominatim HTTP ${r.status}`);
+    const arr = await r.json();
+    return (arr || []).map(x => normPlace(x, "nominatim")).filter(p => p.ok);
+  } catch {
+    return [];
+  }
+}
+
+async function geocodePhotonMulti(q, limit = 6){
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lang=vi&limit=${limit}`;
+  try {
+    const r = await fetchWithTimeout(url, {}, 7000);
+    if (!r.ok) throw new Error(`Photon HTTP ${r.status}`);
+    const data = await r.json();
+    const feats = Array.isArray(data?.features) ? data.features : [];
+    return feats.map(x => normPlace(x, "photon")).filter(p => p.ok);
+  } catch {
+    return [];
+  }
+}
+
+/* ========= Geocode address: chọn best match, chấp nhận từ cấp thôn trở lên ========= */
+async function geocodeAddress(query) {
+  const q = String(query || "").trim();
+  if (q.length < 3) return { ok:false };
+
+  const hints = extractAdminHintsFromQuery(q);
+
+  const pool = [
+    ...(await geocodeNominatimMulti(q, 6)),
+    ...(await geocodePhotonMulti(q, 6))
+  ];
+
+  const candidates = pool.filter(p => {
+    const parts = p.parts || {};
+    return !!(parts.hamlet || parts.ward || parts.commune ||
+              parts.district || parts.city || parts.province);
+  });
+
+  if (!candidates.length) return { ok:false };
+
+  candidates.sort((a,b) => {
+    const pa = scorePlaceByParts(a.parts || {}, hints);
+    const pb = scorePlaceByParts(b.parts || {}, hints);
+    return pb - pa;
+  });
+
+  return candidates[0] || { ok:false };
+}
+
+/* ========= Geocode với fallback + ép Hà Nội ========= */
 async function resolveAddressWithFallback(addr) {
   const raw = String(addr || "").trim();
-  if (!raw) return { ok:false };
+  if (!raw) return { ok: false };
 
-  // 1) Thử với địa chỉ đầy đủ
-  const primary = await geocodeAddress(raw);
-  if (primary.ok) {
+  function packResult(res, usedQuery, tag) {
+    if (!res || !res.ok) return res || { ok: false };
+
+    const parts = res.parts || {};
+    const hasAdmin = !!(
+      parts.hamlet || parts.ward || parts.commune ||
+      parts.district || parts.city || parts.province
+    );
+    if (!hasAdmin) return { ok: false };
+
+    // chỉ nhận địa chỉ trong Hà Nội
+    if (!isHanoiParts(parts)) {
+      return { ok: false, reason: "out_of_area" };
+    }
+
     return {
       ok: true,
-      ...primary,
-      missingHouse: !primary.parts?.houseNumber,
-      usedQuery: raw,
-      fallback: "none"   // dùng full địa chỉ
+      ...res,
+      missingHouse: !parts.houseNumber,
+      usedQuery,
+      fallback: tag
     };
   }
 
-  // 2) Cắt thẳng xuống từ cấp thôn/xóm/ấp/tổ... trở đi
+  // 1) Full chuỗi
+  const primary = await geocodeAddress(raw);
+  const r1 = packResult(primary, raw, "none");
+  if (r1.ok || r1.reason === "out_of_area") return r1;
+
+  // 2) Cắt từ thôn/xóm/ấp trở lên
   const hamletOnly = stripToHamletLevel(raw);
   if (hamletOnly && hamletOnly !== raw) {
     const hRes = await geocodeAddress(hamletOnly);
-    if (hRes.ok) {
-      return {
-        ok: true,
-        ...hRes,
-        missingHouse: true,      // chắc chắn không có số nhà
-        usedQuery: hamletOnly,
-        fallback: "hamlet"       // đang dùng địa chỉ từ thôn trở lên
-      };
-    }
+    const r2 = packResult(hRes, hamletOnly, "hamlet");
+    if (r2.ok || r2.reason === "out_of_area") return r2;
   }
 
-  // 3) Bỏ số nhà / phần đầu (ngõ, hẻm,...) rồi thử lại
+  // 3) Bỏ số nhà / phần đầu rồi thử lại
   const stripped = stripHouseNumber(raw);
   if (stripped && stripped !== raw && stripped !== hamletOnly) {
-    const fallback1 = await geocodeAddress(stripped);
-    if (fallback1.ok) {
-      return {
-        ok: true,
-        ...fallback1,
-        missingHouse: true,
-        usedQuery: stripped,
-        fallback: "strip"        // chỉ biết là đã cắt đầu chuỗi
-      };
-    }
+    const fRes = await geocodeAddress(stripped);
+    const r3 = packResult(fRes, stripped, "strip");
+    if (r3.ok || r3.reason === "out_of_area") return r3;
   }
 
-  // 4) Vẫn không tìm được
-  return { ok:false };
+  // 4) Không tìm thấy gì ổn
+  return { ok: false };
 }
-
 
 /* Tính khoảng cách lái xe bằng OSRM */
 async function calcDistance(orig, dest) {
@@ -305,7 +390,6 @@ async function calcDistance(orig, dest) {
   }
 }
 
-
 /* ========= Gemini ========= */
 const API_KEY = "AIzaSyCQZaLPV5xXjs65vh2f8L6HlwHAn8ouSoc"; // <-- Nên chuyển về BE/proxy
 let MODEL = "gemini-2.0-flash";
@@ -317,9 +401,6 @@ const chatHistory = [];
 const userUploads = [];
 const initialInputHeight = messageInput ? messageInput.scrollHeight : 0;
 
-
-
-
 // Cờ và util
 function hasAtLeastOneItem() {
   const t = (window.AIQUOTE?.getTotals?.() || { qty:0 }).qty;
@@ -327,7 +408,6 @@ function hasAtLeastOneItem() {
 }
 function hasAllRequiredSlots() {
   const d = SLOT.data || {};
-  // bắt buộc phải có họ tên, SĐT, from/to đã geocode, ngày & giờ
   return !!(d.name && d.phone && d.fromPlace && d.toPlace && d.date && d.time);
 }
 function isDraftReady() {
@@ -356,14 +436,12 @@ function buildDraftPayload() {
     cart: {
       totalQty: totals.qty,
       itemsAmount: totals.amount,
-      weightSummary: weight // để BE hiển thị/memo nếu cần
+      weightSummary: weight
     },
     currency: (loadSettings().currency || "VND"),
     createdAt: new Date().toISOString()
   };
 }
-
-
 
 /* ========= Business guard ========= */
 const DOMAIN_ONLY_MESSAGE =
@@ -376,19 +454,16 @@ const SLOT = {
   data: {
     name: null,
     phone: null,
-    // raw text user gõ:
     fromAddr: null, toAddr: null,
-    // chuẩn hoá vị trí:
     fromPlace: null, toPlace: null,
-    // parts địa chỉ tách cấp cho BE:
     fromParts: null, toParts: null,
     date: null, time: null, datetime: null,
-    _dateObj: null,        // chỉ ngày
-    _datetimeObj: null,    // ngày + giờ (Date đầy đủ)
+    _dateObj: null,
+    _datetimeObj: null,
     km: null,
     durationText: null,
     routeText: null,
-    routeSeconds: null     // số giây OSRM trả về
+    routeSeconds: null
   }
 };
 
@@ -425,12 +500,11 @@ function askQuestionFor(key) {
   return Q[key] || "";
 }
 function askSlotQuestion(key) {
-  ASKING_DATE = (key === "date");   // chỉ bật khi hỏi ngày
+  ASKING_DATE = (key === "date");
   renderSlotReply(askQuestionFor(key));
   updateSlotDateBarVisibility();
 }
 
-/* ========= Cho phép SỬA GIỮA CHỪNG ========= */
 /* ========= Cho phép SỬA GIỮA CHỪNG ========= */
 function detectAndApplyCorrections(rawText){
   const t = (rawText||"").trim();
@@ -475,7 +549,6 @@ function detectAndApplyCorrections(rawText){
   }
 
   // đổi ngày (có ngày mới)
-   // đổi ngày (có ngày mới)
   m = t.match(/\b(?:đổi|sửa)\s*ngày\s*(?:thành|sang)?\s*(.+)$/i);
   if (m) {
     const parsed = parseFlexibleDate(m[1]);
@@ -483,7 +556,7 @@ function detectAndApplyCorrections(rawText){
       const { dt } = parsed;
       SLOT.data._dateObj = dt;
       SLOT.data.date = formatDateOnlyVN(dt);
-      SLOT.data._datetimeObj = null;   // ngày mới → giờ cũ coi như bỏ
+      SLOT.data._datetimeObj = null;
       updatedDateThisTurn = true;
       changed = true;
       renderSlotReply(`Đã cập nhật <b>ngày</b> thành: ${escapeHTML(SLOT.data.date)}.`);
@@ -492,8 +565,6 @@ function detectAndApplyCorrections(rawText){
     }
   }
 
-
-  // đổi giờ (có giờ mới)
   // đổi giờ (có giờ mới)
   m = t.match(/\b(?:đổi|sửa)\s*giờ\s*(?:thành|sang)?\s*(.+)$/i);
   if (m) {
@@ -518,7 +589,6 @@ function detectAndApplyCorrections(rawText){
     }
   }
 
-
   // đổi địa chỉ đi
   m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*đi|địa\s*chỉ\s*lấy|đi|lấy)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
   if (m) {
@@ -529,7 +599,14 @@ function detectAndApplyCorrections(rawText){
       renderSlotReply("Đang kiểm tra địa chỉ LẤY hàng mới…");
       resolveAddressWithFallback(addr).then(g=>{
         if (!g.ok) {
-          renderSlotReply("Địa chỉ lấy hàng chưa tìm thấy trên bản đồ. Bạn mô tả rõ hơn nhé.");
+          if (g.reason === "out_of_area") {
+            renderSlotReply(
+              "Hiện tại hệ thống chỉ hỗ trợ địa chỉ trong <b>Hà Nội</b>. " +
+              "Bạn nhập lại giúp mình một địa chỉ thuộc Hà Nội nhé."
+            );
+          } else {
+            renderSlotReply("Địa chỉ lấy hàng chưa tìm thấy trên bản đồ. Bạn mô tả rõ hơn nhé.");
+          }
           return;
         }
         SLOT.data.fromAddr = addr;
@@ -553,7 +630,14 @@ function detectAndApplyCorrections(rawText){
       renderSlotReply("Đang kiểm tra địa chỉ GIAO hàng mới…");
       resolveAddressWithFallback(addr).then(g=>{
         if (!g.ok) {
-          renderSlotReply("Địa chỉ giao hàng chưa tìm thấy trên bản đồ. Bạn mô tả rõ hơn nhé.");
+          if (g.reason === "out_of_area") {
+            renderSlotReply(
+              "Hiện tại hệ thống chỉ hỗ trợ địa chỉ trong <b>Hà Nội</b>. " +
+              "Bạn nhập lại giúp mình một địa chỉ thuộc Hà Nội nhé."
+            );
+          } else {
+            renderSlotReply("Địa chỉ giao hàng chưa tìm thấy trên bản đồ. Bạn mô tả rõ hơn nhé.");
+          }
           return;
         }
         SLOT.data.toAddr = addr;
@@ -567,25 +651,20 @@ function detectAndApplyCorrections(rawText){
     }
   }
 
-  // ===== Các trường hợp "bị sai / nhầm" nhưng KHÔNG đưa giá trị mới =====
-
   const hasWrongWord = /\b(sai|nhầm|nhập sai|nhập nhầm|bị nhầm|bị sai)\b/i.test(t);
 
-  // tên bị sai
   if (!updatedNameThisTurn && hasWrongWord && /\b(tên|họ\s*tên)\b/i.test(t)) {
     SLOT.data.name = null;
     changed = true;
     renderSlotReply("Không sao, bạn cho mình xin lại <b>HỌ TÊN chính xác</b> nhé.");
   }
 
-  // SĐT bị sai
   if (!updatedPhoneThisTurn && hasWrongWord && /\b(sđt|số\s*điện\s*thoại)\b/i.test(t)) {
     SLOT.data.phone = null;
     changed = true;
     renderSlotReply("Không sao, bạn gửi lại giúp mình <b>SĐT đúng</b> nhé (vd: 0912345678 hoặc +84 912345678).");
   }
 
-  // địa chỉ LẤY bị sai
   if (!updatedFromThisTurn && hasWrongWord &&
       /\b(địa\s*chỉ\s*(đi|lấy)|chỗ lấy|lấy hàng)\b/i.test(t)) {
     SLOT.data.fromAddr = null;
@@ -595,7 +674,6 @@ function detectAndApplyCorrections(rawText){
     renderSlotReply("Bạn gửi lại giúp mình <b>địa chỉ LẤY hàng</b> mới (số nhà, thôn/xã/phường, huyện/quận, tỉnh/thành) nhé.");
   }
 
-  // địa chỉ GIAO bị sai
   if (!updatedToThisTurn && hasWrongWord &&
       /\b(địa\s*chỉ\s*(đến|giao)|chỗ giao|giao hàng)\b/i.test(t)) {
     SLOT.data.toAddr = null;
@@ -605,7 +683,6 @@ function detectAndApplyCorrections(rawText){
     renderSlotReply("Bạn gửi lại giúp mình <b>địa chỉ GIAO hàng</b> mới (số nhà, thôn/xã/phường, huyện/quận, tỉnh/thành) nhé.");
   }
 
-  // ngày bị sai
   if (!updatedDateThisTurn && hasWrongWord && /\b(ngày)\b/i.test(t)) {
     SLOT.data.date = null;
     SLOT.data._dateObj = null;
@@ -613,7 +690,6 @@ function detectAndApplyCorrections(rawText){
     renderSlotReply("Không sao, bạn nhập lại giúp mình <b>NGÀY vận chuyển</b> (dd/mm/yyyy hoặc 'ngày mai', 'ngày 28 tháng này'...).");
   }
 
-  // giờ bị sai
   if (!updatedTimeThisTurn && hasWrongWord && /\b(giờ|time|thời gian)\b/i.test(t)) {
     SLOT.data.time = null;
     SLOT.data.datetime = null;
@@ -621,14 +697,11 @@ function detectAndApplyCorrections(rawText){
     renderSlotReply("Không sao, bạn nhập lại giúp mình <b>GIỜ vận chuyển</b> (vd: '9h', '9:15', '5h chiều', '10 rưỡi'...).");
   }
 
-  // ngay đầu hàm hoặc sau khi lấy t:
-SLOT.data.draftReady = false;
-try { sessionStorage.removeItem('aiquote_draft'); } catch {}
-
+  SLOT.data.draftReady = false;
+  try { sessionStorage.removeItem('aiquote_draft'); } catch {}
 
   return changed;
 }
-
 
 /* ========= Date/Time helpers ========= */
 function parseDateOnlyFromText(text) {
@@ -645,7 +718,6 @@ function parseDateOnlyFromText(text) {
   return { dt };
 }
 
-/* dạng linh hoạt: ngày mai, mốt, ngày 28 tháng này */
 function parseFlexibleDate(text) {
   const direct = parseDateOnlyFromText(text);
   if (direct) return direct;
@@ -755,7 +827,6 @@ function normalizePhone(phoneText) {
   const digits = String(phoneText||"").replace(/[^\d+]/g,"");
   if (!digits) return null;
 
-  // chấp nhận +84... hoặc 0...
   let d = digits;
   if (d.startsWith("+84")) d = "0" + d.slice(3);
   if (d.startsWith("84") && d.length===11) d = "0" + d.slice(2);
@@ -838,52 +909,62 @@ function showConfirmCTA() {
   chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
 }
 
-/* ========= Products & Pricing (rule cân nặng sách) ========= */
-const PRODUCTS_URL = "/user/data/products.json";
-const TARGET_COUNT = 10000;
+// GIÁ SẢN PHẨM BÂY GIỜ LẤY TỪ BACKEND, KHÔNG DÙNG products.json NỮA
+const PRODUCTS_URL = "/api/ai/products-price";
+
+/* Các keyword nhận diện đồ cồng kềnh / sách / ... (không dùng random giá nữa) */
 const BULKY_KEYWORDS = [
   "sofa","ghế sofa","sofa góc","giường","giường đơn","giường đôi","giường tầng",
   "tủ quần áo","tủ 3 cánh","tủ 4 cánh","tủ 5 cánh","tủ bếp lớn",
   "tủ lạnh side-by-side","tủ lạnh 4 cánh",
   "máy chạy bộ","máy tập đa năng","máy photocopy","két sắt lớn",
-  "máy giặt","máy sấy","máy rửa chén","máy lạnh đứng","tivi 55 inch","tivi 65 inch","tivi 75 inch",
+  "máy giặt","máy sấy","máy rửa chén","máy lạnh đứng",
+  "tivi 55 inch","tivi 65 inch","tivi 75 inch",
   "bàn họp","kệ kho sắt","bàn bida","bàn bida mini","tủ thờ","bàn thờ","cây cảnh lớn"
 ];
-const BASE_NAMES = [
-  "nồi cơm điện","bàn làm việc","bàn học","bàn ăn","bàn trà","bàn gấp",
-  "ghế xoay","kệ sách","tủ quần áo","tivi 55 inch","máy giặt","máy sấy",
-  "két sắt nhỏ","thùng carton nhỏ","thùng carton lớn","xe đẩy em bé","đàn guitar",
-  "máy hút bụi","loa kéo","máy pha cà phê","lò vi sóng","tủ bếp lớn"
-];
+
 const SIZE_TAGS = ["mini","nhỏ","vừa","lớn","cao cấp"];
 const MATERIALS = ["gỗ","gỗ sồi","gỗ thông","gỗ công nghiệp","nhựa","inox","thép","hợp kim","vải","da","da PU"];
 const COLORS = ["trắng","đen","xám","nâu","be","xanh","đỏ"];
-const rand = (arr) => arr[Math.floor(Math.random()*arr.length)];
-const randomInt = (min,max,step=5000)=>{
-  const a=Math.ceil(min/step), b=Math.floor(max/step);
-  return (Math.floor(Math.random()*(b-a+1))+a)*step;
-};
-const cheapPrice = () => randomInt(15_000, 150_000, 5000);
-const bulkyPrice = () => randomInt(250_000, 900_000, 5000);
-const isBulky = (name="") =>
-  BULKY_KEYWORDS.some(k => (name||"").toLowerCase().includes(k.toLowerCase()));
-const decorateName = (base) => {
-  const bits=[];
-  if(Math.random()<0.6) bits.push(rand(SIZE_TAGS));
-  if(Math.random()<0.4) bits.push(rand(MATERIALS));
-  if(Math.random()<0.4) bits.push(rand(COLORS));
-  return bits.length?`${base} (${bits.join(", ")})`:base;
-};
 
-/* Hạng mục tính theo cân nặng (ví dụ: sách) */
+// Tách tên chính & kích thước từ chuỗi tên
+const SIZE_WORDS = ["mini","nhỏ","vừa","lớn","cao cấp"];
+function splitNameAndSize(fullName) {
+  const full = String(fullName || "").trim();
+  if (!full) return { base: "", size: "" };
+
+  const mParen = full.match(/\((mini|nhỏ|vừa|lớn|cao cấp)\)\s*$/i);
+  if (mParen) {
+    return {
+      base: full.replace(/\((mini|nhỏ|vừa|lớn|cao cấp)\)\s*$/i, "").trim(),
+      size: mParen[1]
+    };
+  }
+
+  const lower = full.toLowerCase();
+  for (const w of SIZE_WORDS) {
+    if (lower.endsWith(" " + w)) {
+      return {
+        base: full.slice(0, full.length - w.length).trim(),
+        size: w
+      };
+    }
+  }
+
+  return { base: full, size: "" };
+}
+
+/* Hạng mục tính theo cân nặng (ví dụ: sách)
+ * Chỉ dùng để ƯỚC LƯỢNG CÂN NẶNG, KHÔNG tính tiền ở FE nữa.
+ */
 const WEIGHT_RULES = [
   {
     keywords: ["sách", "quyển sách", "cuốn sách", "thùng sách", "chồng sách", "sách vở"],
     unitLabel: "quyển",
-    kgPerUnit: 0.5,       // 1 quyển ≈ 0.5kg
-    pricePerKg: 8000      // 8k / kg
+    kgPerUnit: 0.5
   }
 ];
+
 function findWeightRuleForName(name) {
   if (!name) return null;
   const n = String(name).toLowerCase();
@@ -988,269 +1069,6 @@ async function fetchWithBackoff(url, options, { maxRetries = 3, baseDelay = 700 
   }
 }
 
-
-/* ========= [ADD] Helper: normalize & trích gợi ý hành chính từ query ========= */
-/* ========= [ADD] Helper: normalize & trích gợi ý hành chính từ query ========= */
-function _normalize(s){ 
-  return String(s||"").toLowerCase().normalize("NFC").trim(); 
-}
-
-function extractAdminHintsFromQuery(q){
-  const t = _normalize(q);
-
-  const mHamlet   = t.match(/\b(thôn|xóm|ấp|khóm|bản|buôn|tổ|khu|làng)\s+([a-z0-9\s\-]+)/i);
-  const mWard     = t.match(/\b(phường|xã|thị trấn)\s+([a-z0-9\s\-]+)/i);
-  const mDistrict = t.match(/\b(quận|huyện|thị xã)\s+([a-z0-9\s\-]+)/i);
-  const mCityProv = t.match(/\b(thành phố|tỉnh|tp\.?)\s+([a-z0-9\s\.\-]+)/i);
-
-  return {
-    hamlet:   mHamlet   ? _normalize(mHamlet[2])   : "",
-    ward:     mWard     ? _normalize(mWard[2])     : "",
-    district: mDistrict ? _normalize(mDistrict[2]) : "",
-    cityprov: mCityProv ? _normalize(mCityProv[2]) : ""
-  };
-}
-
-
-/* ========= [ADD] Helper: chấm điểm ứng viên theo cấp hành chính ========= */
-/* ========= [ADD] Helper: chấm điểm ứng viên theo cấp hành chính ========= */
-function scorePlaceByParts(parts, qHints){
-  const hamlet   = _normalize(parts.hamlet   || "");
-  const ward     = _normalize(parts.ward     || "");
-  const commune  = _normalize(parts.commune  || "");
-  const district = _normalize(parts.district || "");
-  const city     = _normalize(parts.city     || "");
-  const prov     = _normalize(parts.province || "");
-
-  // nếu quá chung chung, không có bất kỳ cấp nào -> vứt
-  if (!hamlet && !ward && !commune && !district && !city && !prov) {
-    return -1e9;
-  }
-
-  let s = 10; // base score
-
-  // có xã/phường → cộng điểm
-  if (ward || commune) s += 15;
-  // có thôn/xóm/ấp → cộng nhẹ, để ưu tiên chi tiết hơn
-  if (hamlet) s += 8;
-
-  // khớp tên thôn trong query
-  if (qHints.hamlet && hamlet && hamlet.includes(qHints.hamlet)) {
-    s += 35;
-  }
-
-  // khớp xã/ phường trong query
-  if (qHints.ward) {
-    if ((ward && ward.includes(qHints.ward)) ||
-        (commune && commune.includes(qHints.ward))) {
-      s += 25;
-    }
-  }
-
-  // khớp huyện
-  if (qHints.district && district && district.includes(qHints.district)) {
-    s += 15;
-  }
-
-  // khớp thành phố / tỉnh
-  if (qHints.cityprov && ( (city && city.includes(qHints.cityprov)) ||
-                           (prov && prov.includes(qHints.cityprov)) )) {
-    s += 10;
-  }
-
-  // bonus nếu đủ nhiều cấp
-  if (district) s += 4;
-  if (city)     s += 2;
-  if (prov)     s += 2;
-
-  return s;
-}
-
-
-/* ========= [ADD] Lấy NHIỀU ứng viên từ Nominatim/Photon (đã normPlace) ========= */
-async function geocodeNominatimMulti(q, limit = 6){
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&addressdetails=1&accept-language=vi&q=${encodeURIComponent(q)}`;
-  try {
-    const r = await fetchWithTimeout(url, {}, 7000);
-    if (!r.ok) throw new Error(`Nominatim HTTP ${r.status}`);
-    const arr = await r.json();
-    return (arr || []).map(x => normPlace(x, "nominatim")).filter(p => p.ok);
-  } catch { return []; }
-}
-
-async function geocodePhotonMulti(q, limit = 6){
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lang=vi&limit=${limit}`;
-  try {
-    const r = await fetchWithTimeout(url, {}, 7000);
-    if (!r.ok) throw new Error(`Photon HTTP ${r.status}`);
-    const data = await r.json();
-    const feats = Array.isArray(data?.features) ? data.features : [];
-    return feats.map(x => normPlace(x, "photon")).filter(p => p.ok);
-  } catch { return []; }
-}
-
-/* ========= [REPLACE] Geocode address: bắt buộc có xã/phường + chọn best match ========= */
-/* ========= [REPLACE] Geocode address: chọn best match, chấp nhận từ cấp thôn trở lên ========= */
-async function geocodeAddress(query) {
-  const q = String(query || "").trim();
-  if (q.length < 3) return { ok:false };
-
-  const hints = extractAdminHintsFromQuery(q);
-
-  // Lấy pool ứng viên từ cả 2 nguồn
-  const pool = [
-    ...(await geocodeNominatimMulti(q, 6)),
-    ...(await geocodePhotonMulti(q, 6))
-  ];
-
-  // Chỉ giữ những ứng viên có ít nhất 1 cấp hành chính (thôn/xã/huyện/tỉnh...)
-  const candidates = pool.filter(p => {
-    const parts = p.parts || {};
-    return !!(parts.hamlet || parts.ward || parts.commune ||
-              parts.district || parts.city || parts.province);
-  });
-
-  if (!candidates.length) return { ok:false };
-
-  // Chấm điểm & chọn tốt nhất
-  candidates.sort((a,b) => {
-    const pa = scorePlaceByParts(a.parts || {}, hints);
-    const pb = scorePlaceByParts(b.parts || {}, hints);
-    return pb - pa;
-  });
-
-  return candidates[0] || { ok:false };
-}
-
-
-/* ========= [REPLACE] Fallback geocode: chấp nhận từ thôn trở lên ========= */
-async function resolveAddressWithFallback(addr) {
-  const raw = String(addr || "").trim();
-  if (!raw) return { ok:false };
-
-  const accept = (res, usedQuery, fallbackTag) => {
-    if (!res?.ok) return null;
-    const parts = res.parts || {};
-
-    // CHỈ YÊU CẦU có ít nhất một cấp hành chính (thôn/xã/phường/huyện/tỉnh)
-    const hasAdmin =
-      !!(parts.hamlet || parts.ward || parts.commune ||
-         parts.district || parts.city || parts.province);
-
-    if (!hasAdmin) return null;
-
-    return {
-      ok: true,
-      ...res,
-      missingHouse: !parts.houseNumber,
-      usedQuery,
-      fallback: fallbackTag
-    };
-  };
-
-  // 1) Full chuỗi
-  const primary = await geocodeAddress(raw);
-  const a1 = accept(primary, raw, "none");
-  if (a1) return a1;
-
-  // 2) Cắt từ cấp thôn/xóm/ấp/tổ... trở đi
-  const hamletOnly = stripToHamletLevel(raw);
-  if (hamletOnly && hamletOnly !== raw) {
-    const p2 = await geocodeAddress(hamletOnly);
-    const a2 = accept(p2, hamletOnly, "hamlet");
-    if (a2) return a2;
-  }
-
-  // 3) Bỏ số nhà/đầu chuỗi
-  const stripped = stripHouseNumber(raw);
-  if (stripped && stripped !== raw && stripped !== hamletOnly) {
-    const p3 = await geocodeAddress(stripped);
-    const a3 = accept(p3, stripped, "strip");
-    if (a3) return a3;
-  }
-
-  // 4) Không có kết quả đủ thông tin
-  return { ok:false };
-}
-
-
-
-/* ========= Prompt build ========= */
-function buildPromptText(userText) {
-  const s = loadSettings();
-  const priceLines = (s.items || [])
-    .slice(0, 200)
-    .map(it => `- ${it.name}: ${Number(it.price).toLocaleString()} ${s.currency}`)
-    .join("\n");
-  return s.basePrompt +
-    "\n\nBảng đơn giá tham khảo (một phần):\n" +
-    priceLines +
-    "\n\nHãy liệt kê hạng mục theo định dạng đã yêu cầu.\n\n" +
-    (userText || "");
-}
-
-/* ========= Upload preview ========= */
-function renderUploadPreview() {
-  if (!fileUploadWrapper) return;
-  const grid = fileUploadWrapper.querySelector(".thumb-grid");
-  if (!grid) return;
-  grid.innerHTML = "";
-  userUploads.forEach((u, idx) => {
-    const item = document.createElement("div");
-    item.className = "thumb";
-    item.innerHTML = `
-      <img src="${u.previewUrl}" alt="upload ${idx + 1}">
-      <button type="button" class="thumb-remove" data-idx="${idx}" title="Xoá ảnh">&times;</button>`;
-    grid.appendChild(item);
-  });
-  fileUploadWrapper.classList.toggle("file-uploaded", userUploads.length > 0);
-}
-if (fileInput) {
-  fileInput.multiple = true;
-  fileInput.addEventListener("change", () => {
-    const files = Array.from(fileInput.files || []);
-    fileInput.value = "";
-    if (!files.length) return;
-    if (userUploads.length + files.length > 10) {
-      alert("Bạn chỉ có thể tải lên tối đa 10 ảnh.");
-      return;
-    }
-    const images = files.filter(f => /^image\//i.test(f.type));
-    if (images.length !== files.length) {
-      alert("Một số tệp không phải hình ảnh nên đã bị bỏ qua.");
-    }
-    Promise.all(
-      images.map(file => new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const previewUrl = e.target.result;
-          const base64 = previewUrl.split(",")[1];
-          userUploads.push({ data: base64, mime_type: file.type, previewUrl });
-          resolve();
-        };
-        reader.readAsDataURL(file);
-      }))
-    ).then(renderUploadPreview);
-  });
-}
-if (fileUploadWrapper) {
-  fileUploadWrapper.addEventListener("click", (e) => {
-    const btn = e.target.closest(".thumb-remove");
-    if (!btn) return;
-    const idx = +btn.getAttribute("data-idx");
-    if (idx >= 0) {
-      userUploads.splice(idx, 1);
-      renderUploadPreview();
-    }
-  });
-}
-if (fileCancelButton) {
-  fileCancelButton.addEventListener("click", () => {
-    userUploads.splice(0, userUploads.length);
-    renderUploadPreview();
-  });
-}
-
 /* ========= Parse AI text -> [{name, qty}] ========= */
 function parseItemsFromAiText(text) {
   if (!text) return [];
@@ -1271,9 +1089,9 @@ function parseItemsFromAiText(text) {
       lower.startsWith("ghi chú") ||
       /[\?؟]+$/.test(lower)
     ) continue;
-    const mQty = line.match(qtyRegex);
-    if (!mQty) continue;
-    const qty = parseInt(mQty[1].replace(/[^\d]/g, ""), 10) || 1;
+    const m = line.match(qtyRegex);
+    if (!m) continue;
+    const qty = parseInt(m[1].replace(/[^\d]/g, ""), 10) || 1;
     let name = line.split(/[—:]/)[0]
       .replace(/\((.*?)\)/g, "")
       .replace(/\s+/g, " ")
@@ -1292,9 +1110,9 @@ function parseItemsFromAiText(text) {
   const sumAmountEl = document.querySelector("#sum-amount");
   if (!itemsTbody || !sumQtyEl || !sumAmountEl) return;
 
-  let items = []; // {id,name,price,qty}
-  let priceIndexExact = null; // Map<lowerName, price>
-  let priceIndexList = null;  // Array<[lowerName, price]>
+  let items = [];
+  let priceIndexExact = null;
+  let priceIndexList = null;
 
   function buildPriceIndex() {
     const list = loadSettings().items || [];
@@ -1315,11 +1133,7 @@ function parseItemsFromAiText(text) {
     const n = (name || "").toLowerCase().trim();
     if (!n) return 0;
 
-    const weightRule = findWeightRuleForName(name);
-    if (weightRule) {
-      return weightRule.kgPerUnit * weightRule.pricePerKg;
-    }
-
+    // KHÔNG có fallback giá sách / random nữa – chỉ dùng giá từ DB
     if (priceIndexExact.has(n)) return priceIndexExact.get(n);
 
     const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -1332,14 +1146,12 @@ function parseItemsFromAiText(text) {
 
   const fmt = (n) => Number(n || 0).toLocaleString() + " " + currency();
 
-  // Tính phí ship theo quãng đường đã có trong SLOT (OSRM)
-function computeShipFee() {
-  const km = Number(window?.AIQUOTE_SLOT?.data?.km || 0);
-  const cfg = loadSettings();
-  if (!km) return 0;
-  return Math.max(cfg.minFare, Math.round(km * (cfg.pricePerKm || 0)));
-}
-
+  function computeShipFee() {
+    const km = Number(window?.AIQUOTE_SLOT?.data?.km || 0);
+    const cfg = loadSettings();
+    if (!km) return 0;
+    return Math.max(cfg.minFare, Math.round(km * (cfg.pricePerKm || 0)));
+  }
 
   function normalizeNameForCompare(name) {
     if (!name) return "";
@@ -1350,71 +1162,76 @@ function computeShipFee() {
   }
 
   function render() {
-  itemsTbody.innerHTML = "";
+    itemsTbody.innerHTML = "";
 
-  if (!items.length) {
-    const tr = document.createElement("tr");
-    tr.className = "empty-row";
-    tr.innerHTML = `
-      <td colspan="4" class="text-muted text-center py-3">
-        Chưa có sản phẩm. Gửi ảnh để AI nhận diện hoặc thêm thủ công.
-      </td>`;
-    itemsTbody.appendChild(tr);
-  } else {
-    for (const it of items) {
-      const hasPrice = Number(it.price) > 0;
-      const priceHtml = hasPrice
-        ? `${fmt(it.price)}`
-        : `<span class="text-muted font-italic">báo giá sau</span>`;
-      const subHtml = hasPrice
-        ? `Tạm tính: ${fmt(it.price * it.qty)}`
-        : `<span class="text-muted">Tạm tính: —</span>`;
-
-      let weightExtraHtml = "";
-      const rule = findWeightRuleForName(it.name);
-      if (rule) {
-        const qty = Number(it.qty) || 0;
-        const totalKg = qty * rule.kgPerUnit;
-        weightExtraHtml = `<br><small class="text-muted">≈ ${totalKg.toFixed(1)} kg, ${fmt(rule.pricePerKg)} / kg</small>`;
-      }
-
+    if (!items.length) {
       const tr = document.createElement("tr");
-      tr.dataset.id = it.id;
+      tr.className = "empty-row";
       tr.innerHTML = `
-        <td>${escapeHTML(it.name)}</td>
-        <td class="text-center">
-          <div class="qty-group">
-            <button class="btn-minus" type="button" aria-label="Giảm">−</button>
-            <input class="qty-input" value="${it.qty}" inputmode="numeric">
-            <button class="btn-plus" type="button" aria-label="Tăng">+</button>
-          </div>
-        </td>
-        <td class="text-right">
-          <div>${priceHtml}${weightExtraHtml}</div>
-          <small class="text-muted">${subHtml}</small>
-        </td>
-        <td class="text-right">
-          <button class="btn btn-sm btn-outline-danger btn-del" title="Xoá">
-            <i class="fas fa-trash"></i>
-          </button>
+        <td colspan="5" class="text-muted text-center py-3">
+          Chưa có sản phẩm. Gửi ảnh để AI nhận diện hoặc thêm thủ công.
         </td>`;
       itemsTbody.appendChild(tr);
+    } else {
+      for (const it of items) {
+        const hasPrice = Number(it.price) > 0;
+        const priceHtml = hasPrice
+          ? `${fmt(it.price)}`
+          : `<span class="text-muted font-italic">báo giá sau</span>`;
+        const subHtml = hasPrice
+          ? `Tạm tính: ${fmt(it.price * it.qty)}`
+          : `<span class="text-muted">Tạm tính: —</span>`;
+
+        let weightExtraHtml = "";
+        const rule = findWeightRuleForName(it.name);
+        if (rule) {
+          const qty = Number(it.qty) || 0;
+          const totalKg = qty * rule.kgPerUnit;
+          weightExtraHtml = `<br><small class="text-muted">≈ ${totalKg.toFixed(1)} kg</small>`;
+        }
+
+        const { base, size } = splitNameAndSize(it.name);
+
+        const tr = document.createElement("tr");
+        tr.dataset.id = it.id;
+        tr.innerHTML = `
+          <td>${escapeHTML(base)}</td>
+          <td class="text-center">
+            ${size
+              ? `<span class="badge badge-light">${escapeHTML(size)}</span>`
+              : `<span class="text-muted">—</span>`}
+          </td>
+          <td class="text-center">
+            <div class="qty-group">
+              <button class="btn-minus" type="button" aria-label="Giảm">−</button>
+              <input class="qty-input" value="${it.qty}" inputmode="numeric">
+              <button class="btn-plus" type="button" aria-label="Tăng">+</button>
+            </div>
+          </td>
+          <td class="text-right">
+            <div>${priceHtml}${weightExtraHtml}</div>
+            <small class="text-muted">${subHtml}</small>
+          </td>
+          <td class="text-right">
+            <button class="btn btn-sm btn-outline-danger btn-del" title="Xoá">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>`;
+        itemsTbody.appendChild(tr);
+      }
     }
+
+    const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
+    const itemsAmount = items
+      .filter(i => Number(i.price) > 0)
+      .reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);
+
+    const shipFee    = computeShipFee();
+    const grandTotal = itemsAmount + shipFee;
+
+    sumQtyEl.textContent = String(totalQty);
+    sumAmountEl.textContent = Number(grandTotal).toLocaleString() + " " + currency();
   }
-
-  // ===== Tổng bên phải: TIỀN HÀNG + PHÍ SHIP (khớp với tóm tắt chat) =====
-  const totalQty = items.reduce((s,i)=>s+Number(i.qty||0),0);
-  const itemsAmount = items
-    .filter(i => Number(i.price) > 0)
-    .reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);
-
-  const shipFee    = computeShipFee();       // phí ship từ SLOT.data.km
-  const grandTotal = itemsAmount + shipFee;  // tổng cuối cùng
-
-  sumQtyEl.textContent = String(totalQty);
-  sumAmountEl.textContent = Number(grandTotal).toLocaleString() + " " + currency();
-}
-
 
   function setItems(list) {
     items = (list || []).map(it => {
@@ -1429,7 +1246,6 @@ function computeShipFee() {
     }).filter(it => it.name);
     render();
     window.AIQUOTE.rerender = render;
-
   }
 
   function appendItemsFromAi(list) {
@@ -1523,8 +1339,7 @@ function computeShipFee() {
       if (!rule) continue;
       const qty = Number(it.qty) || 0;
       const kg = qty * rule.kgPerUnit;
-      const amount = kg * rule.pricePerKg;
-      summary.push({ name: it.name, qty, kg, pricePerKg: rule.pricePerKg, amount });
+      summary.push({ name: it.name, qty, kg });
     }
     return summary;
   };
@@ -1565,9 +1380,8 @@ function computeShipFee() {
 
   render();
 
-    window.AIQUOTE.exportItems = () =>
+  window.AIQUOTE.exportItems = () =>
     items.map(it => ({ name: it.name, qty: Number(it.qty||0), price: Number(it.price||0) }));
-
 })();
 
 /* ========= Parse lệnh thêm/xoá ========= */
@@ -1775,7 +1589,6 @@ function autofillSlotFromFreeText(text) {
     }
   }
 
-    // ===== NGÀY + GIỜ =====
   const existingDate = SLOT.data.date;
   const existingTime = SLOT.data.time;
   const dateParsed = parseFlexibleDate(raw);
@@ -1796,13 +1609,11 @@ function autofillSlotFromFreeText(text) {
       SLOT.data.datetime = formatDateTimeVN(dt);
       SLOT.data._datetimeObj = dt;
     } else {
-      // chỉ có giờ, chưa có ngày ⇒ lưu giờ thôi
       SLOT.data.time = formatTimeVN(timeParsed.hour, timeParsed.minute);
       SLOT.data._datetimeObj = null;
     }
   }
 }
-
 
 /* ========= AI call ========= */
 async function generateBotResponse(incomingMessageDiv, userText, opts = {}) {
@@ -1845,7 +1656,7 @@ async function generateBotResponse(incomingMessageDiv, userText, opts = {}) {
     const parsed = parseItemsFromAiText(apiText);
     if (allowAutofill && parsed.length) {
       if (window.AIQUOTE?.appendItemsFromAi) {
-        window.AIQUOTE.appendItemsFromAi(parsed); // cộng dồn
+        window.AIQUOTE.appendItemsFromAi(parsed);
       }
     }
     if (allowAutofill) {
@@ -1877,20 +1688,18 @@ async function renderFinalCombinedSummary() {
   }
 
   if (!d.km) {
-  const dist = await calcDistance(d.fromPlace, d.toPlace);
-  if (!dist.ok) {
-    renderSlotReply("Mình chưa tính được quãng đường giữa 2 địa chỉ. Bạn kiểm tra lại địa chỉ giúp mình nhé.");
-    return;
+    const dist = await calcDistance(d.fromPlace, d.toPlace);
+    if (!dist.ok) {
+      renderSlotReply("Mình chưa tính được quãng đường giữa 2 địa chỉ. Bạn kiểm tra lại địa chỉ giúp mình nhé.");
+      return;
+    }
+    d.km = dist.km;
+    d.durationText = dist.durationText;
+    d.routeText = dist.routeText;
+    d.routeSeconds = dist.seconds || null;
+
+    window.AIQUOTE?.rerender?.();
   }
-  d.km = dist.km;
-  d.durationText = dist.durationText;
-  d.routeText = dist.routeText;
-  d.routeSeconds = dist.seconds || null;   // <-- THÊM DÒNG NÀY
-
-  // Tính xong km thì cập nhật lại panel tổng tiền bên phải
-  window.AIQUOTE?.rerender?.();
-}
-
 
   const { amount: itemsAmount } = (window.AIQUOTE?.getTotals?.() || { amount: 0 });
   const cfg = loadSettings();
@@ -1900,25 +1709,22 @@ async function renderFinalCombinedSummary() {
   const fromFmt = d.fromPlace?.formatted || d.fromAddr || "—";
   const toFmt   = d.toPlace?.formatted   || d.toAddr   || "—";
 
-    // Thời điểm lấy hàng (ngày + giờ KH chọn)
   let pickupText = "—";
   if (d.datetime) {
-    pickupText = d.datetime;                                // đã có sẵn chuỗi dd/MM/yyyy HH:mm
+    pickupText = d.datetime;
   } else if (d._datetimeObj) {
     pickupText = formatDateTimeVN(d._datetimeObj);
   } else if (d.date || d.time) {
     pickupText = [d.date || "", d.time || ""].join(" ").trim();
   }
 
-  // Thời gian ước tính giao hàng = thời gian lấy hàng + thời gian di chuyển
   let etaText = "—";
   if (d._datetimeObj && d.routeSeconds) {
     const etaDate = new Date(d._datetimeObj.getTime() + d.routeSeconds * 1000);
     etaText = formatDateTimeVN(etaDate);
   }
 
-
- const html = `
+  const html = `
   <b>TÓM TẮT YÊU CẦU & BÁO GIÁ</b>
   <table class="table table-sm mt-2 mb-2">
     <tbody>
@@ -1938,76 +1744,130 @@ async function renderFinalCombinedSummary() {
   </small>
 `;
 
+  const exportedItems = (window.AIQUOTE?.exportItems?.() || []);
 
-  // Sau khi đã render tóm tắt và tính phí/route
-const payload = buildDraftPayload();
-try {
-  sessionStorage.setItem('aiquote_draft', JSON.stringify(payload));
-} catch {}
-SLOT.data.draftReady = true;
+  const draft = {
+    customer: { name: d.name || "", phone: d.phone || "" },
+    pickup:   { raw: d.fromAddr || "", formatted: d.fromPlace?.formatted || "", lat: d.fromPlace?.lat, lng: d.fromPlace?.lng, parts: d.fromParts || null },
+    dropoff:  { raw: d.toAddr   || "", formatted: d.toPlace?.formatted   || "", lat: d.toPlace?.lat, lng: d.toPlace?.lng, parts: d.toParts  || null },
 
-// Gợi ý người dùng: giờ có thể sang trang hợp đồng
-renderSlotReply(
-  '<i class="far fa-file-alt mr-1"></i> Hợp đồng nháp đã sẵn sàng. ' +
-  'Bạn có thể bấm nút <b>Xác nhận vận chuyển</b> ở khung bên phải để xem chi tiết và in/chia sẻ.'
-);
+    schedule: { date: d.date, time: d.time, datetime: d.datetime },
 
-// (tuỳ chọn) bật trạng thái nút bên card phải
-document.querySelector('#btn-confirm-shipment')?.classList.add('ready');
+    route: {
+      km: d.km,
+      distanceKm: d.km,
+      durationText: d.durationText,
+      routeText: d.routeText,
+      seconds: d.routeSeconds
+    },
 
-  // Lưu nháp để /contract đọc
-// ... (đoạn trên giữ nguyên: đã có itemsAmount, shipFee, grandTotal, d.km, etc.)
+    cart: {
+      totalQty: (window.AIQUOTE?.getTotals?.() || { qty:0 }).qty,
+      itemsAmount: itemsAmount,
+      items: exportedItems
+    },
 
-// ---- GÓI DỮ LIỆU DRAFT THỐNG NHẤT (để Request đọc)
-const exportedItems = (window.AIQUOTE?.exportItems?.() || []);
+    pricing: {
+      moveAmount: itemsAmount,
+      shipFee: shipFee,
+      grandTotal: grandTotal
+    },
 
-const draft = {
-  customer: { name: d.name || "", phone: d.phone || "" },
-  pickup:   { raw: d.fromAddr || "", formatted: d.fromPlace?.formatted || "", lat: d.fromPlace?.lat, lng: d.fromPlace?.lng, parts: d.fromParts || null },
-  dropoff:  { raw: d.toAddr   || "", formatted: d.toPlace?.formatted   || "", lat: d.toPlace?.lat, lng: d.toPlace?.lng, parts: d.toParts  || null },
+    itemsAmount: itemsAmount,
+    shipFee: shipFee,
+    grandTotal: grandTotal,
 
-  schedule: { date: d.date, time: d.time, datetime: d.datetime },
-
-  route: {
-    km: d.km,
-    distanceKm: d.km,              // alias để phía Request đọc
-    durationText: d.durationText,
-    routeText: d.routeText,
-    seconds: d.routeSeconds
-  },
-
-  cart: {
-    totalQty: (window.AIQUOTE?.getTotals?.() || { qty:0 }).qty,
-    itemsAmount: itemsAmount,       // tiền hàng tạm tính
-    items: exportedItems
-  },
-
-  // **** QUAN TRỌNG: Giá đã tính cuối cùng (để Request hiển thị)
-  pricing: {
-    moveAmount: itemsAmount,        // phí vận chuyển đồ (tiền hàng tạm tính)
-    shipFee: shipFee,               // phí ship theo km
-    grandTotal: grandTotal          // tổng cuối cùng
-  },
-
-  // alias top-level (tuỳ bạn có thể bỏ, nhưng để dễ đọc ở nơi khác)
-  itemsAmount: itemsAmount,
-  shipFee: shipFee,
-  grandTotal: grandTotal,
-
-  currency: (loadSettings().currency || "VND"),
-  createdAt: new Date().toISOString()
-};
-
-// LƯU 1 LẦN vào sessionStorage
-try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
-SLOT.data.draftReady = true;
-window.AIQUOTE_DRAFT_READY = true;
+    currency: (loadSettings().currency || "VND"),
+    createdAt: new Date().toISOString()
+  };
 
   try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
+  SLOT.data.draftReady = true;
   window.AIQUOTE_DRAFT_READY = true;
 
   renderSlotReply(html);
 
+  renderSlotReply(
+    '<i class="far fa-file-alt mr-1"></i> Hợp đồng nháp đã sẵn sàng. ' +
+    'Bạn có thể bấm nút <b>Xác nhận vận chuyển</b> ở khung bên phải để xem chi tiết và in/chia sẻ.'
+  );
+  document.querySelector('#btn-confirm-shipment')?.classList.add('ready');
+}
+
+/* ========= Prompt build ========= */
+function buildPromptText(userText) {
+  const s = loadSettings();
+  const priceLines = (s.items || [])
+    .slice(0, 200)
+    .map(it => `- ${it.name}: ${Number(it.price).toLocaleString()} ${s.currency}`)
+    .join("\n");
+  return s.basePrompt +
+    "\n\nBảng đơn giá tham khảo (một phần):\n" +
+    priceLines +
+    "\n\nHãy liệt kê hạng mục theo định dạng đã yêu cầu.\n\n" +
+    (userText || "");
+}
+
+/* ========= Upload preview ========= */
+function renderUploadPreview() {
+  if (!fileUploadWrapper) return;
+  const grid = fileUploadWrapper.querySelector(".thumb-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  userUploads.forEach((u, idx) => {
+    const item = document.createElement("div");
+    item.className = "thumb";
+    item.innerHTML = `
+      <img src="${u.previewUrl}" alt="upload ${idx + 1}">
+      <button type="button" class="thumb-remove" data-idx="${idx}" title="Xoá ảnh">&times;</button>`;
+    grid.appendChild(item);
+  });
+  fileUploadWrapper.classList.toggle("file-uploaded", userUploads.length > 0);
+}
+if (fileInput) {
+  fileInput.multiple = true;
+  fileInput.addEventListener("change", () => {
+    const files = Array.from(fileInput.files || []);
+    fileInput.value = "";
+    if (!files.length) return;
+    if (userUploads.length + files.length > 10) {
+      alert("Bạn chỉ có thể tải lên tối đa 10 ảnh.");
+      return;
+    }
+    const images = files.filter(f => /^image\//i.test(f.type));
+    if (images.length !== files.length) {
+      alert("Một số tệp không phải hình ảnh nên đã bị bỏ qua.");
+    }
+    Promise.all(
+      images.map(file => new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const previewUrl = e.target.result;
+          const base64 = previewUrl.split(",")[1];
+          userUploads.push({ data: base64, mime_type: file.type, previewUrl });
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      }))
+    ).then(renderUploadPreview);
+  });
+}
+if (fileUploadWrapper) {
+  fileUploadWrapper.addEventListener("click", (e) => {
+    const btn = e.target.closest(".thumb-remove");
+    if (!btn) return;
+    const idx = +btn.getAttribute("data-idx");
+    if (idx >= 0) {
+      userUploads.splice(idx, 1);
+      renderUploadPreview();
+    }
+  });
+}
+if (fileCancelButton) {
+  fileCancelButton.addEventListener("click", () => {
+    userUploads.splice(0, userUploads.length);
+    renderUploadPreview();
+  });
 }
 
 /* ========= Handle send ========= */
@@ -2021,16 +1881,12 @@ function handleOutgoingMessage(e) {
   }
   if (!chatBody) return;
 
-  // 1) Cho phép sửa giữa chừng (ưu tiên chạy trước)
   detectAndApplyCorrections(text);
 
-  // 2) Auto-fill chỉ dùng khi KHÔNG ở mode hỏi từng bước
-  //    (tránh trường hợp đang hỏi SĐT mà lại tự nhảy sang slot địa chỉ)
   if (SLOT.mode !== "collect") {
     autofillSlotFromFreeText(text);
   }
 
-  // 3) Render message người dùng
   const content = `
     <div class="message-text"></div>
     ${
@@ -2047,7 +1903,6 @@ function handleOutgoingMessage(e) {
   chatBody.appendChild(outgoing);
   chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "smooth" });
 
-  // 4) Nếu đang ở mode hỏi thông tin (slot collect)
   if (SLOT.mode === "collect") {
     const key = nextMissingKey();
     if (key) {
@@ -2149,7 +2004,17 @@ function handleOutgoingMessage(e) {
         renderSlotReply("Đang kiểm tra địa chỉ trên bản đồ…");
         resolveAddressWithFallback(addr).then(g => {
           if (!g.ok) {
-            renderSlotReply("Địa chỉ chưa tìm thấy trên bản đồ. Bạn mô tả chi tiết hơn (số nhà, thôn/xã/phường, huyện/quận, tỉnh/thành) nhé.");
+            if (g.reason === "out_of_area") {
+              renderSlotReply(
+                "Hiện tại hệ thống chỉ hỗ trợ địa chỉ trong <b>Hà Nội</b>. " +
+                "Bạn nhập lại giúp mình một địa chỉ thuộc Hà Nội nhé."
+              );
+            } else {
+              renderSlotReply(
+                "Địa chỉ chưa tìm thấy trên bản đồ. " +
+                "Bạn mô tả chi tiết hơn (số nhà, thôn/xã/phường, huyện/quận, tỉnh/thành) nhé."
+              );
+            }
             return;
           }
           SLOT.data[key] = addr.trim();
@@ -2160,11 +2025,13 @@ function handleOutgoingMessage(e) {
 
           if (g.missingHouse) {
             renderSlotReply(
-              `Mình chưa định vị chính xác được số nhà, nên sẽ lấy khu vực gần: <b>${escapeHTML(g.formatted)}</b>. Khi đến nơi tài xế sẽ gọi bạn để xác nhận chi tiết địa chỉ.`
+              `Mình chưa định vị chính xác được số nhà, nên sẽ lấy khu vực gần: <b>${escapeHTML(g.formatted)}</b>.<br>` +
+              `Khi đến nơi tài xế sẽ gọi bạn để xác nhận chi tiết địa chỉ.`
             );
           } else {
             renderSlotReply(
-              `${key === "fromAddr" ? "Địa chỉ lấy hàng" : "Địa chỉ giao hàng"} đã xác thực: <b>${escapeHTML(g.formatted)}</b>`
+              `${key === "fromAddr" ? "Địa chỉ lấy hàng" : "Địa chỉ giao hàng"} đã xác thực: ` +
+              `<b>${escapeHTML(g.formatted)}</b>`
             );
           }
           const nextKey2 = nextMissingKey();
@@ -2193,7 +2060,6 @@ function handleOutgoingMessage(e) {
     return;
   }
 
-  // 5) Không ở mode slot-collect: xử lý add/remove intent + AI từ ảnh
   const toAdd = parseUserAddCommand(text);
   const toRemove = parseUserRemoveCommand(text);
   const hasShippingIntent = detectShippingIntent(text);
@@ -2227,7 +2093,6 @@ function handleOutgoingMessage(e) {
     return;
   }
 
-  // 6) Nếu không có ảnh & không phải intent vận chuyển → nhắc phạm vi
   if (!userUploads.length) {
     if (isSmallTalkOrGreeting(text)) {
       renderSlotReply(
@@ -2242,12 +2107,11 @@ function handleOutgoingMessage(e) {
     return;
   }
 
-  // 7) Có ảnh → gọi AI
   setTimeout(() => {
     if (!chatBody) return;
     const botContent = `
       <svg class="bot-avatar" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 1024 1024">
-        <path d="M738.3 287.6H285.7c-59 0-106.8 47.8-106.8 106.8v303.1c0 59 47.8 106.8 106.8 106.8h81.5v111.1c0 .7.8 1.1 1.4.7l166.9-110.6 41.8-.8h117.4l43.6-.4c59 0 106.8-47.8 106.8-106.8V394.5c0-59-47.8-106.9-106.8-106.9zM351.7 448.2c0-29.5 23.9-53.5 53.5-53.5s53.5 23.9 53.5 53.5-23.9 53.5-53.5 53.5-53.5-23.9-53.5-53.5zm157.9 267.1c-67.8 0-123.8-47.5-132.3-109h264.6c-8.6 61.5-64.5 109-132.3 109zm110-213.7c-29.5 0-53.5-23.9-53.5-53.5s23.9-53.5 53.5-53.5 53.5 23.9 53.5 53.5-23.9 53.5-53.5 53.5zM867.2 644.5V453.1h26.5c19.4 0 35.1 15.7 35.1 35.1v121.1c0 19.4-15.7 35.1-35.1 35.1h-26.5zM95.2 609.4V488.2c0-19.4 15.7-35.1 35.1-35.1h26.5v191.3h-26.5c-19.4 0-35.1 15.7-35.1-35.1zM561.5 149.6c0 23.4-15.6 43.3-36.9 49.7v44.9h-30v-44.9c-21.4-6.5-36.9-26.3-36.9-49.7 0-28.6 23.3-51.9 51.9-51.9s51.9 23.3 51.9 51.9z"/>
+        <path d="M738.3 287.6H285.7c-59 0-106.8 47.8-106.8 106.8v303.1c0 59 47.8 106.8 106.8 106.8h81.5v111.1c0 .7.8 1.1 1.4.7l166.9-110.6 41.8-.8h117.4l43.6-.4c59 0 106.8-47.8 106.8-106.8V394.5c0-59-47.8-106.9-106.8-106.9z"/>
       </svg>
       <div class="message-text">
         <div class="thinking-indicator">
@@ -2285,37 +2149,33 @@ if (sendMessage) {
   sendMessage.addEventListener("click", (e) => handleOutgoingMessage(e));
 }
 
-/* ========= Bootstrap products ========= */
+/* ========= Bootstrap products (lấy trực tiếp từ DB) ========= */
 (async function bootstrapProducts() {
   const s = loadSettings();
   let loaded = [];
   try {
     const r = await fetch(PRODUCTS_URL, { cache: "no-store" });
-    if (r.ok) loaded = await r.json();
+    if (r.ok) {
+      loaded = await r.json();
+    } else {
+      console.warn("Load products_price API failed, status =", r.status);
+    }
   } catch (e) {
-    console.warn("Load products.json failed", e);
+    console.warn("Load products_price API error:", e);
   }
 
   const normalized = [];
   const seen = new Set();
+
   for (const it of loaded || []) {
-    const name = String(it?.name || "").trim();
+    const name = String(it && it.name ? it.name : "").trim();
     if (!name) continue;
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    const price = Number(it?.price) || 0;
-    normalized.push({ name, price });
-  }
 
-  while (normalized.length < TARGET_COUNT) {
-    const baseName = BASE_NAMES[Math.floor(Math.random() * BASE_NAMES.length)];
-    const full = decorateName(baseName);
-    const key = full.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const price = isBulky(full) ? bulkyPrice() : cheapPrice();
-    normalized.push({ name: full, price });
+    const price = Number(it.price != null ? it.price : it.unitPrice) || 0;
+    normalized.push({ name, price });
   }
 
   s.items = normalized;
@@ -2338,28 +2198,23 @@ if (chatBody) {
 
 /* ========= Wire nút bên card phải ========= */
 document.querySelector("#btn-confirm-shipment")?.addEventListener("click", () => {
-  // Nếu đã có hợp đồng nháp -> chuyển qua trang contract
   if (isDraftReady()) {
     const url = (typeof CONTRACT_URL !== "undefined" && CONTRACT_URL) ? CONTRACT_URL : "/contract";
     window.location.href = url;
     return;
   }
 
-  // Chưa có nháp -> nếu chưa có món nào thì nhắc người dùng
   if (!hasAtLeastOneItem()) {
     renderSlotReply("Bạn chưa có hạng mục nào trong danh sách. Gửi ảnh để AI nhận diện hoặc thêm thủ công nhé.");
     return;
   }
 
-  // Bắt đầu flow hỏi thông tin để tạo nháp
   clearChatCTA();
   SLOT.mode = "collect"; 
   SLOT.step = 0;
   renderSlotReply("Cảm ơn bạn. Mình sẽ hỏi vài thông tin để tạo Hợp đồng nháp.");
   askSlotQuestion(nextMissingKey() || "name");
 });
-
-
 
 document.querySelector("#btn-open-manual")?.addEventListener("click", ()=>{
   $('#manualItemModal').modal('show');
@@ -2380,13 +2235,5 @@ document.querySelector("#mi-save")?.addEventListener("click", ()=>{
   $('#manualItemModal').modal('hide');
 });
 
-
-
-
-
 /* ========= Expose for BE validation hints ========= */
-/* Gợi ý cho BE:
-   - Nếu parts.houseNumber rỗng, hãy đảm bảo có ít nhất ward/commune/district/province.
-   - Nếu trùng tên thôn/ấp/khóm, dựa vào cấp xã; nếu xã trùng, dựa lên huyện/tỉnh để loại trừ.
-*/
 window.AIQUOTE_SLOT = SLOT;
