@@ -440,7 +440,7 @@ async function calcDistance(orig, dest) {
 }
 
 /* ========= Gemini ========= */
-const API_KEY = "AIzaSyBOPLfJpizsnHwB9WCOqs6EFtpVUz06ndw"; // <-- Nên chuyển về BE/proxy
+const API_KEY = "AIzaSyCblzDqrXzgbLZeZ82bmv8AK5uCsRkuwrA"; // <-- Nên chuyển về BE/proxy
 let MODEL = "gemini-2.0-flash";
 const FALLBACK_MODEL = "gemini-2.5-flash";
 const buildApiUrl = () => `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
