@@ -252,17 +252,43 @@
         }
     }
 
+    // ===== QUY ĐỊNH ACTION CHO TỪNG TRẠNG THÁI (STATE MACHINE) =====
     function allowedActionsForStatus(status) {
         const s = (status || '').toLowerCase();
+
         switch (s) {
             case 'pending':
+                // Bước 1: mới tạo
+                // -> Ghi nhận hợp đồng, Từ chối, Hủy (nếu cho phép)
                 return ['accepted', 'declined', 'cancelled'];
+
+            case 'accepted':
+                // Nếu có trạng thái accepted riêng:
+                // cho phép hủy nếu cần, KHÔNG cho skip sang in_progress
+                return ['cancelled'];
+
             case 'ready_to_pay':
+                // Bước 2: Chờ khách thanh toán
+                // - Nút "Xác nhận đã thanh toán" dùng btnConfirmPaid (tách riêng)
+                // - KHÔNG được "Bắt đầu vận chuyển"
+                // - Có thể hủy nếu nghiệp vụ cho phép
+                return ['cancelled'];
+
             case 'paid':
+                // Bước 3: Đã thanh toán
+                // -> Cho phép BẮT ĐẦU VẬN CHUYỂN (in_progress) và có thể hủy
                 return ['in_progress', 'cancelled'];
+
             case 'in_progress':
+                // Bước 4: Đang vận chuyển
+                // -> Cho phép HOÀN THÀNH (completed) và có thể hủy nếu cần
                 return ['completed', 'cancelled'];
+
+            case 'completed':
+            case 'cancelled':
+            case 'declined':
             default:
+                // Trạng thái cuối / từ chối -> không còn action thay đổi trạng thái
                 return [];
         }
     }
