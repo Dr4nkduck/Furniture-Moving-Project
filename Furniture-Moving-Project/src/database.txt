@@ -167,12 +167,12 @@ CREATE TABLE service_requests (
     preferred_date      DATE NOT NULL,
     status              VARCHAR(20) NOT NULL DEFAULT 'pending',
     total_cost          DECIMAL(10,2) NULL,
-    -- ===== CÁC CỘT THANH TOÁN ĐƯỢC THÊM TRỰC TIẾP TRONG DDL =====
+    -- ===== CỘT THANH TOÁN =====
     deposit_amount      DECIMAL(18,2) NULL,
-    payment_type        VARCHAR(20)   NULL,  -- FULL / DEPOSIT / ...
-    payment_status      VARCHAR(20)   NULL,  -- PENDING / PAID / REFUNDED / ...
+    payment_type        VARCHAR(20)   NULL,
+    payment_status      VARCHAR(20)   NULL,
     paid_at             DATETIME2     NULL,
-    -- =============================================================
+    -- ===========================
     contract_id         INT NULL,
     created_at          DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     cancel_reason       NVARCHAR(255) NULL,
@@ -222,7 +222,7 @@ CREATE TABLE request_addresses (
 CREATE INDEX IX_reqaddr_request     ON request_addresses(request_id);
 CREATE UNIQUE INDEX UX_reqaddr_type ON request_addresses(request_id, address_type);
 
--- FURNITURE ITEMS
+-- FURNITURE ITEMS (gắn với request)
 IF OBJECT_ID('furniture_items','U') IS NOT NULL DROP TABLE furniture_items;
 CREATE TABLE furniture_items (
     item_id           INT IDENTITY(1,1) PRIMARY KEY,
@@ -565,7 +565,19 @@ GO
    7) PROVIDER_SERVICE_PACKAGES & PROVIDER_PACKAGE_FURNITURE_PRICES
    ============================================================ */
 
--- provider_service_packages migration
+-- 7.1 Đảm bảo bảng provider_service_packages tồn tại
+IF OBJECT_ID('provider_service_packages','U') IS NULL
+BEGIN
+    CREATE TABLE provider_service_packages(
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        provider_id INT NOT NULL,
+        package_id  INT NOT NULL,
+        per_km DECIMAL(12,2) NULL,
+        package_name_snapshot NVARCHAR(150) NULL
+    );
+END;
+
+-- 7.2 Migration / bổ sung cột, index, FK cho provider_service_packages
 IF OBJECT_ID('provider_service_packages','U') IS NOT NULL
 BEGIN
     IF COL_LENGTH('provider_service_packages','base_fee') IS NOT NULL
@@ -602,13 +614,23 @@ BEGIN
         ALTER TABLE provider_service_packages ADD CONSTRAINT FK_psp_package
             FOREIGN KEY (package_id) REFERENCES service_packages(package_id);
 END
-ELSE
-BEGIN
-    PRINT 'SKIP: provider_service_packages does not exist -> migration step 1 skipped.';
-END
 GO
 
--- provider_package_furniture_prices
+-- 7.3 Master furniture_types (cho PV-002 & PPFP)
+IF OBJECT_ID('furniture_types','U') IS NULL
+BEGIN
+    CREATE TABLE furniture_types (
+        furniture_type_id INT IDENTITY(1,1) PRIMARY KEY,
+        code NVARCHAR(50)  NOT NULL UNIQUE,
+        name NVARCHAR(255) NOT NULL,
+        unit NVARCHAR(50)  NULL,
+        is_active BIT NOT NULL DEFAULT 1,
+        created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+    );
+END;
+GO
+
+-- 7.4 provider_package_furniture_prices
 IF OBJECT_ID('provider_package_furniture_prices','U') IS NULL
 BEGIN
   CREATE TABLE provider_package_furniture_prices(
@@ -689,7 +711,7 @@ VALUES
 GO
 
 /* ============================================================
-   9) SEED PSP/PPFP nhẹ cho provider 1 + gói OFFICE_MOVE
+   9) SEED PSP/PPFP nhẹ cho provider đầu tiên + gói OFFICE_MOVE
    ============================================================ */
 IF OBJECT_ID('provider_service_packages','U') IS NOT NULL
 BEGIN
@@ -771,7 +793,7 @@ END
 GO
 
 /* ============================================================
-   10) PRODUCTS_PRICE (bảng giá sản phẩm theo kg + seed khổng lồ)
+   10) PRODUCTS_PRICE (bảng giá sản phẩm theo size + sách theo kg)
    ============================================================ */
 IF OBJECT_ID('dbo.products_price', 'U') IS NOT NULL
 BEGIN
@@ -792,13 +814,206 @@ CREATE UNIQUE INDEX UX_products_price_base_size
     ON dbo.products_price(base_name, size_label);
 GO
 
-/* SEED cơ bản + thêm nhiều sản phẩm như file bạn gửi trước đó
-   (giữ nguyên để AI Quote dùng, bạn tự dán block INSERT cũ vào đây) */
+INSERT INTO dbo.products_price(base_name, size_label, is_bulky, unit_price) VALUES
+-- ===== Thùng carton =====
+(N'Thùng carton', N'Nhỏ', 0, 10000),
+(N'Thùng carton', N'Vừa', 0, 15000),
+(N'Thùng carton', N'Lớn', 0, 20000),
 
--- >>> BẮT ĐẦU KHỐI INSERT SẢN PHẨM GỐC CỦA BẠN <<<
--- INSERT INTO dbo.products_price(base_name, size_label, is_bulky, unit_price) VALUES
--- (... toàn bộ block cũ của bạn ...);
--- >>> KẾT THÚC KHỐI INSERT SẢN PHẨM GỐC CỦA BẠN <<<
+-- ===== Hộp nhựa chứa đồ =====
+(N'Hộp nhựa', N'Nhỏ', 0, 12000),
+(N'Hộp nhựa', N'Vừa', 0, 18000),
+(N'Hộp nhựa', N'Lớn', 0, 25000),
+
+-- ===== Bàn học =====
+(N'Bàn học', N'Nhỏ', 0, 40000),
+(N'Bàn học', N'Vừa', 0, 55000),
+(N'Bàn học', N'Lớn', 0, 70000),
+
+-- ===== Bàn làm việc =====
+(N'Bàn làm việc', N'Nhỏ', 0, 45000),
+(N'Bàn làm việc', N'Vừa', 0, 65000),
+(N'Bàn làm việc', N'Lớn', 0, 85000),
+
+-- ===== Bàn ăn =====
+(N'Bàn ăn', N'Nhỏ', 0, 50000),
+(N'Bàn ăn', N'Vừa', 0, 75000),
+(N'Bàn ăn', N'Lớn', 0, 100000),
+
+-- ===== Ghế đơn =====
+(N'Ghế đơn', N'Nhỏ', 0, 15000),
+(N'Ghế đơn', N'Vừa', 0, 20000),
+(N'Ghế đơn', N'Lớn', 0, 25000),
+
+-- ===== Ghế sofa =====
+(N'Sofa', N'Nhỏ', 1, 180000),
+(N'Sofa', N'Vừa', 1, 250000),
+(N'Sofa', N'Lớn', 1, 350000),
+
+-- ===== Giường =====
+(N'Giường', N'Nhỏ', 1, 220000),
+(N'Giường', N'Vừa', 1, 300000),
+(N'Giường', N'Lớn', 1, 380000),
+
+-- ===== Tủ quần áo =====
+(N'Tủ quần áo', N'Nhỏ', 1, 200000),
+(N'Tủ quần áo', N'Vừa', 1, 280000),
+(N'Tủ quần áo', N'Lớn', 1, 360000),
+
+-- ===== Tủ giày =====
+(N'Tủ giày', N'Nhỏ', 0, 30000),
+(N'Tủ giày', N'Vừa', 0, 45000),
+(N'Tủ giày', N'Lớn', 0, 60000),
+
+-- ===== Kệ sách =====
+(N'Kệ sách', N'Nhỏ', 0, 35000),
+(N'Kệ sách', N'Vừa', 0, 50000),
+(N'Kệ sách', N'Lớn', 0, 70000),
+
+-- ===== Kệ TV =====
+(N'Kệ TV', N'Nhỏ', 0, 40000),
+(N'Kệ TV', N'Vừa', 0, 60000),
+(N'Kệ TV', N'Lớn', 0, 80000),
+
+-- ===== Tủ bếp =====
+(N'Tủ bếp', N'Nhỏ', 1, 150000),
+(N'Tủ bếp', N'Vừa', 1, 220000),
+(N'Tủ bếp', N'Lớn', 1, 300000),
+
+-- ===== Tủ hồ sơ =====
+(N'Tủ hồ sơ', N'Nhỏ', 1, 90000),
+(N'Tủ hồ sơ', N'Vừa', 1, 130000),
+(N'Tủ hồ sơ', N'Lớn', 1, 180000),
+
+-- ===== Tivi =====
+(N'Tivi', N'Nhỏ', 0, 40000),
+(N'Tivi', N'Vừa', 0, 60000),
+(N'Tivi', N'Lớn', 0, 90000),
+
+-- ===== Tủ lạnh =====
+(N'Tủ lạnh', N'Nhỏ', 1, 120000),
+(N'Tủ lạnh', N'Vừa', 1, 180000),
+(N'Tủ lạnh', N'Lớn', 1, 260000),
+
+-- ===== Máy giặt =====
+(N'Máy giặt', N'Nhỏ', 1, 120000),
+(N'Máy giặt', N'Vừa', 1, 150000),
+(N'Máy giặt', N'Lớn', 1, 200000),
+
+-- ===== Máy sấy =====
+(N'Máy sấy', N'Nhỏ', 1, 120000),
+(N'Máy sấy', N'Vừa', 1, 150000),
+(N'Máy sấy', N'Lớn', 1, 200000),
+
+-- ===== Máy lạnh =====
+(N'Máy lạnh', N'Nhỏ', 1, 100000),
+(N'Máy lạnh', N'Vừa', 1, 140000),
+(N'Máy lạnh', N'Lớn', 1, 180000),
+
+-- ===== Bàn trang điểm =====
+(N'Bàn trang điểm', N'Nhỏ', 0, 40000),
+(N'Bàn trang điểm', N'Vừa', 0, 60000),
+(N'Bàn trang điểm', N'Lớn', 0, 80000),
+
+-- ===== Kệ kho sắt =====
+(N'Kệ kho sắt', N'Nhỏ', 1, 90000),
+(N'Kệ kho sắt', N'Vừa', 1, 140000),
+(N'Kệ kho sắt', N'Lớn', 1, 190000),
+
+-- ===== Cây cảnh =====
+(N'Cây cảnh', N'Nhỏ', 0, 30000),
+(N'Cây cảnh', N'Vừa', 0, 50000),
+(N'Cây cảnh', N'Lớn', 1, 90000),
+
+-- ===== Xe đạp =====
+(N'Xe đạp', N'Nhỏ', 1, 100000),
+(N'Xe đạp', N'Vừa', 1, 130000),
+(N'Xe đạp', N'Lớn', 1, 170000),
+
+-- ===== Máy chạy bộ =====
+(N'Máy chạy bộ', N'Nhỏ', 1, 220000),
+(N'Máy chạy bộ', N'Vừa', 1, 280000),
+(N'Máy chạy bộ', N'Lớn', 1, 350000),
+
+-- ===== Đàn piano =====
+(N'Đàn piano', N'Nhỏ', 1, 400000),
+(N'Đàn piano', N'Vừa', 1, 600000),
+(N'Đàn piano', N'Lớn', 1, 900000),
+
+-- ===== Két sắt =====
+(N'Két sắt', N'Nhỏ', 1, 150000),
+(N'Két sắt', N'Vừa', 1, 220000),
+(N'Két sắt', N'Lớn', 1, 300000),
+
+-- ===== Bàn thờ =====
+(N'Bàn thờ', N'Nhỏ', 1, 120000),
+(N'Bàn thờ', N'Vừa', 1, 170000),
+(N'Bàn thờ', N'Lớn', 1, 230000),
+
+-- ===== Tủ thờ =====
+(N'Tủ thờ', N'Nhỏ', 1, 150000),
+(N'Tủ thờ', N'Vừa', 1, 220000),
+(N'Tủ thờ', N'Lớn', 1, 300000),
+
+-- ===== Bộ bàn ghế ăn =====
+(N'Bộ bàn ghế ăn', N'Nhỏ', 1, 180000),
+(N'Bộ bàn ghế ăn', N'Vừa', 1, 240000),
+(N'Bộ bàn ghế ăn', N'Lớn', 1, 320000),
+
+-- ===== Bộ sofa góc =====
+(N'Bộ sofa góc', N'Nhỏ', 1, 260000),
+(N'Bộ sofa góc', N'Vừa', 1, 340000),
+(N'Bộ sofa góc', N'Lớn', 1, 420000),
+
+-- ===== Giá treo quần áo =====
+(N'Giá treo quần áo', N'Nhỏ', 0, 25000),
+(N'Giá treo quần áo', N'Vừa', 0, 35000),
+(N'Giá treo quần áo', N'Lớn', 0, 50000),
+
+-- ===== Cũi em bé =====
+(N'Cũi em bé', N'Nhỏ', 0, 50000),
+(N'Cũi em bé', N'Vừa', 0, 70000),
+(N'Cũi em bé', N'Lớn', 0, 90000),
+
+-- ===== Valy =====
+(N'Valy', N'Nhỏ', 0, 20000),
+(N'Valy', N'Vừa', 0, 30000),
+(N'Valy', N'Lớn', 0, 45000),
+
+-- ===== Quạt điện =====
+(N'Quạt điện', N'Nhỏ', 0, 10000),
+(N'Quạt điện', N'Vừa', 0, 15000),
+(N'Quạt điện', N'Lớn', 0, 20000),
+
+-- ===== Lò vi sóng =====
+(N'Lò vi sóng', N'Nhỏ', 0, 25000),
+(N'Lò vi sóng', N'Vừa', 0, 35000),
+(N'Lò vi sóng', N'Lớn', 0, 45000),
+
+-- ===== Nồi cơm điện =====
+(N'Nồi cơm điện', N'Nhỏ', 0, 15000),
+(N'Nồi cơm điện', N'Vừa', 0, 20000),
+(N'Nồi cơm điện', N'Lớn', 0, 26000),
+
+-- ===== Máy tính để bàn =====
+(N'Máy tính để bàn', N'Nhỏ', 0, 35000),
+(N'Máy tính để bàn', N'Vừa', 0, 45000),
+(N'Máy tính để bàn', N'Lớn', 0, 60000),
+
+-- ===== Màn hình =====
+(N'Màn hình', N'Nhỏ', 0, 20000),
+(N'Màn hình', N'Vừa', 0, 30000),
+(N'Màn hình', N'Lớn', 0, 40000),
+
+-- ===== Máy in =====
+(N'Máy in', N'Nhỏ', 0, 30000),
+(N'Máy in', N'Vừa', 0, 40000),
+(N'Máy in', N'Lớn', 0, 55000),
+
+-- ===== Sách – theo kg =====
+(N'Sách (đóng thùng)', N'1kg', 0, 15000),
+(N'Sách (đóng thùng)', N'5kg', 0, 60000),
+(N'Sách (đóng thùng)', N'10kg', 0, 100000);
 GO
 
 /* ============================================================
@@ -821,5 +1036,98 @@ IF NOT EXISTS (SELECT 1 FROM ai_quote_settings)
 BEGIN
     INSERT INTO ai_quote_settings(currency, price_per_km, min_fare, max_days_ahead)
     VALUES ('VND', 10000, 50000, 30);
+END;
+GO
+
+
+/* ============================================================
+   HAPPY CASE – Phòng khách (ảnh demo AI)
+   Thêm các sản phẩm mà AI đang nhận diện nhưng DB chưa có
+   (check NOT EXISTS để không bị trùng UNIQUE)
+   ============================================================ */
+IF OBJECT_ID('dbo.products_price', 'U') IS NOT NULL
+BEGIN
+    --------------------------------------------------------
+    -- Tủ TV (Vừa) – 60,000 VND
+    --------------------------------------------------------
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.products_price
+        WHERE base_name = N'Tủ TV'
+          AND size_label = N'Vừa'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Tủ TV', N'Vừa', 0, 60000);
+    END
+
+    --------------------------------------------------------
+    -- Bàn trà (Nhỏ) – 40,000 VND
+    --------------------------------------------------------
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.products_price
+        WHERE base_name = N'Bàn trà'
+          AND size_label = N'Nhỏ'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Bàn trà', N'Nhỏ', 0, 40000);
+    END
+
+    --------------------------------------------------------
+    -- (OPTIONAL) Seed lại cho chắc các món khác của phòng khách
+    -- Chỉ insert nếu trước đó chưa có trong DB
+    --------------------------------------------------------
+
+    -- Sofa (Vừa) – 250,000
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.products_price
+        WHERE base_name = N'Sofa' AND size_label = N'Vừa'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Sofa', N'Vừa', 1, 250000);
+    END
+
+    -- Bàn ăn (Vừa) – 75,000
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.products_price
+        WHERE base_name = N'Bàn ăn' AND size_label = N'Vừa'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Bàn ăn', N'Vừa', 0, 75000);
+    END
+
+    -- Ghế đơn (Vừa) – 20,000
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.products_price
+        WHERE base_name = N'Ghế đơn' AND size_label = N'Vừa'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Ghế đơn', N'Vừa', 0, 20000);
+    END
+
+    -- Cây cảnh (Nhỏ) – 30,000
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.products_price
+        WHERE base_name = N'Cây cảnh' AND size_label = N'Nhỏ'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Cây cảnh', N'Nhỏ', 0, 30000);
+    END
+
+    -- Cây cảnh (Vừa) – 50,000
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.products_price
+        WHERE base_name = N'Cây cảnh' AND size_label = N'Vừa'
+    )
+    BEGIN
+        INSERT INTO dbo.products_price (base_name, size_label, is_bulky, unit_price)
+        VALUES (N'Cây cảnh', N'Vừa', 0, 50000);
+    END
 END;
 GO

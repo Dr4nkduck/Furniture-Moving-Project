@@ -1,130 +1,15 @@
 /* PV-002 Provider Services JS
  * Backend endpoints (không đổi):
  *  - GET  /api/providers/{pid}/service-packages
- *        -> [ { packageId, packageName, basePackageName?, pricePerKm?/perKm } ]
+ *        -> [ { packageId, packageName, basePackageName?, pricePerKm } ]
  *  - GET  /api/providers/{pid}/service-packages/{packageId}
- *        -> { packageNameSnapshot, pricePerKm?/perKm, furniturePrices: [{furnitureItemId,furnitureItemName,price}] }
+ *        -> { packageNameSnapshot, pricePerKm, furniturePrices: [{furnitureItemId,furnitureItemName,price}] }
  *  - PUT  /api/providers/{pid}/service-packages/{packageId}
  *        -> lưu snapshot (pricePerKm + furniturePrices). Nếu muốn "xóa", gửi pricePerKm=null và furniturePrices=[]
  *  - (tuỳ) GET /api/providers/me -> lấy providerId; ưu tiên <meta name="provider-id">
  */
 
 (() => {
-    // ==================== 0. MASTER JSON NỘI THẤT (mặc định) ====================
-    // Nếu package chưa có furniturePrices, sẽ auto sinh từ list này để provider sửa giá.
-    const MASTER_FURNITURE = [
-        { "name": "bàn", "price": 15000 },
-        { "name": "bàn làm việc", "price": 20000 },
-        { "name": "bàn học", "price": 18000 },
-        { "name": "bàn ăn", "price": 22000 },
-        { "name": "bàn trà", "price": 12000 },
-        { "name": "bàn gấp", "price": 9000 },
-        { "name": "ghế", "price": 8000 },
-        { "name": "ghế xoay", "price": 10000 },
-        { "name": "ghế sofa", "price": 300000 },
-        { "name": "ghế băng", "price": 15000 },
-        { "name": "ghế đôn", "price": 5000 },
-        { "name": "ghế ăn", "price": 7000 },
-        { "name": "ghế đơn", "price": 10000 },
-        { "name": "sofa 2 chỗ", "price": 350000 },
-        { "name": "sofa 3 chỗ", "price": 450000 },
-        { "name": "sofa góc", "price": 550000 },
-        { "name": "giường đơn", "price": 300000 },
-        { "name": "giường đôi", "price": 400000 },
-        { "name": "giường tầng", "price": 500000 },
-        { "name": "nệm", "price": 12000 },
-        { "name": "tủ quần áo", "price": 350000 },
-        { "name": "tủ 3 cánh", "price": 450000 },
-        { "name": "tủ 4 cánh", "price": 550000 },
-        { "name": "tủ đầu giường", "price": 8000 },
-        { "name": "tủ giày", "price": 12000 },
-        { "name": "kệ sách", "price": 15000 },
-        { "name": "kệ TV", "price": 15000 },
-        { "name": "tủ bếp nhỏ", "price": 30000 },
-        { "name": "tủ bếp lớn", "price": 500000 },
-        { "name": "bếp từ", "price": 12000 },
-        { "name": "bếp gas", "price": 10000 },
-        { "name": "tủ lạnh mini", "price": 20000 },
-        { "name": "tủ lạnh 2 cánh", "price": 350000 },
-        { "name": "tủ lạnh side-by-side", "price": 600000 },
-        { "name": "máy giặt", "price": 300000 },
-        { "name": "máy sấy", "price": 300000 },
-        { "name": "máy rửa chén", "price": 350000 },
-        { "name": "máy lạnh treo tường", "price": 300000 },
-        { "name": "máy lạnh đứng", "price": 500000 },
-        { "name": "quạt điện", "price": 5000 },
-        { "name": "quạt cây", "price": 7000 },
-        { "name": "quạt bàn", "price": 4000 },
-        { "name": "tivi 32 inch", "price": 12000 },
-        { "name": "tivi 43 inch", "price": 16000 },
-        { "name": "tivi 55 inch", "price": 220000 },
-        { "name": "dàn loa", "price": 15000 },
-        { "name": "máy tính để bàn", "price": 15000 },
-        { "name": "màn hình máy tính", "price": 8000 },
-        { "name": "máy in", "price": 12000 },
-        { "name": "case PC", "price": 10000 },
-        { "name": "bàn phím", "price": 2000 },
-        { "name": "chuột máy tính", "price": 2000 },
-        { "name": "lò vi sóng", "price": 10000 },
-        { "name": "nồi chiên không dầu", "price": 8000 },
-        { "name": "nồi cơm điện", "price": 6000 },
-        { "name": "bình nước nóng", "price": 8000 },
-        { "name": "bàn ủi", "price": 4000 },
-        { "name": "máy hút bụi", "price": 9000 },
-        { "name": "đèn", "price": 5000 },
-        { "name": "đèn bàn", "price": 3000 },
-        { "name": "đèn cây", "price": 5000 },
-        { "name": "gương đứng", "price": 8000 },
-        { "name": "gương treo tường", "price": 6000 },
-        { "name": "tranh treo tường", "price": 5000 },
-        { "name": "đồng hồ treo tường", "price": 3000 },
-        { "name": "cây cảnh nhỏ", "price": 5000 },
-        { "name": "cây cảnh lớn", "price": 120000 },
-        { "name": "chậu cây gốm", "price": 7000 },
-        { "name": "valy nhỏ", "price": 5000 },
-        { "name": "valy lớn", "price": 7000 },
-        { "name": "thùng carton nhỏ", "price": 2000 },
-        { "name": "thùng carton lớn", "price": 3000 },
-        { "name": "kệ kho sắt", "price": 250000 },
-        { "name": "kệ nhựa", "price": 10000 },
-        { "name": "bàn trang điểm", "price": 22000 },
-        { "name": "ghế trang điểm", "price": 7000 },
-        { "name": "tủ thuốc", "price": 8000 },
-        { "name": "lều", "price": 5000 },
-        { "name": "xe đạp", "price": 150000 },
-        { "name": "xe đạp điện", "price": 220000 },
-        { "name": "máy chạy bộ", "price": 400000 },
-        { "name": "máy tập đa năng", "price": 450000 },
-        { "name": "tạ tay", "price": 5000 },
-        { "name": "bàn bida mini", "price": 400000 },
-        { "name": "đàn piano cơ", "price": 1500000 },
-        { "name": "đàn organ", "price": 20000 },
-        { "name": "đàn guitar", "price": 6000 },
-        { "name": "đàn ukulele", "price": 4000 },
-        { "name": "loa kéo", "price": 10000 },
-        { "name": "tủ hồ sơ", "price": 20000 },
-        { "name": "bàn họp", "price": 350000 },
-        { "name": "ghế họp", "price": 8000 },
-        { "name": "máy chiếu", "price": 8000 },
-        { "name": "màn chiếu", "price": 7000 },
-        { "name": "máy photocopy", "price": 500000 },
-        { "name": "két sắt nhỏ", "price": 200000 },
-        { "name": "két sắt lớn", "price": 450000 },
-        { "name": "bàn thờ", "price": 350000 },
-        { "name": "tủ thờ", "price": 450000 },
-        { "name": "chậu rửa chén", "price": 12000 },
-        { "name": "bình lọc nước", "price": 9000 },
-        { "name": "xe đẩy em bé", "price": 10000 },
-        { "name": "nôi em bé", "price": 15000 },
-        { "name": "cũi em bé", "price": 20000 },
-        { "name": "bình gas", "price": 9000 },
-        { "name": "bếp nướng điện", "price": 8000 },
-        { "name": "máy xay sinh tố", "price": 4000 },
-        { "name": "máy ép trái cây", "price": 6000 },
-        { "name": "lò nướng", "price": 12000 },
-        { "name": "máy pha cà phê", "price": 12000 }
-    ];
-
     // ==================== 1. DOM ====================
     const $configuredList   = document.getElementById('configuredList');
     const $configuredCount  = document.getElementById('configuredCount');
@@ -157,14 +42,13 @@
     const state = {
         providerId: getProviderIdFromMeta(),
         allPackages: [],   // toàn bộ packages/snapshot từ API
-        // cấu hình cho UI (đưa hết allPackages để luôn thấy dữ liệu)
-        configured: [],
+        configured: [],    // list hiển thị cột trái
         current: {
             packageId: null,
             basePackageName: null,
             packageName: null,
             perKm: null,
-            items: [] // [{furnitureItemId,furnitureItemName,price}]
+            items: []      // [{furnitureItemId,furnitureItemName,price}]
         }
     };
 
@@ -377,16 +261,14 @@
 
         try {
             const raw = await apiGet(`/api/providers/${state.providerId}/service-packages`);
-
             const all = Array.isArray(raw) ? raw : [];
-            // Chuẩn hoá key pricePerKm và packageNameSnapshot cho frontend
+
             state.allPackages = all.map(p => ({
                 ...p,
                 pricePerKm: p.pricePerKm ?? p.perKm ?? p.per_km ?? null,
                 packageNameSnapshot: p.packageNameSnapshot ?? p.snapshotName ?? null
             }));
 
-            // ➜ FIX: luôn đưa ALL packages ra UI (trước đây filter pricePerKm => rỗng)
             state.configured = state.allPackages.slice();
 
             buildPackageFilterOptions();
@@ -411,28 +293,29 @@
         const meta = state.allPackages.find(p => p.packageId === packageId) || {};
         const d = await apiGet(`/api/providers/${state.providerId}/service-packages/${packageId}`);
 
-        // Chuẩn hoá detail
         const perKm = d.pricePerKm ?? d.perKm ?? d.per_km ?? null;
         let furniture = d.furniturePrices || d.items || [];
-
-        // Nếu backend chưa có bảng giá, auto seed từ MASTER_FURNITURE
-        if (!furniture || !furniture.length) {
-            furniture = MASTER_FURNITURE.map(it => ({
-                furnitureItemId: null,
-                furnitureItemName: it.name,
-                price: it.price
-            }));
-        }
 
         state.current.packageId = packageId;
         state.current.basePackageName = meta.basePackageName || meta.packageName || null;
         state.current.packageName = meta.packageName || null;
         state.current.perKm = perKm;
-        state.current.items = furniture.map(x => ({
-            furnitureItemId: x.furnitureItemId || x.id || null,
-            furnitureItemName: x.furnitureItemName || x.name || '',
-            price: x.price
-        }));
+
+        // ==== CHỈ LOAD TỪ DB ====
+        // Nếu DB chưa có record nào -> tạo 1 dòng trống để provider tự nhập
+        if (!Array.isArray(furniture) || furniture.length === 0) {
+            state.current.items = [{
+                furnitureItemId: null,
+                furnitureItemName: '',
+                price: null
+            }];
+        } else {
+            state.current.items = furniture.map(x => ({
+                furnitureItemId: x.furnitureItemId ?? x.furnitureTypeId ?? x.id ?? null,
+                furnitureItemName: x.furnitureItemName ?? x.furnitureTypeName ?? x.name ?? '',
+                price: x.price
+            }));
+        }
 
         $packageNameSnapshot.value = d.packageNameSnapshot || meta.packageNameSnapshot || '';
         $pricePerKm.value = perKm == null ? '' : perKm;
@@ -532,7 +415,6 @@
         const body = {
             providerId: state.providerId,
             packageId: state.current.packageId,
-            // backend đang dùng packageNameSnapshot
             packageNameSnapshot: ($packageNameSnapshot.value || null),
             pricePerKm: ($pricePerKm.value === '' ? null : Number($pricePerKm.value)),
             furniturePrices: state.current.items.map(x => ({
@@ -602,7 +484,6 @@
 
         const perKmInit = $modalPerKm.value === '' ? null : Number($modalPerKm.value);
 
-        // Tạo snapshot rỗng với giá/km ban đầu, bảng giá trống (khi mở sẽ auto seed MASTER_FURNITURE)
         const body = {
             providerId: state.providerId,
             packageId: pkgId,

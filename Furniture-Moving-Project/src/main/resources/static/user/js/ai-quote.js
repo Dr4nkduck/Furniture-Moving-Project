@@ -440,7 +440,7 @@ async function calcDistance(orig, dest) {
 }
 
 /* ========= Gemini ========= */
-const API_KEY = "AIzaSyCblzDqrXzgbLZeZ82bmv8AK5uCsRkuwrA"; // <-- Nên chuyển về BE/proxy
+const API_KEY = "AIzaSyCRTF79V32imUA7hESdHNBH3M22atypPb8"; // <-- Nên chuyển về BE/proxy
 let MODEL = "gemini-2.0-flash";
 const FALLBACK_MODEL = "gemini-2.5-flash";
 const buildApiUrl = () => `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
@@ -538,7 +538,6 @@ function askSlotQuestion(key) {
   updateSlotDateBarVisibility();
 }
 
-/* ========= Cho phép SỬA GIỮA CHỪNG (đã fix) ========= */
 /* ========= Cho phép SỬA GIỮA CHỪNG (đã fix) ========= */
 function detectAndApplyCorrections(rawText){
   const t = (rawText || "").trim();
@@ -715,10 +714,10 @@ function detectAndApplyCorrections(rawText){
   }
 
   // ===== 5) Đổi địa chỉ ĐI (pickup – có thêm “nhận hàng”) =====
-  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*(?:đi|lấy|nhận)|chỗ\s*(?:lấy|nhận)|(?:đi|lấy|nhận)\s*hàng?)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
+  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*(đi|lấy|nhận)|chỗ\s*(?:lấy|nhận)|(?:đi|lấy|nhận)\s*hàng?)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
   if (m) {
     handled = true;
-    const addr = m[1].trim();
+    const addr = m[2].trim();
     if (addr.length >= 4) {
       updatedFromThisTurn = true;
       renderSlotReply("Đang kiểm tra địa chỉ LẤY hàng mới…");
@@ -757,10 +756,10 @@ function detectAndApplyCorrections(rawText){
   }
 
   // ===== 6) Đổi địa chỉ ĐẾN (dropoff – có thêm “giao hàng”) =====
-  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*(?:đến|giao)|chỗ\s*giao|(?:đến|giao)\s*hàng?)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
+  m = t.match(/\b(?:đổi|sửa)\s*(?:địa\s*chỉ\s*(đến|giao)|chỗ\s*giao|(?:đến|giao)\s*hàng?)\s*(?:thành|sang)?\s*[:\-]?\s*(.+)$/i);
   if (m) {
     handled = true;
-    const addr = m[1].trim();
+    const addr = m[2].trim();
     if (addr.length >= 4) {
       updatedToThisTurn = true;
       renderSlotReply("Đang kiểm tra địa chỉ GIAO hàng mới…");
@@ -867,8 +866,6 @@ function detectAndApplyCorrections(rawText){
 
   return handled;
 }
-
-
 
 /* ========= Date/Time helpers ========= */
 // Hỗ trợ cả dd/mm và dd/mm/yyyy
@@ -1202,9 +1199,9 @@ function defaultSettings() {
 }
 
 function loadSettings(){
-  try { 
+  try {
     return JSON.parse(localStorage.getItem(CFG_KEY)) || defaultSettings();
-  } catch { 
+  } catch {
     return defaultSettings();
   }
 }
@@ -1312,13 +1309,68 @@ if (fileCancelButton) {
   });
 }
 
-/* ========= Parse AI text -> [{name, qty}] ========= */
+/* ======= PARSE CHIỀU DÀI / RỘNG / CAO + SIZE ======= */
+// Parse chiều dài/rộng/cao từ text (VD: "2m x 0.8m x 0.6m", "200x80x60cm", "dài 2m, rộng 80cm, cao 60cm")
+function parseDimensionsFromText(text) {
+  if (!text) return null;
+  const s = String(text).toLowerCase().replace(/×/g, "x");
+
+  // số + đơn vị (cm hoặc m)
+  const all = [...s.matchAll(/(\d+(?:[\.,]\d+)?)\s*(cm|m)\b/g)];
+  if (all.length < 2) return null;
+
+  const toCm = (numStr, unit) => {
+    let v = parseFloat(String(numStr).replace(",", "."));
+    if (Number.isNaN(v)) return null;
+    if (unit === "m") v *= 100;
+    return v;
+  };
+
+  const lengthMatch = all[0];
+  const widthMatch  = all[1];
+  const heightMatch = all[2] || null;
+
+  const lengthCm = toCm(lengthMatch[1], lengthMatch[2]);
+  const widthCm  = toCm(widthMatch[1],  widthMatch[2]);
+  const heightCm = heightMatch ? toCm(heightMatch[1], heightMatch[2]) : null;
+
+  if (!lengthCm || !widthCm) return null;
+
+  return { lengthCm, widthCm, heightCm };
+}
+
+// Tính size từ chiều dài/rộng/cao (theo m³)
+function classifySizeFromDims(dim) {
+  if (!dim) return null;
+  const { lengthCm, widthCm, heightCm } = dim;
+  if (!lengthCm || !widthCm || !heightCm) return null;
+
+  const volumeM3 = (lengthCm * widthCm * heightCm) / 1_000_000; // cm³ -> m³
+
+  if (volumeM3 < 0.3)  return "SMALL";
+  if (volumeM3 < 0.8)  return "MEDIUM";
+  if (volumeM3 < 1.5)  return "LARGE";
+  return "XLARGE";
+}
+
+// Map code size -> tiếng Việt
+function sizeLabelVi(tag) {
+  const t = String(tag || "").toUpperCase();
+  if (t === "S" || t === "SMALL")     return "Nhỏ";
+  if (t === "M" || t === "MEDIUM")    return "Vừa";
+  if (t === "L" || t === "LARGE")     return "Lớn";
+  if (t === "XL" || t === "XLARGE")   return "Rất lớn";
+  return tag || "";
+}
+
+/* ========= Parse AI text -> [{name, qty, lengthCm, widthCm, heightCm, sizeTag}] ========= */
 function parseItemsFromAiText(text) {
   if (!text) return [];
   const lines = text.split(/\r?\n/);
   const results = [];
   const unitWords = "(?:cái|bộ|chiếc|thùng carton|thùng|kg|m3|m²|m|bức|tấm|cây|cuộn|ghế|bàn|thanh|kiện|bao|túi|con|quyển|cuốn)";
   const qtyRegex = new RegExp(`(\\d+[\\d.,]*)\\s*${unitWords}\\b`, "i");
+
   for (let raw of lines) {
     let line = (raw || "").trim().replace(/^[-•*]\s*/, "");
     if (!line) continue;
@@ -1332,16 +1384,29 @@ function parseItemsFromAiText(text) {
       lower.startsWith("ghi chú") ||
       /[\?؟]+$/.test(lower)
     ) continue;
+
     const m = line.match(qtyRegex);
     if (!m) continue;
     const qty = parseInt(m[1].replace(/[^\d]/g, ""), 10) || 1;
+
+    // không xoá phần ngoặc để còn giữ info kích thước AI mô tả
     let name = line.split(/[—:]/)[0]
-      .replace(/\((.*?)\)/g, "")
       .replace(/\s+/g, " ")
       .trim();
     if (!name || /^((bạn|mình|tôi|anh|chị|bên mình|vui lòng|xin vui lòng)\b)/i.test(name)) continue;
     if (name.length < 2) continue;
-    results.push({ name, qty });
+
+    const dims = parseDimensionsFromText(line);
+    const sizeTag = dims ? classifySizeFromDims(dims) : null;
+
+    results.push({
+      name,
+      qty,
+      lengthCm: dims?.lengthCm ?? null,
+      widthCm:  dims?.widthCm  ?? null,
+      heightCm: dims?.heightCm ?? null,
+      sizeTag
+    });
   }
   return results;
 }
@@ -1353,37 +1418,64 @@ function parseItemsFromAiText(text) {
   const sumAmountEl = document.querySelector("#sum-amount");
   if (!itemsTbody || !sumQtyEl || !sumAmountEl) return;
 
-  let items = []; // {id,name,price,qty}
-  let priceIndexExact = null; // Map<lowerName, price>
-  let priceIndexList = null;  // Array<[lowerName, price]>
+  let items = []; // {id,name,price,qty,lengthCm,widthCm,heightCm,sizeTag}
 
-  function buildPriceIndex() {
+  // meta sản phẩm từ settings.items (giá + chiều + size)
+  let productMetaExact = null; // Map<normalizedName, meta>
+  let productMetaList  = null; // Array<[normalizedName, meta]>
+
+  function normalizeNameForCompare(name) {
+    if (!name) return "";
+    let t = String(name).toLowerCase().trim();
+    t = t.replace(/^(?:cái|chiếc|bộ|quyển|cuốn|thùng carton|thùng|hộp|valy|vali|bao|túi)\s+/i, "");
+    t = t.replace(/\s+/g, " ");
+    return t;
+  }
+  const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  function buildProductMetaIndex() {
     const list = loadSettings().items || [];
-    priceIndexExact = new Map();
-    priceIndexList = [];
+    productMetaExact = new Map();
+    productMetaList  = [];
+
     for (const it of list) {
-      const nm = (it.name || "").toLowerCase().trim();
+      const nmRaw = it.name || "";
+      const nm = normalizeNameForCompare(nmRaw);
       const price = Number(it.price) || 0;
       if (!nm) continue;
-      priceIndexExact.set(nm, price);
-      priceIndexList.push([nm, price]);
+
+      const meta = {
+        price,
+        lengthCm: Number(it.lengthCm ?? it.length_cm ?? it.length) || null,
+        widthCm:  Number(it.widthCm  ?? it.width_cm  ?? it.width)  || null,
+        heightCm: Number(it.heightCm ?? it.height_cm ?? it.height) || null,
+        sizeLabel: it.size ?? it.sizeLabel ?? it.size_label ?? null
+      };
+
+      productMetaExact.set(nm, meta);
+      productMetaList.push([nm, meta]);
     }
-    priceIndexList.sort((a, b) => b[0].length - a[0].length);
+
+    // ưu tiên match tên dài trước
+    productMetaList.sort((a, b) => b[0].length - a[0].length);
+  }
+
+  function lookupMeta(name) {
+    if (!productMetaExact) buildProductMetaIndex();
+    const key = normalizeNameForCompare(name);
+    if (!key) return { price: 0, lengthCm: null, widthCm: null, heightCm: null, sizeLabel: null };
+
+    if (productMetaExact.has(key)) return productMetaExact.get(key);
+
+    for (const [nm, meta] of productMetaList) {
+      const rx = new RegExp(`\\b${escapeRegExp(nm)}\\b`, "i");
+      if (rx.test(key)) return meta;
+    }
+    return { price: 0, lengthCm: null, widthCm: null, heightCm: null, sizeLabel: null };
   }
 
   function lookupPrice(name) {
-    if (!priceIndexExact) buildPriceIndex();
-    const n = (name || "").toLowerCase().trim();
-    if (!n) return 0;
-
-    if (priceIndexExact.has(n)) return priceIndexExact.get(n);
-
-    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    for (const [nm, price] of priceIndexList) {
-      const rx = new RegExp(`\\b${escapeRegExp(nm)}\\b`, "i");
-      if (rx.test(n)) return Number(price) || 0;
-    }
-    return 0;
+    return lookupMeta(name).price || 0;
   }
 
   const fmt = (n) => Number(n || 0).toLocaleString() + " " + currency();
@@ -1394,14 +1486,6 @@ function parseItemsFromAiText(text) {
     const cfg = loadSettings();
     if (!km) return 0;
     return Math.max(cfg.minFare, Math.round(km * (cfg.pricePerKm || 0)));
-  }
-
-  function normalizeNameForCompare(name) {
-    if (!name) return "";
-    let t = String(name).toLowerCase().trim();
-    t = t.replace(/^(?:cái|chiếc|bộ|quyển|cuốn|thùng carton|thùng|hộp|valy|vali|bao|túi)\s+/i, "");
-    t = t.replace(/\s+/g, " ");
-    return t;
   }
 
   function render() {
@@ -1433,10 +1517,30 @@ function parseItemsFromAiText(text) {
           weightExtraHtml = `<br><small class="text-muted">≈ ${totalKg.toFixed(1)} kg</small>`;
         }
 
+        let dimsHtml = "";
+        if (it.lengthCm || it.widthCm || it.heightCm || it.sizeTag) {
+          const parts = [];
+          if (it.lengthCm) parts.push(`${it.lengthCm}cm`);
+          if (it.widthCm)  parts.push(`${it.widthCm}cm`);
+          if (it.heightCm) parts.push(`${it.heightCm}cm`);
+
+          const sizeText = it.sizeTag ? sizeLabelVi(it.sizeTag) : "";
+          const metaTxt = [
+            parts.length ? `Kích thước: ${parts.join(" × ")}` : "",
+            sizeText ? `Size: ${sizeText}` : ""
+          ].filter(Boolean).join(" • ");
+
+          if (metaTxt) {
+            dimsHtml = `<br><small class="text-muted">${escapeHTML(metaTxt)}</small>`;
+          }
+        }
+
         const tr = document.createElement("tr");
         tr.dataset.id = it.id;
         tr.innerHTML = `
-          <td>${escapeHTML(it.name)}</td>
+          <td>
+            ${escapeHTML(it.name)}${dimsHtml}
+          </td>
           <td class="text-center">
             <span class="text-muted">—</span>
           </td>
@@ -1479,36 +1583,33 @@ function parseItemsFromAiText(text) {
     items = (list || []).map(it => {
       const name = String(it.name || "").trim();
       const cleanQty = Math.max(1, Number(String(it.qty || 1).replace(/[^\d]/g, "")) || 1);
+      if (!name) return null;
+
+      const meta = lookupMeta(name);
+
+      const lengthCm = it.lengthCm ?? it.length_cm ?? meta.lengthCm ?? null;
+      const widthCm  = it.widthCm  ?? it.width_cm  ?? meta.widthCm  ?? null;
+      const heightCm = it.heightCm ?? it.height_cm ?? meta.heightCm ?? null;
+
+      let sizeTag = it.sizeTag ?? it.size ?? meta.sizeLabel ?? null;
+      if (!sizeTag && lengthCm && widthCm && heightCm) {
+        sizeTag = classifySizeFromDims({ lengthCm, widthCm, heightCm });
+      }
+
       return {
         id: "i_" + Math.random().toString(36).slice(2, 9),
         name,
-        price: lookupPrice(name),
-        qty: cleanQty
+        price: meta.price,
+        qty: cleanQty,
+        lengthCm,
+        widthCm,
+        heightCm,
+        sizeTag
       };
-    }).filter(it => it.name);
+    }).filter(Boolean);
+
     render();
     window.AIQUOTE.rerender = render;
-  }
-
-  function appendItemsFromAi(list) {
-    if (!Array.isArray(list) || !list.length) return;
-    for (const it of list) {
-      const name = String(it?.name || "").trim();
-      const qty = Math.max(1, Number(String(it?.qty || 1).replace(/[^\d]/g,"")) || 1);
-      if (!name) continue;
-      const idx = findIndexByName(name);
-      if (idx >= 0) {
-        items[idx].qty = Number(items[idx].qty || 0) + qty;
-      } else {
-        items.push({
-          id: "i_" + Math.random().toString(36).slice(2,9),
-          name,
-          price: lookupPrice(name),
-          qty
-        });
-      }
-    }
-    render();
   }
 
   function findIndexByName(name) {
@@ -1520,6 +1621,53 @@ function parseItemsFromAiText(text) {
     if (idx >= 0) return idx;
     idx = items.findIndex(x => keyNorm.includes(normalizeNameForCompare(x.name)));
     return idx;
+  }
+
+  function appendItemsFromAi(list) {
+    if (!Array.isArray(list) || !list.length) return;
+    for (const it of list) {
+      const name = String(it?.name || "").trim();
+      const qty = Math.max(1, Number(String(it?.qty || 1).replace(/[^\d]/g,"")) || 1);
+      if (!name) continue;
+
+      const meta = lookupMeta(name);
+
+      const aiDims = {
+        lengthCm: it.lengthCm ?? it.length_cm ?? null,
+        widthCm:  it.widthCm  ?? it.width_cm  ?? null,
+        heightCm: it.heightCm ?? it.height_cm ?? null
+      };
+
+      const lengthCm = aiDims.lengthCm ?? meta.lengthCm ?? null;
+      const widthCm  = aiDims.widthCm  ?? meta.widthCm  ?? null;
+      const heightCm = aiDims.heightCm ?? meta.heightCm ?? null;
+
+      let sizeTag = it.sizeTag ?? it.size ?? meta.sizeLabel ?? null;
+      if (!sizeTag && lengthCm && widthCm && heightCm) {
+        sizeTag = classifySizeFromDims({ lengthCm, widthCm, heightCm });
+      }
+
+      const idx = findIndexByName(name);
+      if (idx >= 0) {
+        items[idx].qty = Number(items[idx].qty || 0) + qty;
+        items[idx].lengthCm = items[idx].lengthCm || lengthCm;
+        items[idx].widthCm  = items[idx].widthCm  || widthCm;
+        items[idx].heightCm = items[idx].heightCm || heightCm;
+        items[idx].sizeTag  = items[idx].sizeTag  || sizeTag;
+      } else {
+        items.push({
+          id: "i_" + Math.random().toString(36).slice(2,9),
+          name,
+          price: meta.price,
+          qty,
+          lengthCm,
+          widthCm,
+          heightCm,
+          sizeTag
+        });
+      }
+    }
+    render();
   }
 
   function removeItemByName(name) {
@@ -1545,6 +1693,9 @@ function parseItemsFromAiText(text) {
     const cleanName = String(name || "").trim();
     const cleanQty = Math.max(1, Number(qty) || 1);
     if (!cleanName) return false;
+
+    const meta = lookupMeta(cleanName);
+
     const idx = findIndexByName(cleanName);
     if (idx >= 0) {
       items[idx].qty = Number(items[idx].qty || 0) + cleanQty;
@@ -1552,8 +1703,12 @@ function parseItemsFromAiText(text) {
       items.push({
         id: "i_" + Math.random().toString(36).slice(2, 9),
         name: cleanName,
-        price: lookupPrice(cleanName),
-        qty: cleanQty
+        price: meta.price,
+        qty: cleanQty,
+        lengthCm: meta.lengthCm,
+        widthCm:  meta.widthCm,
+        heightCm: meta.heightCm,
+        sizeTag:  meta.sizeLabel
       });
     }
     render();
@@ -1561,7 +1716,7 @@ function parseItemsFromAiText(text) {
   }
 
   window.AIQUOTE = window.AIQUOTE || {};
-  window.AIQUOTE.rerender = render; 
+  window.AIQUOTE.rerender = render;
   window.AIQUOTE.setItems = setItems;
   window.AIQUOTE.appendItemsFromAi = appendItemsFromAi;
   window.AIQUOTE.upsertItem = upsertItem;
@@ -1585,6 +1740,17 @@ function parseItemsFromAiText(text) {
     }
     return summary;
   };
+
+  window.AIQUOTE.exportItems = () =>
+    items.map(it => ({
+      name: it.name,
+      qty: Number(it.qty || 0),
+      price: Number(it.price || 0),
+      lengthCm: it.lengthCm ?? null,
+      widthCm:  it.widthCm  ?? null,
+      heightCm: it.heightCm ?? null,
+      sizeTag:  it.sizeTag  ?? null
+    }));
 
   itemsTbody.addEventListener("click",(e)=>{
     const tr = e.target.closest("tr");
@@ -1621,9 +1787,6 @@ function parseItemsFromAiText(text) {
   });
 
   render();
-
-  window.AIQUOTE.exportItems = () =>
-    items.map(it => ({ name: it.name, qty: Number(it.qty||0), price: Number(it.price||0) }));
 })();
 
 /* ========= Parse lệnh thêm/xoá ========= */
@@ -2031,7 +2194,6 @@ async function renderFinalCombinedSummary() {
 
   try { sessionStorage.setItem('aiquote_draft', JSON.stringify(draft)); } catch {}
   SLOT.data.draftReady = true;
-  // ✅ đánh dấu: từ giờ cho phép sửa thông tin
   SLOT.data.hasDraftShown = true;
   window.AIQUOTE_DRAFT_READY = true;
 
@@ -2072,9 +2234,6 @@ function handleOutgoingMessage(e) {
   if (!chatBody) return;
 
   const handledCorrection = detectAndApplyCorrections(text);
-
-  // Nếu câu này là để SỬA thông tin (tên/SĐT/địa chỉ/ngày/giờ)
-  // thì dừng tại đây: không thêm/xoá hàng, không gọi AI trả lời lan man.
   if (handledCorrection) {
     return;
   }
@@ -2250,7 +2409,6 @@ function handleOutgoingMessage(e) {
       persistAiQuoteState();
       return;
     }
-    
   }
 
   const toAddRaw = parseUserAddCommand(text);
@@ -2260,7 +2418,6 @@ function handleOutgoingMessage(e) {
     ? parseItemsFromShippingSentence(text)
     : [];
 
-  // LỌC CHỈ GIỮ NỘI THẤT / ĐỒ CỒNG KỀNH
   const rejectedNames = [];
 
   const toAdd = [];
@@ -2281,7 +2438,6 @@ function handleOutgoingMessage(e) {
     }
   }
 
-  // Nếu CHỈ có sản phẩm bị loại (không phải nội thất) -> nói 1 câu rồi dừng
   const onlyRejected =
     rejectedNames.length &&
     !toAdd.length &&
@@ -2297,7 +2453,6 @@ function handleOutgoingMessage(e) {
     return;
   }
 
-  // Nếu vừa có sản phẩm hợp lệ vừa có bị loại -> có thể báo chi tiết như cũ (tuỳ bạn)
   if (rejectedNames.length) {
     const listHtml = rejectedNames
       .map(n => `<li>${escapeHTML(n)}</li>`)
@@ -2310,28 +2465,6 @@ function handleOutgoingMessage(e) {
     );
   }
 
-  // Nếu có món bị loại, báo lại cho user
-  if (rejectedNames.length) {
-    const unique = Array.from(
-      new Set(rejectedNames.map(n => n.trim()).filter(Boolean))
-    );
-
-    let html =
-      'Hệ thống chỉ cho phép thêm sản phẩm là nội thất, bạn vui lòng thêm sản phẩm khác nhé.';
-
-    if (unique.length) {
-      const listHtml = unique
-        .map(n => `<li>${escapeHTML(n)}</li>`)
-        .join("");
-      html +=
-        '<br>Các hạng mục sau không được thêm:' +
-        `<ul class="mb-1">${listHtml}</ul>`;
-    }
-
-    renderSlotReply(html);
-  }
-
-  // Thêm / xoá thực tế
   if (toAdd.length && window.AIQUOTE?.upsertItem) {
     toAdd.forEach(it => window.AIQUOTE.upsertItem(it.name, it.qty));
   }
@@ -2348,7 +2481,6 @@ function handleOutgoingMessage(e) {
     intentItems.forEach(it => window.AIQUOTE.upsertItem(it.name, it.qty));
   }
 
-  // Giữ nguyên logic CTA nhưng dùng list đã lọc
   if ((toAdd.length || toRemove.length || hasShippingIntent) && userUploads.length === 0) {
     showConfirmCTA();
     if (hasShippingIntent && !toAdd.length && !toRemove.length && !intentItems.length) {
@@ -2359,7 +2491,6 @@ function handleOutgoingMessage(e) {
     persistAiQuoteState();
     return;
   }
-
 
   if (!userUploads.length) {
     if (isSmallTalkOrGreeting(text)) {
@@ -2421,7 +2552,7 @@ if (sendMessage) {
 
 /* ========= Bootstrap products (lấy trực tiếp từ DB) ========= */
 (async function bootstrapProducts() {
-    await loadSettingsFromServer();  
+  await loadSettingsFromServer();
   let loaded = [];
   try {
     const r = await fetch(PRODUCTS_URL, { cache: "no-store" });
@@ -2446,9 +2577,23 @@ if (sendMessage) {
 
     const price = Number(it.price != null ? it.price : it.unitPrice) || 0;
 
-    normalized.push({ name, price });
+    const lengthCm = Number(it.lengthCm ?? it.length_cm ?? it.length) || null;
+    const widthCm  = Number(it.widthCm  ?? it.width_cm  ?? it.width)  || null;
+    const heightCm = Number(it.heightCm ?? it.height_cm ?? it.height) || null;
+
+    const size = it.sizeLabel ?? it.size_label ?? it.size ?? null;
+
+    normalized.push({
+      name,
+      price,
+      lengthCm,
+      widthCm,
+      heightCm,
+      size
+    });
   }
-const s = loadSettings();
+
+  const s = loadSettings();
   s.items = normalized;
   saveSettings(s);
 })();
@@ -2482,7 +2627,7 @@ document.querySelector("#btn-confirm-shipment")?.addEventListener("click", () =>
   }
 
   clearChatCTA();
-  SLOT.mode = "collect"; 
+  SLOT.mode = "collect";
   SLOT.step = 0;
   renderSlotReply("Cảm ơn bạn. Mình sẽ hỏi vài thông tin để tạo Hợp đồng nháp.");
   askSlotQuestion(nextMissingKey() || "name");
@@ -2547,7 +2692,7 @@ window.AIQUOTE_SLOT = SLOT;
         _dateObj:null, _datetimeObj:null,
         km:null, durationText:null, routeText:null, routeSeconds:null,
         draftReady:false,
-        hasDraftShown:false // ✅ default nếu bản cũ chưa có field này
+        hasDraftShown:false
       },
       state.slot.data || {}
     );
@@ -2566,6 +2711,5 @@ window.AIQUOTE_SLOT = SLOT;
   ASKING_DATE = false;
   updateSlotDateBarVisibility();
 
-  // sau khi restore, scroll xuống cuối
   chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: "auto" });
 })();

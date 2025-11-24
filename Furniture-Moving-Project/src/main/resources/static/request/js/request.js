@@ -184,7 +184,7 @@ function addItemRow(data = {}) {
   const tr = document.createElement('tr');
   tr.className = 'item-row';
   tr.innerHTML = `
-    <td><input type="text"  name="items.name" placeholder="VD: Tủ quần áo" required /></td>
+    <td><input type="text"  name="items.name" placeholder="" required /></td>
     <td><input type="number" name="items.qty"  min="1" value="1" required style="width:80px"></td>
     <td><input type="number" name="items.len"  min="0" placeholder="0" style="width:90px"></td>
     <td><input type="number" name="items.wid"  min="0" placeholder="0" style="width:90px"></td>
@@ -562,7 +562,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     const raw = localStorage.getItem(draftKey);
     if (!raw) {
-      addItemRow({ name: 'Bàn làm việc', qty: 1 });
+      // không auto thêm "Bàn làm việc" nữa
+      addItemRow();
       updateSummary();
     } else {
       try {
@@ -601,7 +602,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         updateSummary();
       } catch (_) {
-        addItemRow({ name: 'Bàn làm việc', qty: 1 });
+        // fallback: chỉ thêm 1 dòng trống
+        addItemRow();
         updateSummary();
       }
     }
@@ -686,7 +688,8 @@ function resetFormUI(){
   form?.reset();
   if (itemsBody) {
     itemsBody.innerHTML = '';
-    addItemRow({ name: 'Bàn làm việc', qty: 1 });
+    // thêm 1 dòng trống, không có ví dụ gì
+    addItemRow();
   }
   if (fileInput) fileInput.value = '';
   if (thumbs) thumbs.innerHTML = '';
