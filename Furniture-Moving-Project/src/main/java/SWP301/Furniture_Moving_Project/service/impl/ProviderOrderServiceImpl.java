@@ -99,15 +99,13 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
                 .collect(Collectors.toList()));
 
         // ✅ 3. Lấy thêm thông tin từ entity ServiceRequest (payment + cancelReason)
-            ServiceRequest sr = srRepo.findById(requestId)
-                .orElse(null);
+        ServiceRequest sr = srRepo.findById(requestId).orElse(null);
         if (sr != null) {
             dto.setPaymentStatus(sr.getPaymentStatus());
             dto.setPaymentType(sr.getPaymentType());
             dto.setCancelReason(sr.getCancelReason());
-            dto.setCancelledBy(sr.getCancelledBy());   // 👈 thêm dòng này
+            dto.setCancelledBy(sr.getCancelledBy());
         }
-
 
         // ✅ 4. Lấy yêu cầu hủy mới nhất (nếu có) cho đơn này của provider này
         if (sr != null && sr.getProviderId() != null) {
@@ -150,28 +148,39 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
 
         String ns = raw;
 
-        // Handle acknowledgment: provider bấm "accepted" -> acknowledge contract + chuyển sang ready_to_pay
-        if ("accepted".equals(raw)) {
+        // 🔥 Handle acknowledgment:
+        // Provider có thể gửi "accepted" HOẶC trực tiếp "ready_to_pay"
+        if ("accepted".equals(raw) || "ready_to_pay".equals(raw)) {
             // Chỉ cho accept khi đơn đang pending (tránh accept lại đơn đã đi xa hơn)
             if (!"pending".equals(current)) {
-                throw new IllegalStateException("Chỉ có thể chấp nhận những đơn đang ở trạng thái \"Đang chờ xử lý\".");
+                throw new IllegalStateException(
+                        "Chỉ có thể chấp nhận những đơn đang ở trạng thái \"Đang chờ xử lý\"."
+                );
             }
 
             if (request.getContractId() != null) {
-                Contract contract = contractRepo.findById(request.getContractId())
-                        .orElse(null);
-                if (contract != null && "signed".equals(contract.getStatus())) {
-                    contract.setStatus("acknowledged");
-                    contract.setAcknowledgedAt(OffsetDateTime.now());
-                    contractRepo.save(contract);
+                Contract contract = contractRepo.findById(request.getContractId()).orElse(null);
+                if (contract != null) {
+                    String cst = contract.getStatus() == null
+                            ? ""
+                            : contract.getStatus().toLowerCase();
+
+                    // Nếu chưa phải acknowledged thì cập nhật
+                    if (!"acknowledged".equals(cst)) {
+                        contract.setStatus("acknowledged");
+                        contract.setAcknowledgedAt(OffsetDateTime.now(ZONE_VN));
+                        contractRepo.save(contract);
+                    }
                 }
             }
+
+            // Trạng thái lưu vào request luôn là ready_to_pay
             ns = "ready_to_pay";
         }
 
         // Validate trạng thái đích (basic)
         switch (ns) {
-            case "pending", "ready_to_pay", "declined", "in_progress", "completed", "cancelled" -> {
+            case "pending", "ready_to_pay", "declined", "in_progress", "completed", "cancelled", "paid" -> {
             }
             default -> throw new IllegalArgumentException("Trạng thái không được hỗ trợ: " + ns);
         }
@@ -192,8 +201,7 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
             throw new IllegalStateException(msg);
         }
 
-        // ✅ Thay vì gọi srRepo.providerUpdateStatus(...),
-        //    ta cập nhật trực tiếp entity để set được cancelledBy / cancelledAt
+        // ✅ Cập nhật entity
         if ("cancelled".equals(ns)) {
             // PROVIDER chủ động hủy đơn
             request.setStatus("cancelled");

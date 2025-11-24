@@ -250,10 +250,23 @@ public class CustomerRequestController {
 
         Map<String, Object> res = new HashMap<>();
 
+        // ===== chuẩn hóa trạng thái cho FE =====
+        String status = request.getStatus() != null
+                ? request.getStatus().toLowerCase()
+                : null;
+
+        String paymentStatus = request.getPaymentStatus() != null
+                ? request.getPaymentStatus().toUpperCase()
+                : null;
+
+        String paymentType = request.getPaymentType() != null
+                ? request.getPaymentType().toUpperCase()
+                : null;
+
         // ---- trạng thái request / payment ----
-        res.put("status", request.getStatus());                 // pending / ready_to_pay / ...
-        res.put("paymentStatus", request.getPaymentStatus());   // PENDING / PAID / FAILED / ...
-        res.put("paymentType", request.getPaymentType());       // DEPOSIT_20 / FULL / null
+        res.put("status", status);                   // vd: "pending", "ready_to_pay"
+        res.put("paymentStatus", paymentStatus);     // vd: "PENDING", "PAID"
+        res.put("paymentType", paymentType);         // vd: "DEPOSIT_20", "FULL"
 
         // ---- tiền & thời điểm ----
         res.put("paidAt", request.getPaidAt());
@@ -265,12 +278,27 @@ public class CustomerRequestController {
 
         // ---- contract ----
         res.put("contractId", request.getContractId());
+
+        String contractStatus = null;
+        if (contract != null && contract.getStatus() != null) {
+            contractStatus = contract.getStatus().toLowerCase();
+        }
+
+        // Nếu muốn coi "signed" như "acknowledged" khi request đã ready_to_pay:
+        if ("ready_to_pay".equals(status) && "signed".equals(contractStatus)) {
+            contractStatus = "acknowledged";
+        }
+
+        res.put("contractStatus", contractStatus);
+
         if (contract != null) {
-            res.put("contractStatus", contract.getStatus());
             res.put("contractSignedAtFormatted",
                     contract.getSignedAt() != null ? contract.getSignedAt().format(DATETIME_FMT) : null);
             res.put("contractAckAtFormatted",
                     contract.getAcknowledgedAt() != null ? contract.getAcknowledgedAt().format(DATETIME_FMT) : null);
+        } else {
+            res.put("contractSignedAtFormatted", null);
+            res.put("contractAckAtFormatted", null);
         }
 
         // ---- flag button ----
@@ -310,3 +338,4 @@ public class CustomerRequestController {
         }
     }
 }
+    
