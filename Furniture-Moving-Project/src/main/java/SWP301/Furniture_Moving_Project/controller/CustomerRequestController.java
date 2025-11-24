@@ -156,11 +156,50 @@ public class CustomerRequestController {
                         && request.isCancellationRequestAllowedByCustomer()
                         && !hasPendingCancel;
 
+        // ==== NEW: lấy yêu cầu hủy mới nhất (nếu có) ====
+        CancellationRequest latestCancellation = cancellationRequestRepository
+                .findTopByServiceRequestIdOrderByCreatedAtDesc(requestId)
+                .orElse(null);
+
+        // ==== NEW: xác định ai là người hủy (nếu đã cancelled) ====
+        String cancelledBy = request.getCancelledBy();
+        String cb = cancelledBy == null ? "" : cancelledBy.trim().toUpperCase();
+
+        boolean cancelledByCustomer = "CUSTOMER".equals(cb);
+        boolean cancelledByProvider = "PROVIDER".equals(cb);
+        boolean cancelledByAdmin    = "ADMIN".equals(cb);
+
+        String cancelledByHuman = null;
+        if ("cancelled".equalsIgnoreCase(request.getStatus())) {
+            if ("CUSTOMER".equals(cb)) {
+                cancelledByHuman = "Bạn (khách hàng)";
+            } else if ("PROVIDER".equals(cb)) {
+                cancelledByHuman = "Nhà cung cấp";
+            } else if ("ADMIN".equals(cb)) {
+                cancelledByHuman = "Quản trị viên";
+            } else if (!cb.isEmpty()) {
+                cancelledByHuman = cancelledBy;
+            }
+        }
+
+        boolean hasCancellationInfo =
+                "cancelled".equalsIgnoreCase(request.getStatus())
+                        && (request.getCancelReason() != null || latestCancellation != null);
+
         model.addAttribute("request", request);
         model.addAttribute("contract", contract);
         model.addAttribute("canCancel", canCancel);
         model.addAttribute("canRequestCancel", canRequestCancel);
         model.addAttribute("hasPendingCancel", hasPendingCancel);
+
+        // Thông tin hủy để hiển thị cho customer
+        model.addAttribute("cancelledBy", cancelledBy);
+        model.addAttribute("cancelledByCustomer", cancelledByCustomer);
+        model.addAttribute("cancelledByProvider", cancelledByProvider);
+        model.addAttribute("cancelledByAdmin", cancelledByAdmin);
+        model.addAttribute("cancelledByHuman", cancelledByHuman);
+        model.addAttribute("latestCancellation", latestCancellation);
+        model.addAttribute("hasCancellationInfo", hasCancellationInfo);
 
         return "customer/request-detail";
     }
@@ -202,6 +241,10 @@ public class CustomerRequestController {
         res.put("canCancel", canCancel);
         res.put("canRequestCancel", canRequestCancel);
         res.put("hasPendingCancel", hasPendingCancel);
+
+        // Thông tin hủy (nếu cần cho JS)
+        res.put("cancelledBy", request.getCancelledBy());
+        res.put("cancelReason", request.getCancelReason());
 
         return res;
     }

@@ -9,11 +9,24 @@ import java.util.Optional;
 public interface CancellationRequestRepository
         extends JpaRepository<CancellationRequest, Integer> {
 
+    // Check xem đơn này đã có yêu cầu hủy với status cụ thể chưa (requested / approved / rejected)
     boolean existsByServiceRequestIdAndStatus(Integer serviceRequestId, String status);
 
+    // Lấy yêu cầu hủy mới nhất theo serviceRequestId + status (nếu cần)
     Optional<CancellationRequest> findFirstByServiceRequestIdAndStatusOrderByCreatedAtDesc(
             Integer serviceRequestId,
             String status
+    );
+
+    // ✅ Bên provider: lấy yêu cầu hủy mới nhất của đơn này cho provider này
+    Optional<CancellationRequest> findTopByServiceRequestIdAndProviderIdOrderByCreatedAtDesc(
+            Integer serviceRequestId,
+            Integer providerId
+    );
+
+    // ✅ Bên customer: lấy yêu cầu hủy mới nhất của đơn này (bất kể provider nào)
+    Optional<CancellationRequest> findTopByServiceRequestIdOrderByCreatedAtDesc(
+            Integer serviceRequestId
     );
 
     // ✅ Lấy toàn bộ yêu cầu hủy của 1 provider (mọi trạng thái)
@@ -23,10 +36,5 @@ public interface CancellationRequestRepository
     List<CancellationRequest> findByProviderIdAndStatusOrderByCreatedAtDesc(
             Integer providerId,
             String status
-            
-    );
-        Optional<CancellationRequest> findTopByServiceRequestIdAndProviderIdOrderByCreatedAtDesc(
-            Integer serviceRequestId,
-            Integer providerId
     );
 }

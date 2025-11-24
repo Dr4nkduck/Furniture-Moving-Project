@@ -35,9 +35,18 @@ public class ProviderOrderDetailDTO {
     // ===== Hủy trực tiếp (giai đoạn 1) =====
     /**
      * Lý do hủy được lưu trực tiếp trên service_requests.cancel_reason
-     * (dùng cho case KH chưa thanh toán và tự hủy đơn).
+     * (dùng cho case KH chưa thanh toán và tự hủy đơn, hoặc provider / admin hủy).
      */
     private String cancelReason;
+
+    /**
+     * Bên thực hiện thao tác hủy cuối cùng:
+     *  - CUSTOMER
+     *  - PROVIDER
+     *  - ADMIN
+     *  - hoặc null nếu chưa set.
+     */
+    private String cancelledBy;
 
     // ===== YÊU CẦU HỦY (giai đoạn 2 + 3) =====
     /**
@@ -177,6 +186,14 @@ public class ProviderOrderDetailDTO {
 
     public void setCancelReason(String cancelReason) {
         this.cancelReason = cancelReason;
+    }
+
+    public String getCancelledBy() {
+        return cancelledBy;
+    }
+
+    public void setCancelledBy(String cancelledBy) {
+        this.cancelledBy = cancelledBy;
     }
 
     public Integer getCancellationId() {

@@ -36,6 +36,8 @@
         statusText: document.getElementById('cancelStatusText'),
         reasonText: document.getElementById('cancelReasonText'),
         decisionNoteText: document.getElementById('cancelDecisionNoteText'),
+        cancelledByText: document.getElementById('cancelledByText'),
+        reasonLabel: document.getElementById('cancelReasonLabel'),
         btnApprove: document.getElementById('btnApproveCancel'),
         btnReject: document.getElementById('btnRejectCancel')
     };
@@ -370,7 +372,16 @@
         let hasPendingCancellation = false;
 
         if (cancelSec.wrapper) {
+            // Reset default
+            cancelSec.wrapper.classList.add('d-none');
+            cancelSec.statusText && (cancelSec.statusText.textContent = '');
+            cancelSec.reasonText && (cancelSec.reasonText.textContent = '');
+            cancelSec.decisionNoteText && (cancelSec.decisionNoteText.textContent = '');
+            cancelSec.cancelledByText && (cancelSec.cancelledByText.textContent = '');
+            cancelSec.reasonLabel && (cancelSec.reasonLabel.textContent = 'Lý do hủy:');
+
             if (dto.cancellationStatus) {
+                // Có CancellationRequest (khách gửi yêu cầu hủy)
                 cancelSec.wrapper.classList.remove('d-none');
 
                 if (cancelSec.statusText) {
@@ -385,33 +396,48 @@
                         : '';
                 }
 
+                // Bên yêu cầu hủy: khách hàng
+                if (cancelSec.cancelledByText) {
+                    cancelSec.cancelledByText.textContent = 'Khách hàng';
+                }
+                if (cancelSec.reasonLabel) {
+                    cancelSec.reasonLabel.textContent = 'Lý do khách yêu cầu hủy:';
+                }
+
                 hasPendingCancellation = dto.cancellationStatus === 'requested';
 
                 if (cancelSec.btnApprove) cancelSec.btnApprove.disabled = !hasPendingCancellation;
                 if (cancelSec.btnReject)  cancelSec.btnReject.disabled  = !hasPendingCancellation;
 
-            } else if (dto.status === 'cancelled' && dto.cancelReason) {
+            } else if (dto.status === 'cancelled' && (dto.cancelReason || dto.cancelledBy)) {
+                // Không có CancellationRequest, nhưng đơn đã bị hủy
                 cancelSec.wrapper.classList.remove('d-none');
 
+                // Ai là người hủy?
+                let whoText = 'Không xác định';
+                const who = (dto.cancelledBy || '').toUpperCase();
+                if (who === 'CUSTOMER') whoText = 'Khách hàng';
+                else if (who === 'PROVIDER') whoText = 'Nhà cung cấp';
+                else if (who === 'ADMIN') whoText = 'Quản trị viên';
+
                 if (cancelSec.statusText) {
-                    cancelSec.statusText.textContent = 'Đơn đã bị khách hủy trước khi thanh toán.';
+                    cancelSec.statusText.textContent = `Đơn đã bị ${whoText.toLowerCase()} hủy.`;
+                }
+                if (cancelSec.cancelledByText) {
+                    cancelSec.cancelledByText.textContent = whoText;
+                }
+                if (cancelSec.reasonLabel) {
+                    cancelSec.reasonLabel.textContent = 'Lý do hủy:';
                 }
                 if (cancelSec.reasonText) {
-                    cancelSec.reasonText.textContent = dto.cancelReason;
-                }
-                if (cancelSec.decisionNoteText) {
-                    cancelSec.decisionNoteText.textContent = '';
+                    cancelSec.reasonText.textContent = dto.cancelReason || '(không có lý do)';
                 }
 
                 if (cancelSec.btnApprove) cancelSec.btnApprove.disabled = true;
                 if (cancelSec.btnReject)  cancelSec.btnReject.disabled  = true;
             } else {
+                // Không có gì để show
                 cancelSec.wrapper.classList.add('d-none');
-
-                if (cancelSec.statusText) cancelSec.statusText.textContent = '';
-                if (cancelSec.reasonText) cancelSec.reasonText.textContent = '';
-                if (cancelSec.decisionNoteText) cancelSec.decisionNoteText.textContent = '';
-
                 currentCancellationId = null;
             }
         }

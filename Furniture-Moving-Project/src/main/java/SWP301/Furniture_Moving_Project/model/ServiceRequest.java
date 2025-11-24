@@ -57,6 +57,10 @@ public class ServiceRequest {
     @Column(name = "cancelled_at", columnDefinition = "datetime2")
     private LocalDateTime cancelledAt;
 
+    // NEW: ai là người hủy: CUSTOMER | PROVIDER | ADMIN
+    @Column(name = "cancelled_by")
+    private String cancelledBy;
+
     @OneToMany(mappedBy = "serviceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FurnitureItem> furnitureItems = new ArrayList<>();
 
@@ -255,6 +259,14 @@ public class ServiceRequest {
 
     public void setCancelledAt(LocalDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
+    }
+
+    public String getCancelledBy() {
+        return cancelledBy;
+    }
+
+    public void setCancelledBy(String cancelledBy) {
+        this.cancelledBy = cancelledBy;
     }
 
     public List<FurnitureItem> getFurnitureItems() {

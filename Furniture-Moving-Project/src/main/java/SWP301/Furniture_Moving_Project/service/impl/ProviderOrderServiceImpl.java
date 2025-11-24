@@ -99,13 +99,15 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
                 .collect(Collectors.toList()));
 
         // ✅ 3. Lấy thêm thông tin từ entity ServiceRequest (payment + cancelReason)
-        ServiceRequest sr = srRepo.findById(requestId)
+            ServiceRequest sr = srRepo.findById(requestId)
                 .orElse(null);
         if (sr != null) {
             dto.setPaymentStatus(sr.getPaymentStatus());
             dto.setPaymentType(sr.getPaymentType());
             dto.setCancelReason(sr.getCancelReason());
+            dto.setCancelledBy(sr.getCancelledBy());   // 👈 thêm dòng này
         }
+
 
         // ✅ 4. Lấy yêu cầu hủy mới nhất (nếu có) cho đơn này của provider này
         if (sr != null && sr.getProviderId() != null) {
@@ -190,15 +192,23 @@ public class ProviderOrderServiceImpl implements ProviderOrderService {
             throw new IllegalStateException(msg);
         }
 
-        int updated = srRepo.providerUpdateStatus(
-                providerId,
-                requestId,
-                ns,
-                StringUtils.hasText(cancelReason) && "cancelled".equals(ns) ? cancelReason : null
-        );
-        if (updated == 0) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc đơn không thuộc về nhà cung cấp này.");
+        // ✅ Thay vì gọi srRepo.providerUpdateStatus(...),
+        //    ta cập nhật trực tiếp entity để set được cancelledBy / cancelledAt
+        if ("cancelled".equals(ns)) {
+            // PROVIDER chủ động hủy đơn
+            request.setStatus("cancelled");
+            if (StringUtils.hasText(cancelReason)) {
+                request.setCancelReason(cancelReason);
+            }
+            request.setCancelledAt(LocalDateTime.now(ZONE_VN));
+            request.setCancelledBy("PROVIDER");
+        } else {
+            // Các trạng thái khác: chỉ đơn giản set status
+            request.setStatus(ns);
+            // (Không đụng tới cancelReason / cancelledAt / cancelledBy ở đây)
         }
+
+        srRepo.save(request);
     }
 
     /**

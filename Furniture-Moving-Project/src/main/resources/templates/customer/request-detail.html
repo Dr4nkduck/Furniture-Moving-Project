@@ -157,6 +157,54 @@
                 </div>
             </div>
 
+            <!-- THÔNG TIN HỦY ĐƠN (customer nhìn thấy lý do hủy) -->
+            <div class="fm-section"
+                 th:if="${hasCancellationInfo}">
+                <div class="fm-section-title text-danger">Thông tin hủy đơn</div>
+
+                <p class="mb-1">
+                    <strong>Trạng thái:</strong>
+                    <span th:text="${request.status == 'cancelled' ? 'Đơn hàng đã bị hủy' : 'Yêu cầu hủy đã được xử lý'}">
+                        Đơn hàng đã bị hủy
+                    </span>
+                </p>
+
+                <p class="mb-1" th:if="${cancelledByHuman != null}">
+                    <strong>Bên hủy:</strong>
+                    <span th:text="${cancelledByHuman}">Bạn (khách hàng)</span>
+                </p>
+
+                <p class="mb-1"
+                   th:if="${request.cancelReason != null}">
+                    <strong>Lý do hủy:</strong>
+                    <span th:text="${request.cancelReason}">Khách thay đổi kế hoạch</span>
+                </p>
+
+                <p class="mb-1"
+                   th:if="${request.cancelledAt != null}">
+                    <strong>Thời điểm hủy:</strong>
+                    <span th:text="${#temporals.format(request.cancelledAt, 'dd/MM/yyyy HH:mm')}">
+                        01/01/2025 12:00
+                    </span>
+                </p>
+
+                <!-- Nếu có bản ghi CancellationRequest (hủy sau thanh toán) -->
+                <p class="mb-1"
+                   th:if="${latestCancellation != null and latestCancellation.decisionNote != null}">
+                    <strong>Ghi chú từ đơn vị vận chuyển:</strong>
+                    <span th:text="${latestCancellation.decisionNote}">
+                        Sẽ hoàn tiền 90% cho khách.
+                    </span>
+                </p>
+
+                <p class="mb-0 small text-muted"
+                   th:if="${latestCancellation != null}">
+                    Trạng thái yêu cầu hủy:
+                    <span th:text="${latestCancellation.status}">approved</span>
+                </p>
+            </div>
+            <!-- HẾT THÔNG TIN HỦY ĐƠN -->
+
             <!-- Thông tin chi phí -->
             <div class="fm-section">
                 <div class="fm-section-title">Chi phí</div>
