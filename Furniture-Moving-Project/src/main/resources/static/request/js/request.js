@@ -1,3 +1,12 @@
+/* =====================================================================
+ *  REQUEST.JS – Tạo yêu cầu dịch vụ vận chuyển
+ *  - Load nhà cung cấp từ /api/providers
+ *  - Load gói dịch vụ từ /api/service-packages (từ DB)
+ *  - Preview ảnh, bảng đồ đạc, ước tính chi phí
+ *  - Bridge từ AI Quote (sessionStorage/localStorage)
+ *  - Lưu nháp form (localStorage)
+ * ===================================================================== */
+
 /* ========= Helpers ========= */
 const $  = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -54,7 +63,7 @@ async function loadProviders() {
   const sel = document.getElementById('providerId');
   if (!sel) return;
   try {
-    const res = await fetch('/api/providers'); // mặc định ?status=verified
+    const res = await fetch('/api/providers');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const payload = await res.json();
     const list = payload.data || [];
@@ -72,7 +81,37 @@ async function loadProviders() {
     console.error('Load providers failed:', e);
   }
 }
-document.addEventListener('DOMContentLoaded', loadProviders);
+
+/* ========= Service packages: load từ DB ========= */
+async function loadServicePackages() {
+  const sel = document.getElementById('servicePackage');
+  if (!sel) return;
+
+  // trạng thái đang tải
+  sel.innerHTML = '<option value="" disabled selected>Đang tải gói…</option>';
+
+  try {
+    const res = await fetch('/api/service-packages');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const payload = await res.json();
+    const list = payload.data || [];
+
+    if (!list.length) {
+      sel.innerHTML = '<option value="" disabled selected>Chưa có gói dịch vụ</option>';
+      return;
+    }
+
+    let html = '<option value="" disabled selected>— Chọn gói —</option>';
+    list.forEach(p => {
+      // p.code = HOME_MOVE / OFFICE_MOVE..., p.name = tên gói
+      html += `<option value="${p.code}">${p.name}</option>`;
+    });
+    sel.innerHTML = html;
+  } catch (e) {
+    console.error('Load service packages failed:', e);
+    sel.innerHTML = '<option value="" disabled selected>Lỗi tải gói dịch vụ</option>';
+  }
+}
 
 /* ========= Images preview (multi + remove) ========= */
 const fileInput = $('#images');
@@ -146,7 +185,7 @@ function addItemRow(data = {}) {
   const tr = document.createElement('tr');
   tr.className = 'item-row';
   tr.innerHTML = `
-    <td><input type="text"  name="items.name" placeholder="VD: Tủ quần áo" required /></td>
+    <td><input type="text"  name="items.name" placeholder="" required /></td>
     <td><input type="number" name="items.qty"  min="1" value="1" required style="width:80px"></td>
     <td><input type="number" name="items.len"  min="0" placeholder="0" style="width:90px"></td>
     <td><input type="number" name="items.wid"  min="0" placeholder="0" style="width:90px"></td>
@@ -182,7 +221,7 @@ clearItemsBtn?.addEventListener('click', () => {
 
 /* ========= Summary & estimate ========= */
 
-// phí nhân công / đồ (chỉ tính khi có món thực sự)
+// phí nhân công/đồ (fallback)
 function calcMovingEstimate() {
   const base = 200_000;
   const perItem = 50_000;
@@ -232,7 +271,7 @@ function getDistanceFromAIQuote() {
   } catch { return null; }
 }
 
-// phí ship theo quãng đường
+// phí ship theo quãng đường (fallback)
 function calcShippingEstimate() {
   const perKm = 12_000;
 
@@ -267,9 +306,8 @@ function calcEstimate() {
   return move + ship;
 }
 
-// updateSummary – ưu tiên số từ AI-Quote, ẩn khi chưa có gì
+// === updateSummary() – ưu tiên số từ AI-Quote ===
 function updateSummary() {
-  // helper: đọc pricing từ aiquote_draft
   function readAIQuotePricing() {
     try {
       const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
@@ -490,7 +528,6 @@ function normalizeAiquoteDraft(raw) {
   const dateVN  = firstNonEmpty(raw?.schedule?.date, raw?.date);
   const timeAny = firstNonEmpty(raw?.schedule?.time, raw?.time);
 
-  // items từ nhiều nguồn khác nhau
   const candidateLists = [
     raw.items,
     raw.cart?.items,
@@ -556,7 +593,6 @@ function prefillFromAiquoteDraft() {
   }
 
   if (Array.isArray(d.items) && d.items.length && itemsBody) {
-    // luôn ghi đè bảng khi có dữ liệu từ AI
     itemsBody.innerHTML = '';
     d.items.forEach(it => addItemRow({
       name: it.name ?? it.item ?? '',
@@ -574,7 +610,13 @@ function prefillFromAiquoteDraft() {
 
 /* ========= Load draft/bridge + init ========= */
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadProviders();
+  // load provider + gói dịch vụ song song
+  await Promise.all([
+    loadProviders(),
+    loadServicePackages()
+  ]);
+
+  // sau khi có options thì mới prefill từ AI Quote
   prefillFromAiquoteDraft();
 
   const bridgeKey = 'aiquote_payload_v1';
@@ -591,7 +633,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     const raw = localStorage.getItem(draftKey);
     if (!raw) {
-      // mặc định 1 dòng trống
+      // không auto thêm "Bàn làm việc" nữa
       addItemRow();
       updateSummary();
     } else {
@@ -631,7 +673,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         updateSummary();
       } catch (_) {
-        addItemRow(); // fallback: 1 dòng trống
+        // fallback: chỉ thêm 1 dòng trống
+        addItemRow();
         updateSummary();
       }
     }
@@ -658,8 +701,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ========= Serialize to JSON cho API ========= */
-
-// đọc tổng từ AI-Quote nếu có
 function readAIQuoteTotal() {
   try {
     const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
@@ -709,7 +750,6 @@ function serialize(){
     items,
     preferredDate: fd.get('preferredDate') || '',
     preferredTime: fd.get('preferredTime') || '',
-    // ƯU TIÊN tổng từ AI-Quote, fallback sang ước tính FE
     estimatedCost: Number.isFinite(aiTotal) ? aiTotal : Number(calcEstimate())
   };
 }
@@ -738,7 +778,8 @@ function resetFormUI(){
   form?.reset();
   if (itemsBody) {
     itemsBody.innerHTML = '';
-    addItemRow();      // tạo 1 dòng trống, không preset tên
+    // thêm 1 dòng trống, không có ví dụ gì
+    addItemRow();
   }
   if (fileInput) fileInput.value = '';
   if (thumbs) thumbs.innerHTML = '';

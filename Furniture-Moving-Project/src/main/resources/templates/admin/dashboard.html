@@ -28,14 +28,14 @@
     <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
 
     <!-- Template Styles -->
-    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
-    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
-    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}"/>
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}"/>
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}"/>
 
     <!-- Bootstrap 5 Bundle (Popper included) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- put this as early as possible in <head> -->
+    <!-- Theme init: put this as early as possible in <head> -->
     <script>
         (function () {
             try {
@@ -119,8 +119,14 @@
                 <a th:href="@{/provider-stats}" class="nav-item nav-link">
                     <i class="fa fa-chart-bar me-2"></i>Thông tin nhà cung cấp
                 </a>
+
                 <a th:href="@{/customer-trends}" class="nav-item nav-link">
                     <i class="fa fa-chart-line me-2"></i>Xu hướng khách hàng
+                </a>
+
+                <!-- MỤC MỚI: Xác nhận thanh toán (đi tới /admin/payments) -->
+                <a th:href="@{/admin/payments}" class="nav-item nav-link">
+                    <i class="fa fa-money-check-alt me-2"></i>Xác nhận thanh toán
                 </a>
 
             </div>
@@ -147,6 +153,7 @@
                 <button id="theme-toggle" class="btn btn-sm btn-outline-secondary ms-2" type="button" aria-pressed="false">
                     🌙 Dark
                 </button>
+
                 <!-- Messages -->
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -378,7 +385,8 @@
                         &copy; <a href="#">Your Site Name</a>, All Right Reserved.
                     </div>
                     <div class="col-12 col-sm-6 text-center text-sm-end">
-                        Designed By <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
+                        Designed By
+                        <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
                     </div>
                 </div>
             </div>
@@ -399,7 +407,7 @@
 <script th:src="@{/dashbooard/lib/waypoints/waypoints.min.js}"></script>
 <script th:src="@{/dashbooard/lib/owlcarousel/owl.carousel.min.js}"></script>
 <script th:src="@{/dashbooard/lib/tempusdominus/js/moment.min.js}"></script>
-<script th:src="@{/dashbooard/lib/tempusdominus/js/moment-timezone.min.js}"></script>
+script th:src="@{/dashbooard/lib/tempusdominus/js/moment-timezone.min.js}"></script>
 <script th:src="@{/dashbooard/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js}"></script>
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>

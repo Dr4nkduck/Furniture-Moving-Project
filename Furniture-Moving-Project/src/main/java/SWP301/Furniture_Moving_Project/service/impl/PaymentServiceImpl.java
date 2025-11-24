@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
@@ -66,7 +65,7 @@ public class PaymentServiceImpl implements PaymentService {
         // Chuẩn hoá kiểu thanh toán
         String normalizedType;
         if ("DEPOSIT_20".equalsIgnoreCase(paymentType) || "DEPOSIT".equalsIgnoreCase(paymentType)) {
-            normalizedType = "DEPOSIT"; // user chọn radio "DEPOSIT"
+            normalizedType = "DEPOSIT_20"; // chuẩn hoá: dùng DEPOSIT_20
         } else {
             normalizedType = "FULL";
         }
@@ -74,7 +73,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal total = sr.getTotalCost();
         BigDecimal amount;
 
-        if ("DEPOSIT".equals(normalizedType)) {
+        if ("DEPOSIT_20".equals(normalizedType)) {
             // Đặt cọc 20%
             amount = total.multiply(new BigDecimal("0.20"));
         } else {
@@ -86,14 +85,20 @@ public class PaymentServiceImpl implements PaymentService {
         amount = amount.setScale(0, RoundingMode.HALF_UP);
 
         // === CẬP NHẬT THÔNG TIN THANH TOÁN VÀO ServiceRequest ===
-        sr.setPaymentType(normalizedType);            // "DEPOSIT" hoặc "FULL"
-        if ("DEPOSIT".equals(normalizedType)) {
+        sr.setPaymentType(normalizedType);            // "DEPOSIT_20" hoặc "FULL"
+        if ("DEPOSIT_20".equals(normalizedType)) {
             sr.setDepositAmount(amount);             // số tiền cọc 20%
         } else {
             sr.setDepositAmount(null);               // không lưu cọc nếu full
         }
-        // Tuỳ bạn muốn set PENDING ngay từ đây hay không
-        // sr.setPaymentStatus("PENDING");
+
+        // Nếu chưa từng thanh toán thành công thì set trạng thái thanh toán = PENDING (hoặc UNPAID tuỳ bạn)
+        // Admin sẽ là người đổi sang PAID / DEPOSIT_PAID
+        if (sr.getPaymentStatus() == null ||
+                (!"PAID".equalsIgnoreCase(sr.getPaymentStatus())
+                        && !"DEPOSIT_PAID".equalsIgnoreCase(sr.getPaymentStatus()))) {
+            sr.setPaymentStatus("PENDING");
+        }
 
         serviceRequestRepository.save(sr);
 
@@ -132,51 +137,35 @@ public class PaymentServiceImpl implements PaymentService {
         ServiceRequest sr = serviceRequestRepository.findById(serviceRequestId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ServiceRequest #" + serviceRequestId));
 
-        // Đọc status từ service_requests.status
-        String s = sr.getStatus() == null ? "" : sr.getStatus().toLowerCase();
+        // 1) Xác định trạng thái thanh toán hiển thị cho frontend
+        String paymentStatusRaw = sr.getPaymentStatus();
+        String workflow = sr.getStatus() == null ? "" : sr.getStatus().toLowerCase();
 
         String paymentStatus;
-        if ("paid".equals(s) || "completed".equals(s)) {
+        if ("PAID".equalsIgnoreCase(paymentStatusRaw) || "DEPOSIT_PAID".equalsIgnoreCase(paymentStatusRaw)) {
+            // Admin đã xác nhận đã nhận tiền (toàn bộ hoặc tiền cọc)
             paymentStatus = "PAID";
-        } else if ("ready_to_pay".equals(s)) {
+        } else if ("ready_to_pay".equalsIgnoreCase(workflow)) {
+            // Provider đã ghi nhận hợp đồng, đơn đang ở bước chờ khách thanh toán
             paymentStatus = "READY_TO_PAY";
         } else {
-            // pending, cancelled, declined... -> coi là chưa thanh toán
-            paymentStatus = "PENDING";
+            // Trạng thái ban đầu / chưa tới bước ready_to_pay
+            paymentStatus = "UNPAID";
         }
 
-        // 🔹 Nếu kiểu thanh toán là DEPOSIT thì trả về số tiền cọc,
-        // ngược lại trả totalCost như trước
+        // 2) Số tiền hiển thị: nếu DEPOSIT_20 thì dùng depositAmount, ngược lại dùng totalCost
         BigDecimal amountForResponse;
-        if ("DEPOSIT".equalsIgnoreCase(sr.getPaymentType()) && sr.getDepositAmount() != null) {
+        if ("DEPOSIT_20".equalsIgnoreCase(sr.getPaymentType()) && sr.getDepositAmount() != null) {
             amountForResponse = sr.getDepositAmount();
         } else {
             amountForResponse = sr.getTotalCost();
         }
 
-        // ✅ Nếu đã PAID mà chưa có paidAt hoặc paymentStatus khác "PAID" -> set & lưu lại
-        if ("PAID".equals(paymentStatus)) {
-            boolean changed = false;
-
-            if (sr.getPaidAt() == null) {
-                sr.setPaidAt(LocalDateTime.now(ZONE_VN));
-                changed = true;
-            }
-            if (sr.getPaymentStatus() == null || !"PAID".equalsIgnoreCase(sr.getPaymentStatus())) {
-                sr.setPaymentStatus("PAID");
-                changed = true;
-            }
-
-            if (changed) {
-                serviceRequestRepository.save(sr);
-            }
-        }
-
         PaymentStatusResponse resp = new PaymentStatusResponse();
         resp.setStatus(paymentStatus);
         resp.setAmount(amountForResponse);
-        resp.setPaidAt(sr.getPaidAt());            // đã được set nếu PAID
-        resp.setPaymentType(sr.getPaymentType());  // "DEPOSIT" hoặc "FULL"
+        resp.setPaidAt(sr.getPaidAt());             // dùng field paidAt của entity (admin set)
+        resp.setPaymentType(sr.getPaymentType());   // "DEPOSIT_20" hoặc "FULL"
 
         return resp;
     }
