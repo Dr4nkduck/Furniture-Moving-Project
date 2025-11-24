@@ -1,13 +1,17 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.model.Contract;
 import SWP301.Furniture_Moving_Project.model.User;
+import SWP301.Furniture_Moving_Project.repository.ContractRepository;
 import SWP301.Furniture_Moving_Project.repository.UserRepository;
 import SWP301.Furniture_Moving_Project.service.ContractService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -17,10 +21,12 @@ public class ContractController {
 
     private final ContractService contracts;
     private final UserRepository users;
+    private final ContractRepository contractRepository;
 
-    public ContractController(ContractService contracts, UserRepository users) {
+    public ContractController(ContractService contracts, UserRepository users, ContractRepository contractRepository) {
         this.contracts = contracts;
         this.users = users;
+        this.contractRepository = contractRepository;
     }
 
     @GetMapping
@@ -42,6 +48,32 @@ public class ContractController {
         if (userId == null) return "redirect:/login";
         contracts.accept(userId);
         return "redirect:/request";
+    }
+
+    /**
+     * View a specific contract by ID
+     * GET /contract/{id}
+     */
+    @GetMapping("/{id}")
+    public String viewContract(@PathVariable("id") Integer contractId, Model model) {
+        Integer userId = currentUserId();
+        if (userId == null) return "redirect:/login";
+
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contract not found"));
+
+        // Verify the contract belongs to the current user
+        if (contract.getUser() == null || !contract.getUser().getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to view this contract");
+        }
+
+        addLoginInfo(model, userId);
+        model.addAttribute("contract", contract);
+        
+        User u = users.findById(userId).orElse(null);
+        model.addAttribute("customerName", buildName(u));
+        
+        return "contract/contract";
     }
 
     // ===== helpers =====

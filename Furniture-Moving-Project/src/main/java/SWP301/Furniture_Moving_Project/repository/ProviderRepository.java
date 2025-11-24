@@ -24,7 +24,7 @@ public interface ProviderRepository extends JpaRepository<Provider, Integer> {
           p.provider_id  AS providerId,
           p.company_name AS companyName,
           CAST(p.rating AS float) AS rating
-        FROM providers p
+        FROM dbo.providers p
         ORDER BY p.company_name
         """, nativeQuery = true)
     List<Map<String,Object>> findAvailableProvidersLight();

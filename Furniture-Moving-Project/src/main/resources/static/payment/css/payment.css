@@ -40,7 +40,7 @@
 .page-payment *{box-sizing:border-box;}
 .page-payment img{max-width:100%;display:block;}
 .page-payment a{color:inherit;text-decoration:none;}
-.payment-page{width:min(100% - 32px, var(--maxw));margin-inline:auto;padding:32px 0 96px;}
+.payment-page{width:min(100% - 32px, var(--maxw));margin-inline:auto;padding:32px 0 96px;display:block !important;visibility:visible !important;opacity:1 !important;}
 
 /* =====================
    HEADER (card compact)
@@ -146,8 +146,6 @@
 .page-payment .nav-bar .navbar-nav{display:flex;gap:12px;list-style:none;margin:0;padding:0;}
 .page-payment .nav-bar .navbar-nav a{color:#fff;padding:6px 10px;border-radius:8px;}
 .page-payment .nav-bar .navbar-nav a:hover{background:rgba(255,255,255,.08);color:var(--brand);}
-.page-payment .navbar-toggler,
-.page-payment .navbar-toggler-icon,
 .page-payment .nav-bar .menu,
 .page-payment .nav-bar .menu-label,
 .page-payment .nav-bar hr{display:none!important;}
@@ -266,9 +264,6 @@
   padding:10px 20px;
 }
 .page-payment .navbar-brand{color:#fdbe33; font-weight:800; text-decoration:none; margin-right:16px;}
-.page-payment .navbar-toggler,
-.page-payment .navbar-toggler-icon{display:none!important;} /* ẩn “MENU” cũ nếu có */
-
 /* menu ngang, không cần Bootstrap */
 .page-payment .navbar-nav{display:flex; gap:16px; list-style:none; margin:0; padding:0;}
 .page-payment .navbar-nav .nav-item{position:relative;}

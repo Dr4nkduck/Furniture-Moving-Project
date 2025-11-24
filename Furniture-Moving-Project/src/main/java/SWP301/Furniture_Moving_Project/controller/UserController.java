@@ -38,7 +38,13 @@ public class UserController {
 
     @GetMapping("/user/ai-quote")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public String aiQuote() {
+    public String aiQuote(Model model, Principal principal) {
+        if (!model.containsAttribute("currentUser")) {
+            String username = principal.getName();
+            User currentUser = userRepository.findByUsername(username)
+                    .orElse(null);
+            model.addAttribute("currentUser", currentUser);
+        }
         return "user/ai-quote";
     }
 

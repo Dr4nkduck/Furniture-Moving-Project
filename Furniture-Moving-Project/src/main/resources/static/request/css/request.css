@@ -148,3 +148,45 @@
 }
 .page-request__scope input[type="file"]::-webkit-file-upload-button:hover{background:color-mix(in oklab, var(--brand) 25%, var(--surface-2));}
 .page-request__scope input[type="file"]:hover{color:transparent;}
+/* Làm đậm & rõ 2 tiêu đề "Điểm lấy hàng" / "Điểm giao hàng" */
+.page-request__scope h3 {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+/* Nút "+ Thêm đồ", "Xóa tất cả" trong phần Đồ đạc */
+.page-request__scope .item-actions .btn {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: color-mix(in oklab, var(--brand) 45%, var(--border));
+  font-weight: 600;
+}
+
+.page-request__scope .item-actions .btn:hover {
+  background: color-mix(in oklab, var(--brand) 30%, var(--surface-2));
+}
+
+/* Nút "Xóa" ở từng dòng đồ đạc trong bảng */
+.page-request__scope #itemsTable button {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--brand) 40%, var(--border));
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.page-request__scope #itemsTable button:hover {
+  background: color-mix(in oklab, var(--brand) 35%, var(--surface-2));
+}
+
+/* (tuỳ chọn) làm nút Xóa ảnh nổi bật hơn một chút */
+.page-request__scope .thumb .rm {
+  color: #fff;
+  font-weight: 900;
+  background: rgba(0,0,0,.65);
+}
+.page-request__scope .thumb .rm:hover {
+  background: #dc2626;
+}

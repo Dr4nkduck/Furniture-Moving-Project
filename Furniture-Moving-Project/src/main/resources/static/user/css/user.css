@@ -41,8 +41,8 @@
 
 .page-header { margin-bottom: 0; }
 
-
-
-
-
-
+@media (max-width: 767.98px) {
+    .user-actions .action-card {
+        margin-bottom: 1rem;
+    }
+}

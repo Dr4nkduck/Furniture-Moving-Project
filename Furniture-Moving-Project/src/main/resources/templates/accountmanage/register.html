@@ -19,8 +19,20 @@
         <input type="email" th:field="*{email}" placeholder="Email" required>
       </div>
 
+      <!-- MẬT KHẨU: validate >= 6 ký tự -->
       <div class="input-box">
-        <input type="password" th:field="*{password}" placeholder="Mật khẩu" required>
+        <input type="password"
+               th:field="*{password}"
+               placeholder="Mật khẩu"
+               required
+               minlength="6"
+               oninput="this.setCustomValidity(this.value.length < 6 ? 'Mật khẩu phải có ít nhất 6 ký tự' : '');"
+               oninvalid="this.setCustomValidity('Mật khẩu phải có ít nhất 6 ký tự')">
+      </div>
+
+      <!-- Hiện lỗi validate từ backend (nếu có) -->
+      <div class="form-msg error" th:if="${#fields.hasErrors('password')}">
+        <span th:errors="*{password}"></span>
       </div>
 
       <div class="input-box">

@@ -1,11 +1,13 @@
 package SWP301.Furniture_Moving_Project.controller;
 
+import SWP301.Furniture_Moving_Project.repository.ProviderRepository;
 import SWP301.Furniture_Moving_Project.repository.ServiceRequestRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,17 +17,17 @@ import java.util.Map;
 public class ProviderDashboardController {
 
     private final ServiceRequestRepository requestRepo;
+    private final ProviderRepository providerRepo;
 
-    public ProviderDashboardController(ServiceRequestRepository requestRepo) {
+    public ProviderDashboardController(ServiceRequestRepository requestRepo, ProviderRepository providerRepo) {
         this.requestRepo = requestRepo;
+        this.providerRepo = providerRepo;
     }
 
     @GetMapping("/summary")
-    public Map<String, Object> summary(
-            @RequestParam(required = false) Integer providerId,
-            Authentication auth) {
+    public Map<String, Object> summary(Authentication auth) {
 
-        Integer pid = resolveProviderId(auth, providerId); // tạm lấy query param, bạn có thể map từ auth
+        Integer pid = resolveProviderId(auth);
         Map<String, Object> m = new HashMap<>();
         m.put("total",           requestRepo.countByProviderId(pid));
         m.put("assigned",        requestRepo.countByProviderIdAndStatus(pid, "assigned"));
@@ -35,9 +37,12 @@ public class ProviderDashboardController {
         return m;
     }
 
-    private Integer resolveProviderId(Authentication auth, Integer providerId) {
-        if (providerId != null) return providerId;
-        // TODO: map từ user đang đăng nhập → providerId
-        throw new IllegalArgumentException("Missing providerId (test nhanh: ?providerId=5)");
+    private Integer resolveProviderId(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        String username = auth.getName();
+        return providerRepo.findProviderIdByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not a provider"));
     }
 }

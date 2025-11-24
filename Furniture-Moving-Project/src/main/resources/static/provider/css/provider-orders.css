@@ -98,3 +98,88 @@
         text-align: right;
     }
 }
+
+/* ===== Dialog overlay (Confirm / Prompt đẹp, nằm giữa màn) ===== */
+
+.fm-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.75); /* overlay tối, hợp dark mode */
+    backdrop-filter: blur(2px);
+}
+
+/* Khi Bootstrap thêm .d-none thì ẩn hẳn */
+.fm-dialog-backdrop.d-none {
+    display: none !important;
+}
+
+/* Panel chính của dialog, dùng style card-dark cho đồng bộ */
+.fm-dialog {
+    width: 100%;
+    max-width: 420px;
+    padding: 1.25rem 1.5rem;
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.fm-dialog h5 {
+    font-weight: 600;
+    margin-bottom: .35rem;
+}
+
+.fm-dialog p {
+    margin-bottom: .75rem;
+    color: var(--muted);
+}
+
+/* Textarea trong prompt */
+#dialog-input {
+    resize: vertical;
+    min-height: 70px;
+}
+
+/* Lỗi validate */
+.fm-dialog-error {
+    font-size: .85rem;
+}
+/* ===== Fix màu chữ bị tối trong panel chi tiết ===== */
+
+/* Toàn bộ text trong card tối cho sáng hơn một chút */
+.card-dark {
+    color: var(--text);
+}
+
+/* Đặc biệt là các heading như:
+   - Đánh giá của khách hàng
+   - Nội thất vận chuyển
+   - Xác nhận đã thanh toán
+*/
+.card-dark h1,
+.card-dark h2,
+.card-dark h3,
+.card-dark h4,
+.card-dark h5,
+.card-dark h6 {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Nếu muốn chỉ ảnh hưởng riêng page này thôi thì có thể dùng .detail: */
+/* 
+.detail h1,
+.detail h2,
+.detail h3,
+.detail h4,
+.detail h5,
+.detail h6 {
+    color: var(--text);
+    font-weight: 600;
+}
+*/

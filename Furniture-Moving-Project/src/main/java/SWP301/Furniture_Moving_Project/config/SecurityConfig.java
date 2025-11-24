@@ -48,26 +48,35 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authenticationProvider(daoAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
+                // Các URL public (không cần login)
                 .requestMatchers(
                     "/", "/homepage", "/login", "/register",
                     "/forgot/**",
                     "/css/**", "/js/**", "/images/**",
-                    "/accountmanage/**", "/homepage/**", "/chatbot/**",
+                    "/accountmanage/**",
+                    "/homepage/**",
+                    "/chatbot/**",
                     "/superadmin/**",
-                    "/dashbooard/**", "/customer-trends/**",
+                    "/dashbooard/**",
+                    "/customer-trends/**",
                     "/provider-stats/**",
                     "/userdashboard",
                     "/payment/css/**", "/payment/js/**", "/payment/images/**",
                     "/services/**",
                     "/orders/**",
-                    "/provider-stats/**",
                     "/request/**"
                 ).permitAll()
+
+                // API provider GET public
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/providers/**").permitAll()
-                .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
+
+                // Các khu vực cần role
+                .requestMatchers("/superadmin/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/user/**").hasRole("CUSTOMER")
                 .requestMatchers("/provider/**").hasRole("PROVIDER")
+
+                // Các request còn lại bắt buộc phải login
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login
@@ -75,13 +84,16 @@ public class SecurityConfig {
                 .loginProcessingUrl("/perform_login")
                 .successHandler(successHandler)
                 .failureUrl("/login?error=true")
-                .permitAll())
+                .permitAll()
+            )
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/homepage")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-                .permitAll());
+                .permitAll()
+            );
+
         return http.build();
     }
 }

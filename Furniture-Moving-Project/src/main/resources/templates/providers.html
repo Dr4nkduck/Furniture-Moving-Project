@@ -276,27 +276,47 @@
 
     <script>
       (function () {
+        // DOM Elements
         const $search = document.getElementById("providerSearch");
         const $date = document.getElementById("availabilityDate");
-        const $reviewsModal = document.getElementById('reviewsModal');
+        const $reviewsModalEl = document.getElementById('reviewsModal');
         const $reviewsList = document.getElementById('reviewsList');
         const $reviewsLoading = document.getElementById('reviewsLoading');
         const $reviewsEmpty = document.getElementById('reviewsEmpty');
         const $reviewsError = document.getElementById('reviewsError');
+        const $reviewsModalTitle = document.getElementById('reviewsModalLabel');
 
+        // Bootstrap Modal instance
+        const reviewsModal = new bootstrap.Modal($reviewsModalEl);
+
+        // --- Helper Functions ---
         function renderStars(rating) {
           let html = '<span class="text-warning">';
           for (let i = 1; i <= 5; i++) {
             html += `<i class="${rating >= i ? 'fas fa-star' : (rating >= i - 0.5 ? 'fas fa-star-half-alt' : 'far fa-star')}"></i>`;
           }
-          html += `</span> <small class="text-muted ml-1">${rating}/5</small>`;
+          html += `</span> <small class="text-muted ml-1">${rating.toFixed(1)}/5</small>`;
           return html;
         }
 
+        function sanitizeHTML(str) {
+            return (str || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // --- API & UI Functions ---
+
         async function openReviews(providerId, providerName) {
-          // Set title
-          const title = document.getElementById('reviewsModalLabel');
-          if (title) title.textContent = `Đánh giá – ${providerName}`;
+          if ($reviewsModalTitle) {
+            $reviewsModalTitle.textContent = `Đánh giá – ${sanitizeHTML(providerName)}`;
+          }
 
           // Reset states
           $reviewsList.innerHTML = '';
@@ -304,149 +324,141 @@
           $reviewsError.classList.add('d-none');
           $reviewsLoading.classList.remove('d-none');
 
-          // Show modal
-          // jQuery is available because of Bootstrap 4
-          window.jQuery && window.jQuery('#reviewsModal').modal('show');
+          reviewsModal.show();
 
           try {
-            const resp = await fetch(`/api/providers/${providerId}/reviews`);
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            const data = await resp.json();
-            const items = Array.isArray(data) ? data : (data.data || []);
+            const response = await fetch(`/api/providers/${providerId}/reviews`);
+            if (!response.ok) {
+              throw new Error(`Lỗi mạng: ${response.status}`);
+            }
+            const result = await response.json();
+            const items = Array.isArray(result) ? result : (result.data || []);
 
-            if (!items.length) {
+            if (items.length === 0) {
               $reviewsEmpty.classList.remove('d-none');
               return;
             }
 
-            const parts = items.map(it => {
-              const dt = it.createdAt ? new Date(it.createdAt) : null;
-              const when = dt ? dt.toLocaleString('vi-VN') : '';
-              return `<div class="review-item">
-                        <div class="d-flex align-items-center mb-1">
-                          ${renderStars(it.rating || 0)}
-                          <small class="text-muted ml-2">${when}</small>
-                        </div>
-                        <div class="comment">${(it.comment || '').replace(/</g, '&lt;')}</div>
-                      </div>`;
-            });
-            $reviewsList.innerHTML = parts.join('');
-          } catch (e) {
+            const reviewHTML = items.map(item => {
+              const reviewDate = item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '';
+              return `
+                <div class="review-item">
+                  <div class="d-flex align-items-center mb-1">
+                    ${renderStars(item.rating || 0)}
+                    <small class="text-muted ml-auto">${reviewDate}</small>
+                  </div>
+                  <div class="comment">${sanitizeHTML(item.comment)}</div>
+                </div>`;
+            }).join('');
+            $reviewsList.innerHTML = reviewHTML;
+
+          } catch (error) {
+            console.error("Lỗi khi tải đánh giá:", error);
             $reviewsError.classList.remove('d-none');
           } finally {
             $reviewsLoading.classList.add('d-none');
           }
         }
 
-        function renderSearch(results) {
-          const ids = new Set(results.map((p) => p.providerId));
-          document.querySelectorAll(".provider-card").forEach((card) => {
-            const id = parseInt(card.getAttribute("data-provider-id"));
-            card.style.display = ids.size === 0 || ids.has(id) ? "" : "none";
+        function renderSearchResults(results) {
+          const visibleIds = new Set(results.map(p => p.providerId));
+          document.querySelectorAll(".provider-card").forEach(card => {
+            const cardId = parseInt(card.dataset.providerId, 10);
+            const shouldBeVisible = visibleIds.size === 0 || visibleIds.has(cardId);
+            card.style.display = shouldBeVisible ? "" : "none";
           });
         }
 
-        async function doSearch() {
-          const q = ($search.value || "").trim();
-          if (!q) {
-            // Show all if empty
-            document
-              .querySelectorAll(".provider-card")
-              .forEach((card) => (card.style.display = ""));
+        const doSearch = debounce(async () => {
+          const query = ($search.value || "").trim();
+          if (!query) {
+            document.querySelectorAll(".provider-card").forEach(card => card.style.display = "");
             return;
           }
           try {
-            const resp = await fetch(
-              `/api/providers/search?name=${encodeURIComponent(q)}`
-            );
-            const data = await resp.json();
-            renderSearch(data.data || []);
-          } catch (e) {
-            /* noop */
+            const response = await fetch(`/api/providers/search?name=${encodeURIComponent(query)}`);
+            if (!response.ok) throw new Error('Search failed');
+            const data = await response.json();
+            renderSearchResults(data.data || []);
+          } catch (error) {
+            console.error("Lỗi khi tìm kiếm:", error);
+            // Optionally show an error message to the user
           }
+        }, 250);
+
+        function applyAvailability(availabilityMap) {
+            document.querySelectorAll(".provider-card").forEach(card => {
+                const id = parseInt(card.dataset.providerId, 10);
+                const status = availabilityMap.get(id);
+                const availBadge = card.querySelector(".avail-badge");
+                const busyBadge = card.querySelector(".busy-badge");
+
+                availBadge.classList.add("d-none");
+                busyBadge.classList.add("d-none");
+
+                if (status) {
+                    if (status.available) {
+                        availBadge.classList.remove("d-none");
+                    } else {
+                        busyBadge.classList.remove("d-none");
+                    }
+                }
+            });
         }
 
-        function applyAvailability(availMap, hasTime) {
-          const labelAvail = hasTime ? 'Rảnh thời điểm này' : 'Rảnh ngày này';
-          const labelBusy = hasTime ? 'Bận thời điểm này' : 'Bận ngày này';
-          document.querySelectorAll(".provider-card").forEach((card) => {
-            const id = parseInt(card.getAttribute("data-provider-id"));
-            const m = availMap.get(id);
-            const avail = card.querySelector(".avail-badge");
-            const busy = card.querySelector(".busy-badge");
-            if (!m) {
-              avail.classList.add("d-none");
-              busy.classList.add("d-none");
-            } else if (m.available) {
-              avail.textContent = labelAvail;
-              avail.classList.remove("d-none");
-              busy.classList.add("d-none");
-            } else {
-              busy.textContent = labelBusy;
-              avail.classList.add("d-none");
-              busy.classList.remove("d-none");
-            }
-          });
-        }
-
-        async function checkAvailability() {
-          const d = $date && $date.value;
-          const t = $time && $time.value;
-          if (!d) {
-            // clear badges
-            applyAvailability(new Map(), false);
+        const checkAvailability = debounce(async () => {
+          const dateValue = $date ? $date.value : null;
+          if (!dateValue) {
+            applyAvailability(new Map());
             return;
           }
           try {
-            let url = `/api/providers/availability?date=${encodeURIComponent(d)}`;
-            if (t) {
-              url += `&time=${encodeURIComponent(t)}`;
-            }
-            const resp = await fetch(url);
-            const json = await resp.json();
-            const map = new Map();
-            (json.data || []).forEach((p) => map.set(p.providerId, p));
-            applyAvailability(map, Boolean(t));
-          } catch (e) {
-            /* noop */
+            const url = `/api/providers/availability?date=${encodeURIComponent(dateValue)}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Availability check failed');
+            const json = await response.json();
+            const availabilityMap = new Map();
+            (json.data || []).forEach(p => availabilityMap.set(p.providerId, p));
+            applyAvailability(availabilityMap);
+          } catch (error) {
+            console.error("Lỗi khi kiểm tra lịch rảnh:", error);
+            applyAvailability(new Map()); // Clear badges on error
           }
+        }, 250);
+
+
+        // --- Event Listeners ---
+        if ($search) {
+            $search.addEventListener("input", doSearch);
+        }
+        if ($date) {
+            $date.addEventListener("change", checkAvailability);
         }
 
-        $search &&
-          $search.addEventListener("input", () => {
-            // debounce slightly
-            if ($search._t) clearTimeout($search._t);
-            $search._t = setTimeout(doSearch, 250);
-          });
-
-        $date && $date.addEventListener("change", checkAvailability);
-        $time && $time.addEventListener("change", checkAvailability);
-
-        // click handler for view reviews buttons
         document.addEventListener('click', function(e) {
-          const btn = e.target.closest && e.target.closest('.view-reviews');
-          if (!btn) return;
-          const providerId = btn.getAttribute('data-provider-id');
-          const providerName = btn.getAttribute('data-provider-name') || '';
-          if (providerId) {
-            openReviews(providerId, providerName);
+          const reviewButton = e.target.closest('.view-reviews');
+          if (reviewButton) {
+            const providerId = reviewButton.dataset.providerId;
+            const providerName = reviewButton.dataset.providerName || 'Đơn vị vận chuyển';
+            if (providerId) {
+              openReviews(providerId, providerName);
+            }
           }
         });
 
-        // default date/time = now
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, "0");
-        const dd = String(today.getDate()).padStart(2, "0");
-        const hh = String(today.getHours()).padStart(2, "0");
-        const mi = String(today.getMinutes()).padStart(2, "0");
-        if ($date) {
-          $date.value = `${yyyy}-${mm}-${dd}`;
+        // --- Initialization ---
+        function initializePage() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, "0");
+            const dd = String(today.getDate()).padStart(2, "0");
+            if ($date) {
+              $date.value = `${yyyy}-${mm}-${dd}`;
+              checkAvailability();
+            }
         }
-        if ($time) {
-          $time.value = `${hh}:${mi}`;
-        }
-        checkAvailability();
+
+        initializePage();
       })();
     </script>
   </body>

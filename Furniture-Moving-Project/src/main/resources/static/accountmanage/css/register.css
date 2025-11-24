@@ -1,10 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
 
-*{ margin:0; padding:0; box-sizing:border-box; font-family:"Poppins",sans-serif; }
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Poppins",sans-serif;
+}
 
 body{
-  display:flex; justify-content:center; align-items:center; min-height:100vh;
-  background:url("/images/registerbg2.jpg") no-repeat; background-size:cover; background-position:center;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  background:url("/images/registerbg2.jpg") no-repeat;
+  background-size:cover;
+  background-position:center;
 }
 
 /* ===== Form Wrapper ===== */
@@ -14,30 +24,58 @@ body{
   border:2px solid rgba(255,255,255,.2);
   backdrop-filter:blur(18px);
   box-shadow:0 0 10px rgba(0,0,0,.2);
-  color:#fff; border-radius:10px; padding:25px 32px;
+  color:#fff;
+  border-radius:10px;
+  padding:25px 32px;
 }
-.wrapper h1{ font-size:28px; text-align:center; margin-bottom:12px; }
+.wrapper h1{
+  font-size:28px;
+  text-align:center;
+  margin-bottom:12px;
+}
 
 /* ===== Inputs ===== */
-.input-box{ width:100%; height:44px; margin:22px 0; position:relative; }
-.input-box input{
-  width:100%; height:100%;
-  background:transparent; border:none; outline:none;
-  border:2px solid rgba(255,255,255,.22);
-  border-radius:28px; font-size:15px; color:#fff; padding:12px 14px;
+.input-box{
+  width:100%;
+  height:44px;
+  margin:22px 0;
+  position:relative;
 }
-.input-box input::placeholder{ color:rgba(255,255,255,.92); font-size:14px; }
+.input-box input{
+  width:100%;
+  height:100%;
+  background:transparent;
+  border:none;
+  outline:none;
+  border:2px solid rgba(255,255,255,.22);
+  border-radius:28px;
+  font-size:15px;
+  color:#fff;
+  padding:12px 14px;
+}
+.input-box input::placeholder{
+  color:rgba(255,255,255,.92);
+  font-size:14px;
+}
 
 /* ===== Pretty Select (role) ===== */
-.select-field{ height:auto; }
+.select-field{
+  height:auto;
+}
 .role-select{
-  width:100%; height:44px;
+  width:100%;
+  height:44px;
   padding:10px 44px 10px 14px;
   border-radius:28px;
   border:2px solid rgba(255,255,255,.22);
   background:rgba(255,255,255,.06);
-  color:#fff; outline:none; font-size:15px; line-height:1.2;
-  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  color:#fff;
+  outline:none;
+  font-size:15px;
+  line-height:1.2;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
   background-image:
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
   background-repeat:no-repeat;
@@ -49,38 +87,79 @@ body{
   box-shadow:0 0 0 4px rgba(255,255,255,.12);
 }
 .role-select option{
-  color:#111; background:#fff;
+  color:#111;
+  background:#fff;
 }
 
 /* ===== Button ===== */
 .btn{
-  width:100%; height:40px;
-  background:#fff; border:none; outline:none; border-radius:28px;
+  width:100%;
+  height:40px;
+  background:#fff;
+  border:none;
+  outline:none;
+  border-radius:28px;
   box-shadow:0 0 10px rgba(0,0,0,.1);
-  cursor:pointer; font-size:15px; color:#333; font-weight:600;
+  cursor:pointer;
+  font-size:15px;
+  color:#333;
+  font-weight:600;
 }
-.btn:hover{ background:#f2f2f2; }
+.btn:hover{
+  background:#f2f2f2;
+}
 
 /* Ghost button (link về homepage) */
-.center-btn{ text-align:center; margin-top:15px; }
+.center-btn{
+  text-align:center;
+  margin-top:15px;
+}
 .ghost-btn{
-  display:inline-block; padding:10px 20px; border-radius:40px;
-  background:rgba(255,255,255,.14); color:#fff; text-decoration:none; font-weight:600;
+  display:inline-block;
+  padding:10px 20px;
+  border-radius:40px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  text-decoration:none;
+  font-weight:600;
   border:1px solid rgba(255,255,255,.35);
 }
-.ghost-btn:hover{ background:rgba(255,255,255,.22); }
+.ghost-btn:hover{
+  background:rgba(255,255,255,.22);
+}
 
 /* ===== Messages ===== */
-.form-msg{ text-align:center; margin-top:12px; font-size:14px; }
-.form-msg.error{ color:#ffdede; }
-.form-msg.success{ color:#d4ffdd; }
+.form-msg{
+  text-align:center;
+  margin-top:12px;
+  font-size:14px;
+}
+.form-msg.error{
+  color:#ffdede;
+}
+.form-msg.success{
+  color:#d4ffdd;
+}
 
 /* ===== Footer link ===== */
-.register-link{ font-size:13px; text-align:center; margin:18px 0 12px; }
-.register-link p a{ color:#fff; text-decoration:none; font-weight:600; }
-.register-link p a:hover{ text-decoration:underline; }
+.register-link{
+  font-size:13px;
+  text-align:center;
+  margin:18px 0 12px;
+}
+.register-link p a{
+  color:#fff;
+  text-decoration:none;
+  font-weight:600;
+}
+.register-link p a:hover{
+  text-decoration:underline;
+}
 
 /* Mobile tweak */
 @media (max-width:420px){
-  .wrapper{ width:92%; padding:22px; }
+  .wrapper{
+    width:92%;
+    padding:22px;
+  }
 }

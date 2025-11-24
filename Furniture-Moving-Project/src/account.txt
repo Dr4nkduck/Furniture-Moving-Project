@@ -1,11 +1,13 @@
- /*
-Tài khoản đăng nhập 
+🔑 Tài khoản login bạn có thể dùng ngay sau khi chạy script:
 
-Admin: admin1 / Admin@123 → /admin/dashboard
+superadmin / {noop}Superadmin123 (SUPER_ADMIN)
 
-Super Admin: superadmin / Superadmin123 -> Super Admin
+admin1 / {noop}Admin@123 (ADMIN)
 
-Customer: johnc / User@123 → /user
+johnc / {noop}User@123 (CUSTOMER)
 
-Provider: prov1 / Prov@123 → /provider
- */
+prov1 / {noop}Prov@123 (PROVIDER – FastMove Co.)
+
+prov2 / {noop}Prov2@123 (PROVIDER – HN Budget Movers)
+
+prov3 / {noop}Prov3@123 (PROVIDER – EcoMove Transport)  
