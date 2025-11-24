@@ -17,9 +17,14 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 @Controller
 @RequestMapping("/customer")
@@ -31,6 +36,10 @@ public class CustomerRequestController {
     private final UserRepository userRepository;
     private final CancellationRequestRepository cancellationRequestRepository;
 
+    private static final DateTimeFormatter DATETIME_FMT =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final Locale LOCALE_VN = new Locale("vi", "VN");
+
     public CustomerRequestController(ServiceRequestRepository serviceRequestRepository,
                                      ContractRepository contractRepository,
                                      JdbcTemplate jdbc,
@@ -41,6 +50,13 @@ public class CustomerRequestController {
         this.jdbc = jdbc;
         this.userRepository = userRepository;
         this.cancellationRequestRepository = cancellationRequestRepository;
+    }
+
+    private static String formatMoney(BigDecimal amount) {
+        if (amount == null) return null;
+        BigDecimal v = amount.setScale(0, RoundingMode.HALF_UP);
+        NumberFormat nf = NumberFormat.getInstance(LOCALE_VN);
+        return nf.format(v) + " đ";
     }
 
     /**
@@ -156,12 +172,7 @@ public class CustomerRequestController {
                         && request.isCancellationRequestAllowedByCustomer()
                         && !hasPendingCancel;
 
-        // ==== NEW: lấy yêu cầu hủy mới nhất (nếu có) ====
-        CancellationRequest latestCancellation = cancellationRequestRepository
-                .findTopByServiceRequestIdOrderByCreatedAtDesc(requestId)
-                .orElse(null);
-
-        // ==== NEW: xác định ai là người hủy (nếu đã cancelled) ====
+        // ==== xác định ai là người hủy (nếu đã cancelled) ====
         String cancelledBy = request.getCancelledBy();
         String cb = cancelledBy == null ? "" : cancelledBy.trim().toUpperCase();
 
@@ -169,43 +180,23 @@ public class CustomerRequestController {
         boolean cancelledByProvider = "PROVIDER".equals(cb);
         boolean cancelledByAdmin    = "ADMIN".equals(cb);
 
-        String cancelledByHuman = null;
-        if ("cancelled".equalsIgnoreCase(request.getStatus())) {
-            if ("CUSTOMER".equals(cb)) {
-                cancelledByHuman = "Bạn (khách hàng)";
-            } else if ("PROVIDER".equals(cb)) {
-                cancelledByHuman = "Nhà cung cấp";
-            } else if ("ADMIN".equals(cb)) {
-                cancelledByHuman = "Quản trị viên";
-            } else if (!cb.isEmpty()) {
-                cancelledByHuman = cancelledBy;
-            }
-        }
-
-        boolean hasCancellationInfo =
-                "cancelled".equalsIgnoreCase(request.getStatus())
-                        && (request.getCancelReason() != null || latestCancellation != null);
-
         model.addAttribute("request", request);
         model.addAttribute("contract", contract);
         model.addAttribute("canCancel", canCancel);
         model.addAttribute("canRequestCancel", canRequestCancel);
         model.addAttribute("hasPendingCancel", hasPendingCancel);
 
-        // Thông tin hủy để hiển thị cho customer
+        // ai hủy
         model.addAttribute("cancelledBy", cancelledBy);
         model.addAttribute("cancelledByCustomer", cancelledByCustomer);
         model.addAttribute("cancelledByProvider", cancelledByProvider);
         model.addAttribute("cancelledByAdmin", cancelledByAdmin);
-        model.addAttribute("cancelledByHuman", cancelledByHuman);
-        model.addAttribute("latestCancellation", latestCancellation);
-        model.addAttribute("hasCancellationInfo", hasCancellationInfo);
 
         return "customer/request-detail";
     }
 
     /**
-     * API cho trang chi tiết: trả về trạng thái hiện tại (dùng cho polling)
+     * API cho trang chi tiết: trả về trạng thái hiện tại (dùng cho polling realtime)
      * GET /customer/requests/{id}/status
      */
     @GetMapping("/requests/{id}/status")
@@ -220,7 +211,7 @@ public class CustomerRequestController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        // Tính lại các flag giống viewRequestDetail để nút bấm cũng có thể realtime nếu muốn
+        // === flag cho nút Hủy / Yêu cầu hủy ===
         boolean canCancel = request.isCancellableByCustomer();
 
         boolean hasPendingCancel = cancellationRequestRepository
@@ -234,17 +225,66 @@ public class CustomerRequestController {
                         && request.isCancellationRequestAllowedByCustomer()
                         && !hasPendingCancel;
 
+        // === thông tin hợp đồng (nếu có) ===
+        Contract contract = null;
+        if (request.getContractId() != null) {
+            contract = contractRepository.findById(request.getContractId()).orElse(null);
+        }
+
+        // === xác định bên hủy ===
+        String cancelledBy = request.getCancelledBy();
+        String cb = cancelledBy == null ? "" : cancelledBy.trim().toUpperCase();
+
+        String cancelledByDisplay;
+        if ("CUSTOMER".equals(cb)) {
+            cancelledByDisplay = "Khách hàng";
+        } else if ("PROVIDER".equals(cb)) {
+            cancelledByDisplay = "Đơn vị vận chuyển";
+        } else if ("ADMIN".equals(cb)) {
+            cancelledByDisplay = "Quản trị viên";
+        } else if (cb.isEmpty()) {
+            cancelledByDisplay = null;
+        } else {
+            cancelledByDisplay = "Không xác định";
+        }
+
         Map<String, Object> res = new HashMap<>();
+
+        // ---- trạng thái request / payment ----
         res.put("status", request.getStatus());                 // pending / ready_to_pay / ...
         res.put("paymentStatus", request.getPaymentStatus());   // PENDING / PAID / FAILED / ...
-        res.put("paidAt", request.getPaidAt());                 // để JS hiển thị lại "Thời điểm thanh toán"
+        res.put("paymentType", request.getPaymentType());       // DEPOSIT_20 / FULL / null
+
+        // ---- tiền & thời điểm ----
+        res.put("paidAt", request.getPaidAt());
+        res.put("paidAtFormatted",
+                request.getPaidAt() != null ? request.getPaidAt().format(DATETIME_FMT) : null);
+
+        res.put("totalCostFormatted", formatMoney(request.getTotalCost()));
+        res.put("depositFormatted", formatMoney(request.getDepositAmount()));
+
+        // ---- contract ----
+        res.put("contractId", request.getContractId());
+        if (contract != null) {
+            res.put("contractStatus", contract.getStatus());
+            res.put("contractSignedAtFormatted",
+                    contract.getSignedAt() != null ? contract.getSignedAt().format(DATETIME_FMT) : null);
+            res.put("contractAckAtFormatted",
+                    contract.getAcknowledgedAt() != null ? contract.getAcknowledgedAt().format(DATETIME_FMT) : null);
+        }
+
+        // ---- flag button ----
         res.put("canCancel", canCancel);
         res.put("canRequestCancel", canRequestCancel);
         res.put("hasPendingCancel", hasPendingCancel);
 
-        // Thông tin hủy (nếu cần cho JS)
-        res.put("cancelledBy", request.getCancelledBy());
+        // ---- thông tin hủy trực tiếp ----
         res.put("cancelReason", request.getCancelReason());
+        res.put("cancelledBy", cancelledBy);
+        res.put("cancelledByDisplay", cancelledByDisplay);
+        res.put("cancelledAt", request.getCancelledAt());
+        res.put("cancelledAtFormatted",
+                request.getCancelledAt() != null ? request.getCancelledAt().format(DATETIME_FMT) : null);
 
         return res;
     }

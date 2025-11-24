@@ -38,6 +38,13 @@
   const elTotal = root.querySelector(".js-total");
   const elDeposit = root.querySelector(".js-deposit");
 
+  // Thông tin hủy đơn
+  const cancelSection = root.querySelector(".js-cancel-section");
+  const elCancelSummary = root.querySelector(".js-cancel-summary");
+  const elCancelBy = root.querySelector(".js-cancel-by");
+  const elCancelReason = root.querySelector(".js-cancel-reason");
+  const elCancelledAt = root.querySelector(".js-cancelled-at");
+
   const elContractId = root.querySelector(".js-contract-id");
   const elContractStatus = root.querySelector(".js-contract-status");
   const elContractSigned = root.querySelector(".js-contract-signed");
@@ -152,6 +159,25 @@
       default:
         return code || "";
     }
+  }
+
+  function friendlyCancelledBy(code) {
+    const s = (code || "").toUpperCase();
+    if (s === "CUSTOMER") return "Khách hàng (bạn)";
+    if (s === "PROVIDER") return "Đơn vị vận chuyển";
+    if (s === "ADMIN") return "Quản trị viên";
+    return "Không xác định";
+  }
+
+  function friendlyCancelSummary(status, cancelledBy) {
+    const st = (status || "").toLowerCase();
+    if (st !== "cancelled") return "";
+
+    const s = (cancelledBy || "").toUpperCase();
+    if (s === "CUSTOMER") return "Bạn đã hủy đơn này.";
+    if (s === "PROVIDER") return "Đơn đã bị đơn vị vận chuyển hủy.";
+    if (s === "ADMIN") return "Đơn đã bị quản trị viên hủy.";
+    return "Đơn đã bị hủy.";
   }
 
   function updateBadgeClass(el, status) {
@@ -467,7 +493,7 @@
   setupCancelPaid();
 
   function refreshOnce() {
-    fetch(`/api/customer/request/${requestId}`, {
+    fetch(`/customer/requests/${requestId}/status`, {
       headers: { "X-Requested-With": "XMLHttpRequest" },
     })
       .then((r) => r.json())
@@ -543,6 +569,36 @@
 
         if (elContractAck) {
           elContractAck.textContent = d.contractAckAtFormatted || "—";
+        }
+
+        // ---- THÔNG TIN HỦY ĐƠN (realtime) ----
+        const isCancelled = (d.status || "").toLowerCase() === "cancelled";
+
+        if (cancelSection) {
+          cancelSection.classList.toggle("d-none", !isCancelled);
+        }
+
+        if (isCancelled) {
+          if (elCancelSummary) {
+            elCancelSummary.textContent = friendlyCancelSummary(
+              d.status,
+              d.cancelledBy
+            );
+          }
+
+          if (elCancelBy) {
+            // ưu tiên dùng text backend, fallback friendly helper
+            elCancelBy.textContent =
+              d.cancelledByDisplay || friendlyCancelledBy(d.cancelledBy);
+          }
+
+          if (elCancelReason) {
+            elCancelReason.textContent = d.cancelReason || "—";
+          }
+
+          if (elCancelledAt) {
+            elCancelledAt.textContent = d.cancelledAtFormatted || "—";
+          }
         }
 
         // ---- RATING VISIBILITY ----
