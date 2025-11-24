@@ -56,6 +56,10 @@ function money(n) {
   return Number.isFinite(num) ? vndFmt.format(num) : '—';
 }
 
+/* ========= Provider ship pricing (per km) từ DB ========= */
+let providerShipPerKm = null;    // per km theo provider + package
+let providerShipFromDb = false;  // có lấy được từ DB không
+
 /* ========= Providers: load once on page load ========= */
 let providerMarkupSnapshot = null;
 
@@ -218,6 +222,65 @@ clearItemsBtn?.addEventListener('click', () => {
   updateSummary();
 });
 
+/* ========= AI distance helper ========= */
+function getDistanceFromAIQuote() {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
+    if (!raw) return null;
+    const candidates = [
+      Number(raw?.route?.distanceKm),
+      Number(raw?.distanceKm),
+      Number(raw?.meta?.distanceKm)
+    ].filter(v => Number.isFinite(v) && v > 0);
+    return candidates.length ? candidates[0] : null;
+  } catch { return null; }
+}
+
+/* ========= Ship pricing từ provider (per_km) ========= */
+async function refreshProviderShipPricing() {
+  const providerSel = $('#providerId');
+  const pkgSel      = $('#servicePackage');
+
+  const providerId  = providerSel?.value || '';
+  const packageCode = pkgSel?.value || '';
+
+  providerShipPerKm = null;
+  providerShipFromDb = false;
+
+  // chưa chọn gói thì khỏi gọi
+  if (!packageCode) {
+    updateSummary();
+    return;
+  }
+
+  // chưa chọn provider -> để hệ thống gợi ý, không có giá riêng
+  if (!providerId) {
+    updateSummary();
+    return;
+  }
+
+  try {
+    const url = `/api/providers/ship-price?providerId=${encodeURIComponent(providerId)}&packageCode=${encodeURIComponent(packageCode)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+
+    if (json?.success && json.data?.perKm != null) {
+      const val = Number(json.data.perKm);
+      if (Number.isFinite(val) && val > 0) {
+        providerShipPerKm = val;
+        providerShipFromDb = true;
+      }
+    }
+  } catch (e) {
+    console.error('refreshProviderShipPricing failed:', e);
+    providerShipPerKm = null;
+    providerShipFromDb = false;
+  } finally {
+    updateSummary();
+  }
+}
+
 /* ========= Summary & estimate ========= */
 
 // phí nhân công/đồ (fallback)
@@ -240,20 +303,7 @@ function calcMovingEstimate() {
   return total;
 }
 
-function getDistanceFromAIQuote() {
-  try {
-    const raw = JSON.parse(sessionStorage.getItem('aiquote_draft') || 'null');
-    if (!raw) return null;
-    const candidates = [
-      Number(raw?.route?.distanceKm),
-      Number(raw?.distanceKm),
-      Number(raw?.meta?.distanceKm)
-    ].filter(v => Number.isFinite(v) && v > 0);
-    return candidates.length ? candidates[0] : null;
-  } catch { return null; }
-}
-
-// phí ship theo quãng đường (fallback)
+// phí ship theo quãng đường, ưu tiên per_km từ provider setup
 function calcShippingEstimate() {
   const aiKm = getDistanceFromAIQuote();
   let km = aiKm;
@@ -265,9 +315,20 @@ function calcShippingEstimate() {
     else km = 10;
   }
 
-  const perKm = 12_000;
+  let perKm;
+  let fromProvider = false;
+
+  if (Number.isFinite(providerShipPerKm)) {
+    perKm = providerShipPerKm;
+    fromProvider = true;
+  } else {
+    perKm = 12_000; // fallback mặc định nếu provider chưa setup
+    fromProvider = false;
+  }
+
   const fee = Math.max(0, Math.round(km) * perKm);
-  return { fee, km, perKm };
+
+  return { fee, km, perKm, fromProvider };
 }
 
 // tổng tạm tính (fallback khi không có AI)
@@ -325,14 +386,18 @@ function updateSummary() {
   const moveAmount = Number.isFinite(ai?.move) ? ai.move : calcMovingEstimate();
 
   // ship
-  let shipFee, km, perKm;
+  let shipFee, km, perKm, fromProvider = false;
   if (Number.isFinite(ai?.ship)) {
     shipFee = ai.ship;
     km      = Number.isFinite(ai?.km) ? ai.km : (getDistanceFromAIQuote() ?? NaN);
     perKm   = NaN; // không cần hiển thị đơn giá khi lấy từ AI
+    fromProvider = false;
   } else {
     const s = calcShippingEstimate();
-    shipFee = s.fee; km = s.km; perKm = s.perKm;
+    shipFee = s.fee;
+    km      = s.km;
+    perKm   = s.perKm;
+    fromProvider = !!s.fromProvider;
   }
 
   // total (ưu tiên số tổng từ AI)
@@ -348,8 +413,10 @@ function updateSummary() {
     if (ai) {
       const kmTxt = Number.isFinite(km) ? ` • ~${km} km` : '';
       sumShipMeta.textContent = `(từ AI-Quote${kmTxt})`;
+    } else if (fromProvider) {
+      sumShipMeta.textContent = `(~${km} km × ${Number(perKm || 0).toLocaleString('vi-VN')}đ/km theo bảng giá Provider)`;
     } else {
-      sumShipMeta.textContent = `(~${km} km × ${Number(perKm || 0).toLocaleString('vi-VN')}đ/km)`;
+      sumShipMeta.textContent = `(~${km} km × ${Number(perKm || 0).toLocaleString('vi-VN')}đ/km mặc định)`;
     }
   }
   if (sumTotal) sumTotal.textContent = money(total);
@@ -545,6 +612,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadServicePackages()
   ]);
 
+  // Khi đổi gói hoặc provider -> tải lại per_km ship từ DB
+  $('#servicePackage')?.addEventListener('change', () => {
+    refreshProviderShipPricing();
+  });
+  $('#providerId')?.addEventListener('change', () => {
+    refreshProviderShipPricing();
+  });
+
   // sau khi có options thì mới prefill từ AI Quote
   prefillFromAiquoteDraft();
 
@@ -608,6 +683,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   }
+
+  // gọi 1 lần sau init để nếu đã chọn provider + gói thì dùng luôn giá trong DB
+  refreshProviderShipPricing();
 });
 
 /* ========= Serialize to JSON cho API ========= */
@@ -702,6 +780,9 @@ function resetFormUI(){
     providerSel.innerHTML = providerMarkupSnapshot;
     providerSel.selectedIndex = 0;
   }
+  providerShipPerKm = null;
+  providerShipFromDb = false;
+
   updateSummary();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

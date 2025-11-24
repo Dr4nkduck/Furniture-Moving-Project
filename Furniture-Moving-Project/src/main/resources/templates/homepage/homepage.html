@@ -58,7 +58,6 @@
                 <div class="carousel-caption">
                     <p class="animated fadeInRight">Đăng yêu cầu 1 phút</p>
                     <h1 class="animated fadeInLeft">Nhận &amp; so sánh nhiều báo giá minh bạch</h1>
-                    <a class="btn animated fadeInUp" th:href="@{/homepage/request}">Đăng yêu cầu</a>
                 </div>
             </div>
 
@@ -68,7 +67,6 @@
                 <div class="carousel-caption">
                     <p class="animated fadeInRight">Đối tác đã xác minh</p>
                     <h1 class="animated fadeInLeft">Chọn đơn vị phù hợp theo đánh giá &amp; giá</h1>
-                    <a class="btn animated fadeInUp" th:href="@{/homepage/providers}">Xem đối tác</a>
                 </div>
             </div>
 
@@ -78,7 +76,6 @@
                 <div class="carousel-caption">
                     <p class="animated fadeInRight">Theo dõi đơn dễ dàng</p>
                     <h1 class="animated fadeInLeft">Hỗ trợ 24/7 – Linh hoạt thời gian</h1>
-                    <a class="btn animated fadeInUp" th:href="@{/homepage/support}">Liên hệ hỗ trợ</a>
                 </div>
             </div>
         </div>
@@ -103,7 +100,7 @@
 
         <div class="row">
           <!-- Báo giá bằng AI -->
-          <div class="col-lg-6 col-md-12 mb-4">
+          <div class="col-lg-12 col-md-12 mb-4">
             <div class="action-card">
               <div class="action-header">
                 <i class="fas fa-robot"></i>
@@ -129,37 +126,8 @@
             </div>
           </div>
 
-          <!-- Báo giá thủ công -->
-          <div class="col-lg-6 col-md-12 mb-4">
-            <div class="action-card">
-              <div class="action-header">
-                <i class="fas fa-edit"></i>
-                <h5 class="mb-0">Báo giá thủ công</h5>
-              </div>
-              <div class="action-body">
-                <p>Tự nhập hạng mục, số lượng và đơn giá.</p>
-                <ul>
-                  <li>Kiểm soát chi tiết từng dòng</li>
-                  <li>Phù hợp yêu cầu đặc thù</li>
-                  <li>Dễ chỉnh sửa & lưu nháp</li>
-                </ul>
-              </div>
-              <div class="action-footer">
-                <button id="btn-manual-start" type="button" class="btn btn-primary">
-                  <i class="fas fa-plus mr-1"></i> Tạo báo giá
-                </button>
-                <button id="btn-manual-template" type="button" class="btn btn-outline-dark">
-                  <i class="far fa-file-alt mr-1"></i> Xem mẫu
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div class="text-center mt-2">
-          <small class="text-muted">
-            Cần hỗ trợ? <a th:href="@{/homepage/support}">Liên hệ CSKH 24/7</a>
-          </small>
         </div>
       </div>
     </section>

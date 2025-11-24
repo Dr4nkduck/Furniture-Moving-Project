@@ -1131,3 +1131,307 @@ BEGIN
     END
 END;
 GO
+
+
+-- BỔ SUNG THÊM KHOẢNG 180 SẢN PHẨM CHI TIẾT
+INSERT INTO dbo.products_price(base_name, size_label, is_bulky, unit_price) VALUES
+-- ===== Bàn cafe =====
+(N'Bàn cafe', N'Nhỏ', 0, 30000),
+(N'Bàn cafe', N'Vừa', 0, 45000),
+(N'Bàn cafe', N'Lớn', 0, 60000),
+
+-- ===== Ghế bar =====
+(N'Ghế bar', N'Nhỏ', 0, 25000),
+(N'Ghế bar', N'Vừa', 0, 35000),
+(N'Ghế bar', N'Lớn', 0, 45000),
+
+-- ===== Ghế xếp =====
+(N'Ghế xếp', N'Nhỏ', 0, 15000),
+(N'Ghế xếp', N'Vừa', 0, 20000),
+(N'Ghế xếp', N'Lớn', 0, 26000),
+
+-- ===== Ghế massage =====
+(N'Ghế massage', N'Nhỏ', 1, 220000),
+(N'Ghế massage', N'Vừa', 1, 280000),
+(N'Ghế massage', N'Lớn', 1, 350000),
+
+-- ===== Ghế thư giãn =====
+(N'Ghế thư giãn', N'Nhỏ', 1, 160000),
+(N'Ghế thư giãn', N'Vừa', 1, 210000),
+(N'Ghế thư giãn', N'Lớn', 1, 260000),
+
+-- ===== Ghế bập bênh =====
+(N'Ghế bập bênh', N'Nhỏ', 1, 140000),
+(N'Ghế bập bênh', N'Vừa', 1, 190000),
+(N'Ghế bập bênh', N'Lớn', 1, 240000),
+
+-- ===== Ghế dài ban công =====
+(N'Ghế dài ban công', N'Nhỏ', 0, 60000),
+(N'Ghế dài ban công', N'Vừa', 0, 80000),
+(N'Ghế dài ban công', N'Lớn', 0, 110000),
+
+-- ===== Ghế sân vườn =====
+(N'Ghế sân vườn', N'Nhỏ', 0, 35000),
+(N'Ghế sân vườn', N'Vừa', 0, 50000),
+(N'Ghế sân vườn', N'Lớn', 0, 70000),
+
+-- ===== Bàn sân vườn =====
+(N'Bàn sân vườn', N'Nhỏ', 0, 70000),
+(N'Bàn sân vườn', N'Vừa', 0, 95000),
+(N'Bàn sân vườn', N'Lớn', 0, 120000),
+
+-- ===== Xích đu =====
+(N'Xích đu', N'Nhỏ', 1, 180000),
+(N'Xích đu', N'Vừa', 1, 240000),
+(N'Xích đu', N'Lớn', 1, 320000),
+
+-- ===== Võng =====
+(N'Võng', N'Nhỏ', 0, 40000),
+(N'Võng', N'Vừa', 0, 55000),
+(N'Võng', N'Lớn', 0, 70000),
+
+-- ===== Nôi em bé =====
+(N'Nôi em bé', N'Nhỏ', 0, 60000),
+(N'Nôi em bé', N'Vừa', 0, 85000),
+(N'Nôi em bé', N'Lớn', 0, 110000),
+
+-- ===== Kệ trang trí =====
+(N'Kệ trang trí', N'Nhỏ', 0, 35000),
+(N'Kệ trang trí', N'Vừa', 0, 55000),
+(N'Kệ trang trí', N'Lớn', 0, 80000),
+
+-- ===== Kệ rượu =====
+(N'Kệ rượu', N'Nhỏ', 0, 50000),
+(N'Kệ rượu', N'Vừa', 0, 75000),
+(N'Kệ rượu', N'Lớn', 0, 100000),
+
+-- ===== Tủ rượu =====
+(N'Tủ rượu', N'Nhỏ', 1, 150000),
+(N'Tủ rượu', N'Vừa', 1, 220000),
+(N'Tủ rượu', N'Lớn', 1, 300000),
+
+-- ===== Tủ trưng bày =====
+(N'Tủ trưng bày', N'Nhỏ', 1, 130000),
+(N'Tủ trưng bày', N'Vừa', 1, 190000),
+(N'Tủ trưng bày', N'Lớn', 1, 260000),
+
+-- ===== Tủ kính =====
+(N'Tủ kính', N'Nhỏ', 1, 120000),
+(N'Tủ kính', N'Vừa', 1, 180000),
+(N'Tủ kính', N'Lớn', 1, 250000),
+
+-- ===== Tủ thuốc =====
+(N'Tủ thuốc', N'Nhỏ', 0, 30000),
+(N'Tủ thuốc', N'Vừa', 0, 45000),
+(N'Tủ thuốc', N'Lớn', 0, 65000),
+
+-- ===== Tủ lavabo =====
+(N'Tủ lavabo', N'Nhỏ', 1, 90000),
+(N'Tủ lavabo', N'Vừa', 1, 130000),
+(N'Tủ lavabo', N'Lớn', 1, 180000),
+
+-- ===== Tủ giày thông minh =====
+(N'Tủ giày thông minh', N'Nhỏ', 0, 70000),
+(N'Tủ giày thông minh', N'Vừa', 0, 95000),
+(N'Tủ giày thông minh', N'Lớn', 0, 130000),
+
+-- ===== Kệ tivi treo =====
+(N'Kệ tivi treo', N'Nhỏ', 0, 45000),
+(N'Kệ tivi treo', N'Vừa', 0, 65000),
+(N'Kệ tivi treo', N'Lớn', 0, 90000),
+
+-- ===== Tủ lạnh mini =====
+(N'Tủ lạnh mini', N'Nhỏ', 1, 80000),
+(N'Tủ lạnh mini', N'Vừa', 1, 110000),
+(N'Tủ lạnh mini', N'Lớn', 1, 150000),
+
+-- ===== Bàn vi tính =====
+(N'Bàn vi tính', N'Nhỏ', 0, 55000),
+(N'Bàn vi tính', N'Vừa', 0, 75000),
+(N'Bàn vi tính', N'Lớn', 0, 100000),
+
+-- ===== Bàn học sinh =====
+(N'Bàn học sinh', N'Nhỏ', 0, 45000),
+(N'Bàn học sinh', N'Vừa', 0, 65000),
+(N'Bàn học sinh', N'Lớn', 0, 85000),
+
+-- ===== Bàn học có kệ =====
+(N'Bàn học có kệ', N'Nhỏ', 0, 65000),
+(N'Bàn học có kệ', N'Vừa', 0, 85000),
+(N'Bàn học có kệ', N'Lớn', 0, 110000),
+
+-- ===== Bàn họp =====
+(N'Bàn họp', N'Nhỏ', 1, 150000),
+(N'Bàn họp', N'Vừa', 1, 220000),
+(N'Bàn họp', N'Lớn', 1, 300000),
+
+-- ===== Bàn giáo viên =====
+(N'Bàn giáo viên', N'Nhỏ', 0, 55000),
+(N'Bàn giáo viên', N'Vừa', 0, 75000),
+(N'Bàn giáo viên', N'Lớn', 0, 100000),
+
+-- ===== Bàn đảo bếp =====
+(N'Bàn đảo bếp', N'Nhỏ', 1, 150000),
+(N'Bàn đảo bếp', N'Vừa', 1, 210000),
+(N'Bàn đảo bếp', N'Lớn', 1, 280000),
+
+-- ===== Kệ chén bát =====
+(N'Kệ chén bát', N'Nhỏ', 0, 30000),
+(N'Kệ chén bát', N'Vừa', 0, 45000),
+(N'Kệ chén bát', N'Lớn', 0, 65000),
+
+-- ===== Kệ gia vị =====
+(N'Kệ gia vị', N'Nhỏ', 0, 20000),
+(N'Kệ gia vị', N'Vừa', 0, 30000),
+(N'Kệ gia vị', N'Lớn', 0, 45000),
+
+-- ===== Bàn ủi =====
+(N'Bàn ủi', N'Nhỏ', 0, 15000),
+(N'Bàn ủi', N'Vừa', 0, 22000),
+(N'Bàn ủi', N'Lớn', 0, 30000),
+
+-- ===== Giá phơi đồ =====
+(N'Giá phơi đồ', N'Nhỏ', 0, 35000),
+(N'Giá phơi đồ', N'Vừa', 0, 50000),
+(N'Giá phơi đồ', N'Lớn', 0, 70000),
+
+-- ===== Giá phơi gấp =====
+(N'Giá phơi gấp', N'Nhỏ', 0, 45000),
+(N'Giá phơi gấp', N'Vừa', 0, 65000),
+(N'Giá phơi gấp', N'Lớn', 0, 85000),
+
+-- ===== Giường tầng =====
+(N'Giường tầng', N'Nhỏ', 1, 260000),
+(N'Giường tầng', N'Vừa', 1, 320000),
+(N'Giường tầng', N'Lớn', 1, 400000),
+
+-- ===== Giường gấp =====
+(N'Giường gấp', N'Nhỏ', 1, 180000),
+(N'Giường gấp', N'Vừa', 1, 230000),
+(N'Giường gấp', N'Lớn', 1, 280000),
+
+-- ===== Giường hộp =====
+(N'Giường hộp', N'Nhỏ', 1, 210000),
+(N'Giường hộp', N'Vừa', 1, 270000),
+(N'Giường hộp', N'Lớn', 1, 330000),
+
+-- ===== Giường sofa =====
+(N'Giường sofa', N'Nhỏ', 1, 240000),
+(N'Giường sofa', N'Vừa', 1, 300000),
+(N'Giường sofa', N'Lớn', 1, 380000),
+
+-- ===== Tủ quần áo âm tường =====
+(N'Tủ quần áo âm tường', N'Nhỏ', 1, 200000),
+(N'Tủ quần áo âm tường', N'Vừa', 1, 260000),
+(N'Tủ quần áo âm tường', N'Lớn', 1, 340000),
+
+-- ===== Tủ đồ chơi =====
+(N'Tủ đồ chơi', N'Nhỏ', 0, 45000),
+(N'Tủ đồ chơi', N'Vừa', 0, 65000),
+(N'Tủ đồ chơi', N'Lớn', 0, 90000),
+
+-- ===== Hòm đồ chơi =====
+(N'Hòm đồ chơi', N'Nhỏ', 0, 35000),
+(N'Hòm đồ chơi', N'Vừa', 0, 50000),
+(N'Hòm đồ chơi', N'Lớn', 0, 70000),
+
+-- ===== Bộ bàn ghế học sinh =====
+(N'Bộ bàn ghế học sinh', N'Nhỏ', 1, 90000),
+(N'Bộ bàn ghế học sinh', N'Vừa', 1, 120000),
+(N'Bộ bàn ghế học sinh', N'Lớn', 1, 160000),
+
+-- ===== Bộ bàn ghế cafe =====
+(N'Bộ bàn ghế cafe', N'Nhỏ', 1, 100000),
+(N'Bộ bàn ghế cafe', N'Vừa', 1, 150000),
+(N'Bộ bàn ghế cafe', N'Lớn', 1, 200000),
+
+-- ===== Bộ bàn ghế tiếp khách =====
+(N'Bộ bàn ghế tiếp khách', N'Nhỏ', 1, 130000),
+(N'Bộ bàn ghế tiếp khách', N'Vừa', 1, 190000),
+(N'Bộ bàn ghế tiếp khách', N'Lớn', 1, 260000),
+
+-- ===== Gương toàn thân =====
+(N'Gương toàn thân', N'Nhỏ', 0, 30000),
+(N'Gương toàn thân', N'Vừa', 0, 45000),
+(N'Gương toàn thân', N'Lớn', 0, 65000),
+
+-- ===== Gương treo tường =====
+(N'Gương treo tường', N'Nhỏ', 0, 20000),
+(N'Gương treo tường', N'Vừa', 0, 30000),
+(N'Gương treo tường', N'Lớn', 0, 45000),
+
+-- ===== Đèn đứng =====
+(N'Đèn đứng', N'Nhỏ', 0, 25000),
+(N'Đèn đứng', N'Vừa', 0, 35000),
+(N'Đèn đứng', N'Lớn', 0, 50000),
+
+-- ===== Đèn bàn =====
+(N'Đèn bàn', N'Nhỏ', 0, 20000),
+(N'Đèn bàn', N'Vừa', 0, 30000),
+(N'Đèn bàn', N'Lớn', 0, 45000),
+
+-- ===== Đèn chùm =====
+(N'Đèn chùm', N'Nhỏ', 1, 120000),
+(N'Đèn chùm', N'Vừa', 1, 170000),
+(N'Đèn chùm', N'Lớn', 1, 230000),
+
+-- ===== Rèm cửa =====
+(N'Rèm cửa', N'Nhỏ', 0, 30000),
+(N'Rèm cửa', N'Vừa', 0, 45000),
+(N'Rèm cửa', N'Lớn', 0, 65000),
+
+-- ===== Thảm trải sàn =====
+(N'Thảm trải sàn', N'Nhỏ', 0, 35000),
+(N'Thảm trải sàn', N'Vừa', 0, 55000),
+(N'Thảm trải sàn', N'Lớn', 0, 80000),
+
+-- ===== Thảm phòng khách =====
+(N'Thảm phòng khách', N'Nhỏ', 0, 45000),
+(N'Thảm phòng khách', N'Vừa', 0, 70000),
+(N'Thảm phòng khách', N'Lớn', 0, 95000),
+
+-- ===== Thảm phòng ngủ =====
+(N'Thảm phòng ngủ', N'Nhỏ', 0, 40000),
+(N'Thảm phòng ngủ', N'Vừa', 0, 60000),
+(N'Thảm phòng ngủ', N'Lớn', 0, 85000),
+
+-- ===== Bình nước nóng =====
+(N'Bình nước nóng', N'Nhỏ', 1, 90000),
+(N'Bình nước nóng', N'Vừa', 1, 130000),
+(N'Bình nước nóng', N'Lớn', 1, 180000),
+
+-- ===== Máy lọc nước =====
+(N'Máy lọc nước', N'Nhỏ', 1, 110000),
+(N'Máy lọc nước', N'Vừa', 1, 160000),
+(N'Máy lọc nước', N'Lớn', 1, 220000),
+
+-- ===== Máy hút bụi =====
+(N'Máy hút bụi', N'Nhỏ', 1, 80000),
+(N'Máy hút bụi', N'Vừa', 1, 120000),
+(N'Máy hút bụi', N'Lớn', 1, 160000),
+
+-- ===== Máy lọc không khí =====
+(N'Máy lọc không khí', N'Nhỏ', 1, 100000),
+(N'Máy lọc không khí', N'Vừa', 1, 150000),
+(N'Máy lọc không khí', N'Lớn', 1, 210000),
+
+-- ===== Máy sưởi =====
+(N'Máy sưởi', N'Nhỏ', 1, 90000),
+(N'Máy sưởi', N'Vừa', 1, 130000),
+(N'Máy sưởi', N'Lớn', 1, 180000),
+
+-- ===== Quạt trần =====
+(N'Quạt trần', N'Nhỏ', 1, 70000),
+(N'Quạt trần', N'Vừa', 1, 100000),
+(N'Quạt trần', N'Lớn', 1, 140000),
+
+-- ===== Quạt điều hoà =====
+(N'Quạt điều hoà', N'Nhỏ', 1, 90000),
+(N'Quạt điều hoà', N'Vừa', 1, 130000),
+(N'Quạt điều hoà', N'Lớn', 1, 180000),
+
+-- ===== Máy chiếu =====
+(N'Máy chiếu', N'Nhỏ', 0, 90000),
+(N'Máy chiếu', N'Vừa', 0, 130000),
+(N'Máy chiếu', N'Lớn', 0, 180000);
+GO

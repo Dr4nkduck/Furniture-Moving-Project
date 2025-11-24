@@ -179,6 +179,59 @@ public class ProviderApiController {
     }
 
     // ============================================================
+    // SHIP PRICE cho trang /request – lấy per_km từ PV-002
+    // ============================================================
+
+    /**
+     * Lấy đơn giá ship theo km từ cấu hình PV-002
+     * GET /api/providers/ship-price?providerId=...&packageCode=HOME_MOVE
+     */
+    @GetMapping("/ship-price")
+    public ResponseEntity<Map<String, Object>> getShipPricePerKm(
+            @RequestParam("providerId") Integer providerId,
+            @RequestParam("packageCode") String packageCode
+    ) {
+        String sql = """
+            SELECT TOP 1 psp.per_km
+            FROM provider_service_packages psp
+            JOIN service_packages sp ON sp.package_id = psp.package_id
+            WHERE psp.provider_id = ? 
+              AND sp.code = ?
+              AND sp.is_active = 1
+            """;
+
+        Map<String, Object> body = new LinkedHashMap<>();
+
+        try {
+            Double perKm = jdbc.queryForObject(sql, Double.class, providerId, packageCode);
+
+            if (perKm == null) {
+                body.put("success", false);
+                body.put("message", "Provider chưa cấu hình per_km cho gói này");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+            }
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("providerId", providerId);
+            data.put("packageCode", packageCode);
+            data.put("perKm", perKm);
+
+            body.put("success", true);
+            body.put("data", data);
+            return ResponseEntity.ok(body);
+
+        } catch (EmptyResultDataAccessException ex) {
+            body.put("success", false);
+            body.put("message", "Không tìm thấy cấu hình giá ship cho provider + packageCode");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        } catch (Exception ex) {
+            body.put("success", false);
+            body.put("message", "Lỗi khi đọc giá ship: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        }
+    }
+
+    // ============================================================
     // PV-002 • Service packages (bảng giá & snapshot)
     // ============================================================
 
