@@ -2291,3 +2291,6 @@ a:focus {
 /* Nếu từng set .page-header { margin-bottom:0 } ở CSS user,
    HÃY BỎ rule đó hoặc chuyển thành lớp riêng, tránh ảnh hưởng toàn site. */
 
+.user-actions .row {
+    justify-content: center;
+}
