@@ -12,7 +12,7 @@
         .provider-hero img { width: 100%; height: 260px; object-fit: cover; border-radius: 8px; }
         .review-item { border-bottom: 1px solid #eee; padding: 14px 0; }
         .review-item:last-child { border-bottom: 0; }
-        .rating i { color: #f1c40f; }
+        .rating i { color: #f1c40f; margin-right: 2px; }
     </style>
     
 </head>
@@ -34,9 +34,9 @@
                 <h3 th:text="${provider.companyName}">Tên đơn vị</h3>
                 <div class="d-flex align-items-center mb-3">
                     <div class="rating mr-2">
-                        <i class="fa-star" th:each="i : ${#numbers.sequence(1, 5)}" th:classappend="${i <= provider.rating} ? 'fas' : 'far'"></i>
+                        <i class="fa-star" th:each="i : ${#numbers.sequence(1, 5)}" th:classappend="${provider.rating != null and i <= provider.rating} ? 'fas' : 'far'"></i>
                     </div>
-                    <span class="text-muted" th:text="${provider.rating} + ' / 5 • ' + ${provider.totalReviews} + ' đánh giá'">4.8 / 5 • 120 đánh giá</span>
+                    <span class="text-muted" th:text="${(provider.rating != null ? provider.rating : '0')} + ' / 5 • ' + ${provider.totalReviews} + ' đánh giá'">4.8 / 5 • 120 đánh giá</span>
                 </div>
 
                 <div class="btn-group">

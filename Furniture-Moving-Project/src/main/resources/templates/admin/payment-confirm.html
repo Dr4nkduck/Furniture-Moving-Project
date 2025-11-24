@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <title>Xác nhận thanh toán - Furniture Moving Admin</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <!-- CSRF để JS gọi API PUT -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+
+    <link rel="icon" th:href="@{/images/loginbg.jpg}"/>
+
+    <!-- Fonts + Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" th:href="@{/dashbooard/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/style.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/dashboard.css}">
+    <link rel="stylesheet" th:href="@{/dashbooard/css/theme.css}">
+
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var shouldDark = saved ? (saved === 'dark') : prefersDark;
+                if (shouldDark) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+<div class="container-fluid position-relative bg-white d-flex p-0">
+
+    <!-- Sidebar -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a th:href="@{/admin/dashboard}" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>AdminOP</h3>
+            </a>
+
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" th:src="@{/images/loginbg.jpg}" alt="avatar"
+                         style="width:40px;height:40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3">
+                    <h6 class="mb-0" th:text="${#authentication?.name}">Admin</h6>
+                    <span>Admin</span>
+                </div>
+            </div>
+
+            <div class="navbar-nav w-100">
+                <a th:href="@{/accountmanagement}" class="nav-item nav-link">
+                    <i class="fa fa-th me-2"></i>Quản lí tài khoản
+                </a>
+                <a th:href="@{/provider-stats}" class="nav-item nav-link">
+                    <i class="fa fa-chart-bar me-2"></i>Thông tin nhà cung cấp
+                </a>
+                <a th:href="@{/customer-trends}" class="nav-item nav-link">
+                    <i class="fa fa-chart-line me-2"></i>Xu hướng khách hàng
+                </a>
+
+                <!-- Mục mới -->
+                <a th:href="@{/admin/payments}" class="nav-item nav-link active">
+                    <i class="fa fa-money-bill-wave me-2"></i>Xác nhận thanh toán
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Navbar top giống dashboard -->
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a href="#" class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <form class="d-none d-md-flex ms-4">
+                <input class="form-control border-0" type="search" placeholder="Tìm kiếm">
+            </form>
+
+            <div class="navbar-nav align-items-center ms-auto">
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary ms-2" type="button">
+                    🌙 Dark
+                </button>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" th:src="@{/images/loginbg.jpg}" alt=""
+                             style="width:40px;height:40px;">
+                        <span class="d-none d-lg-inline-flex" th:text="${#authentication?.name}">Admin</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a href="#" class="dropdown-item">My Profile</a>
+                        <a href="#" class="dropdown-item">Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <form th:action="@{/logout}" method="post" id="logoutForm"></form>
+                        <a href="#" class="dropdown-item"
+                           onclick="document.getElementById('logoutForm').submit(); return false;">
+                            Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN: Bảng xác nhận thanh toán -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="mb-1">Xác nhận thanh toán</h6>
+                        <small class="text-muted">
+                            Danh sách tất cả đơn hàng của khách & nhà vận chuyển.  
+                            Admin đối chiếu sao kê và bấm <strong>Đã nhận tiền</strong>.
+                        </small>
+                    </div>
+                    <button id="btnRefresh" class="btn btn-sm btn-outline-primary">
+                        <i class="fa fa-sync-alt"></i> Làm mới
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="text-dark">
+                        <tr>
+                            <th>#REQ</th>
+                            <th>Mã thanh toán</th>
+                            <th>Khách hàng</th>
+                            <th>Nhà vận chuyển</th>
+                            <th>Ngày ưu tiên</th>
+                            <th>Số tiền</th>
+                            <th>TT Đơn</th>
+                            <th>TT Thanh toán</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody id="paymentsTbody">
+                        <!-- JS render -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded-top p-4">
+                <div class="row">
+                    <div class="col-12 col-sm-6 text-center text-sm-start">
+                        &copy; <a href="#">FurnitureMoving</a>, All Right Reserved.
+                    </div>
+                    <div class="col-12 col-sm-6 text-center text-sm-end">
+                        Designed by <a href="https://www.facebook.com/duong.tran.inh.361877/">DuongTD</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS libs -->
+<script th:src="@{/dashbooard/lib/chart/chart.min.js}"></script>
+<script th:src="@{/dashbooard/lib/easing/easing.min.js}"></script>
+<script th:src="@{/dashbooard/lib/waypoints/waypoints.min.js}"></script>
+<script th:src="@{/dashbooard/lib/owlcarousel/owl.carousel.min.js}"></script>
+<script th:src="@{/dashbooard/lib/tempusdominus/js/moment.min.js}"></script>
+<script th:src="@{/dashbooard/lib/tempusdominus/js/moment-timezone.min.js}"></script>
+<script th:src="@{/dashbooard/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js}"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:src="@{/dashbooard/js/main.js}"></script>
+
+<!-- JS xác nhận thanh toán -->
+<script th:src="@{/admin/js/admin-payments.js}"></script>
+</body>
+</html>

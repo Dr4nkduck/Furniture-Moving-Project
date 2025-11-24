@@ -39,8 +39,6 @@ public class EmailService {
             tlog.step("Đã gửi OTP thành công tới {}", to);
         } catch (Exception ex) {
             tlog.err("Gửi mail thất bại: {}", ex.getMessage());
-            // Có thể ném tiếp nếu muốn hiển thị lỗi lên UI:
-            // throw new IllegalStateException("Không gửi được email OTP. Vui lòng thử lại sau.");
         }
     }
 
@@ -51,6 +49,11 @@ public class EmailService {
             msg.setFrom(from);
             msg.setTo(providerEmail);
             msg.setSubject("Thông báo: Khách hàng đã thanh toán đơn #" + requestId);
+
+            String typeLabel = (paymentType != null && paymentType.toUpperCase().startsWith("DEPOSIT"))
+                    ? "Đặt cọc (20%)"
+                    : "Thanh toán đầy đủ (100%)";
+
             msg.setText("""
                     Xin chào,
 
@@ -63,7 +66,7 @@ public class EmailService {
 
                     Trân trọng,
                     Furniture Moving Team
-                    """.formatted(requestId, paymentType.equals("DEPOSIT") ? "Đặt cọc (20%%)" : "Thanh toán đầy đủ (100%%)", amount));
+                    """.formatted(requestId, typeLabel, amount));
 
             mailSender.send(msg);
             tlog.step("Đã gửi thông báo thanh toán thành công tới provider {}", providerEmail);

@@ -14,6 +14,7 @@ import SWP301.Furniture_Moving_Project.service.ProviderPricingService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -111,18 +112,22 @@ public class ProviderPricingServiceImpl implements ProviderPricingService {
 
         for (ProviderPackageFurniturePrice row : rows) {
             FurniturePriceDTO fp = new FurniturePriceDTO();
+            // dùng alias type* nhưng thực chất sẽ map sang furnitureItemId
             fp.setFurnitureTypeId(row.getFurnitureTypeId());
 
-            // Không dùng FurnitureType.getTypeName() nữa để tránh lỗi compile,
-            // tạm thời hiển thị "Mã: <id>". Sau này nếu bạn có field name trong FurnitureType
-            // thì chỉ cần sửa dòng dưới.
             FurnitureType type = row.getFurnitureType();
             String name = (type != null)
-                    ? ("Mã: " + row.getFurnitureTypeId())
+                    ? ("Mã: " + row.getFurnitureTypeId()) // bạn có thể thay bằng type.getName() nếu entity có
                     : ("Mã: " + row.getFurnitureTypeId());
             fp.setFurnitureTypeName(name);
 
-            fp.setPrice(row.getPrice());
+            // convert Double -> BigDecimal an toàn
+            if (row.getPrice() != null) {
+                fp.setPrice(BigDecimal.valueOf(row.getPrice()));
+            } else {
+                fp.setPrice(null);
+            }
+
             prices.add(fp);
         }
 
@@ -168,7 +173,10 @@ public class ProviderPricingServiceImpl implements ProviderPricingService {
                 row.setProviderId(providerId);
                 row.setPackageId(packageId);
                 row.setFurnitureTypeId(fp.getFurnitureTypeId());
-                row.setPrice(fp.getPrice() != null ? fp.getPrice() : 0d);
+
+                // BigDecimal -> Double
+                Double priceVal = (fp.getPrice() != null) ? fp.getPrice().doubleValue() : 0d;
+                row.setPrice(priceVal);
 
                 providerPackageFurnitureRepo.save(row);
             }

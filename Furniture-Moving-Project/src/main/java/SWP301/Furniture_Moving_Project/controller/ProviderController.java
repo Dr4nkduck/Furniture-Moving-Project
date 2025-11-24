@@ -51,7 +51,12 @@ public class ProviderController {
     }
 
     @GetMapping("/orders")
-    public String orders() {
+    public String orders(Model model, Authentication auth) {
+        String username = auth != null ? auth.getName() : null;
+        Integer providerId = providerRepository
+                .findProviderIdByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
+        model.addAttribute("providerId", providerId);
         return "provider/orders";
     }
 
@@ -61,6 +66,21 @@ public class ProviderController {
         return "provider/order-detail";
     }
 
+    // ✅ Trang xem review khách đánh giá provider
+    @GetMapping("/reviews")
+    public String reviews(Model model, Authentication auth) {
+        String username = auth != null ? auth.getName() : null;
 
-    
+        Integer providerId = providerRepository
+                .findProviderIdByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy provider cho user: " + username));
+
+        // companyName để show trên navbar/sidebar nếu cần
+        Optional<Provider> pOpt = providerRepository.findById(providerId);
+        pOpt.ifPresent(p -> model.addAttribute("companyName", p.getCompanyName()));
+
+        model.addAttribute("providerId", providerId);
+
+        return "provider/reviews"; // trỏ tới templates/provider/reviews.html
+    }
 }

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Hợp đồng dịch vụ - Xem lại</title>
+
+  <!-- Không cần CSRF vì chỉ GET, không submit -->
+
+  <!-- Meta dữ liệu (fallback 'Khách hàng' nếu không set customerName) -->
+  <meta name="customer-name" th:content="${customerName} ?: 'Khách hàng'"/>
+
+  <!-- Styles (tái dùng CSS cũ) -->
+  <link rel="stylesheet" th:href="@{/contract/css/contract.css}"/>
+</head>
+<body class="page-contract">
+  <div class="container">
+    <!-- Stepper (giữ lại cho giống, có thể sửa text nếu muốn) -->
+    <ol class="stepper" aria-label="Tiến trình đặt dịch vụ">
+      <li class="active"><span>1</span><b>Hợp đồng</b></li>
+      <li><span>2</span><b>Yêu cầu (Request)</b></li>
+      <li><span>3</span><b>Thanh toán</b></li>
+    </ol>
+
+    <!-- Card -->
+    <section class="card">
+      <header class="card__header">
+        <div class="card__title">
+          <h1>HỢP ĐỒNG DỊCH VỤ VẬN CHUYỂN</h1>
+          <!-- đổi text: không còn “vui lòng đồng ý”, chỉ là xem lại -->
+          <p class="muted">
+            Đây là bản hợp đồng dịch vụ vận chuyển mà bạn đã đồng ý trước đó.
+          </p>
+        </div>
+        <div class="card__tools">
+          <button id="btnPrint" class="btn" type="button" aria-label="In hợp đồng">In</button>
+        </div>
+      </header>
+
+      <!-- Thông tin 2 bên -->
+      <div class="parties">
+        <div>
+          <strong>Bên A (Khách hàng):</strong>
+          <span id="customerName"
+                th:text="${customerName} ?: 'Khách hàng'">
+            Khách hàng
+          </span>
+        </div>
+        <div>
+          <strong>Bên B:</strong> Furniture Moving
+        </div>
+      </div>
+
+      <!-- (tùy chọn) Thông tin thêm về hợp đồng / request -->
+      <div class="muted" style="margin-bottom: 1rem; font-size: 0.9rem;">
+        Mã hợp đồng:
+        <b th:text="${contract != null} ? ${contract.contractId} : '—'">—</b>
+        &nbsp;•&nbsp;
+        Yêu cầu #<span th:text="${request.requestId}">0</span>
+      </div>
+
+      <!-- Nội dung hợp đồng (y hệt file /contract gốc) -->
+      <article id="contractBody" class="paper" tabindex="0" aria-label="Nội dung hợp đồng">
+        <h2>Điều khoản chung</h2>
+        <ol>
+          <li>Bên A cung cấp thông tin trung thực khi tạo yêu cầu dịch vụ.</li>
+          <li>Bên B thực hiện dịch vụ theo báo giá đã thỏa thuận, đảm bảo an toàn hàng hóa.</li>
+          <li>Trong trường hợp xảy ra sự cố/hư hỏng, hai bên phối hợp giải quyết theo quy trình hỗ trợ.</li>
+          <li>Hợp đồng có hiệu lực kể từ thời điểm Bên A xác nhận “Tôi đồng ý”.</li>
+        </ol>
+
+        <h3>Chính sách bảo mật</h3>
+        <p>Thông tin cá nhân của Bên A được bảo mật và chỉ sử dụng nhằm mục đích cung cấp dịch vụ.</p>
+
+        <h3>Giới hạn trách nhiệm</h3>
+        <p>Bên B không chịu trách nhiệm cho các thiệt hại gián tiếp hoặc ngoài phạm vi dịch vụ đã cam kết.</p>
+      </article>
+
+      <!-- KHÔNG có form ký, chỉ có nút quay lại -->
+      <div class="actions">
+        <div class="actions__buttons">
+          <a class="btn ghost"
+             th:href="@{|/customer/requests/${request.requestId}|}">
+            ← Quay lại chi tiết yêu cầu
+          </a>
+          <button id="btnPrintBottom" class="btn" type="button">
+            In
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast cũ không cần nữa, bỏ hẳn -->
+  </div>
+
+  <!-- Scripts (chỉ cần in) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var btnPrint = document.getElementById('btnPrint');
+      var btnPrintBottom = document.getElementById('btnPrintBottom');
+
+      if (btnPrint) {
+        btnPrint.addEventListener('click', function () {
+          window.print();
+        });
+      }
+      if (btnPrintBottom) {
+        btnPrintBottom.addEventListener('click', function () {
+          window.print();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

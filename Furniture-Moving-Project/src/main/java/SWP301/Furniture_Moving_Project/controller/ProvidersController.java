@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,7 +40,7 @@ public class ProvidersController {
                 .map(p -> new ProviderDTO(
                         p.getProviderId(),
                         p.getCompanyName(),
-                        p.getRating()
+                        p.getRating() == null ? BigDecimal.ZERO : p.getRating()
                 ))
                 .collect(Collectors.toList());
 

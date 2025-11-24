@@ -1,8 +1,5 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
-<body>
 <!-- Nav Bar Start -->
-<div class="nav-bar" th:fragment="navbar">
+<div class="nav-bar" th:fragment="navbar" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
             <a href="#" class="navbar-brand">MENU</a>
@@ -20,41 +17,14 @@
                     id="navbarCollapse"
             >
                 <div class="navbar-nav mr-auto">
-                    <a th:href="@{/homepage}" class="nav-item nav-link active"
-                    >Trang chủ</a
-                    >
-                    <a th:href="@{/homepage/about}" class="nav-item nav-link"
-                    >Thông tin</a
-                    >
-                    <a th:href="@{/homepage/service}" class="nav-item nav-link"
-                    >Dịch vụ</a
-                    >
-                    <a th:href="@{/providers}" class="nav-item nav-link"
-                    >Đơn vị vận chuyển</a
-                    >
-                    <div class="nav-item dropdown">
-                        <a
-                                href="#"
-                                class="nav-link dropdown-toggle"
-                                data-toggle="dropdown"
-                        >Hỗ trợ</a
-                        >
-                        <div class="dropdown-menu">
-                            <a th:href="@{/homepage/blog}" class="dropdown-item"
-                            >Yêu cầu hỗ trợ</a
-                            >
-                            <a th:href="@{/homepage/single}" class="dropdown-item"
-                            >Khiếu nại</a
-                            >
-                        </div>
-                    </div>
-                    <a th:href="@{/homepage/contact}" class="nav-item nav-link"
-                    >Liên hệ</a
-                    >
+                    <a th:href="@{/homepage}" class="nav-item nav-link active">Trang chủ</a>
+                    <a th:href="@{/providers}" class="nav-item nav-link">Đơn vị vận chuyển</a>
                 </div>
+
                 <div class="ml-auto">
                     <!-- Hiển thị thông tin user nếu đã đăng nhập -->
-                    <div th:if="${isLoggedIn}" class="nav-item dropdown">
+                    <!-- Use Spring Security check: sec:authorize="isAuthenticated()" -->
+                    <div sec:authorize="isAuthenticated()" class="nav-item dropdown">
                         <a
                                 href="#"
                                 class="nav-link dropdown-toggle"
@@ -63,19 +33,21 @@
                             <img
                                     th:src="@{/images/loginbg.jpg}"
                                     alt="avatar"
-                                    style="
-                      width: 30px;
-                      height: 30px;
-                      border-radius: 50%;
-                      margin-right: 8px;
-                    "
+                                    style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;"
                             />
-                            <span
-                                    th:text="${currentUser.firstName + ' ' + currentUser.lastName}"
-                            >User Name</span
-                            >
+                            <span th:if="${currentUser != null}" 
+                                  th:text="${currentUser.firstName + ' ' + currentUser.lastName}">
+                                User Name
+                            </span>
+                            <span th:unless="${currentUser != null}" 
+                                  th:text="${#authentication.name}">
+                                User
+                            </span>
                         </a>
                         <div class="dropdown-menu">
+                            <a th:href="@{/customer/requests}" class="dropdown-item">
+                                Hợp đồng & yêu cầu của tôi
+                            </a>
                             <a th:href="@{/user/profile}" class="dropdown-item">Thông tin cá nhân</a>
                             <a href="#" class="dropdown-item">Cài đặt</a>
                             <div class="dropdown-divider"></div>
@@ -95,14 +67,12 @@
                         </div>
                     </div>
                     <!-- Hiển thị nút đăng nhập nếu chưa đăng nhập -->
-                       <div th:unless="${isLoggedIn}">
-                            <a class="btn" href="/login">Đăng xuất</a>
-                        </div>
+                    <div sec:authorize="!isAuthenticated()">
+                        <a class="btn" href="/login">Đăng nhập</a>
+                    </div>
                 </div>
             </div>
         </nav>
     </div>
 </div>
 <!-- Nav Bar End -->
-</body>
-</html>

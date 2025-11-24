@@ -27,21 +27,69 @@ public class Review {
     @Column(name = "comment", columnDefinition = "NVARCHAR(MAX)")
     private String comment;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    public Integer getReviewId() { return reviewId; }
-    public void setReviewId(Integer reviewId) { this.reviewId = reviewId; }
-    public Integer getRequestId() { return requestId; }
-    public void setRequestId(Integer requestId) { this.requestId = requestId; }
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
-    public Integer getProviderId() { return providerId; }
-    public void setProviderId(Integer providerId) { this.providerId = providerId; }
-    public Integer getRating() { return rating; }
-    public void setRating(Integer rating) { this.rating = rating; }
-    public String getComment() { return comment; }
-    public void setComment(String comment) { this.comment = comment; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    public Integer getReviewId() {
+        return reviewId;
+    }
+
+    public void setReviewId(Integer reviewId) {
+        this.reviewId = reviewId;
+    }
+
+    public Integer getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(Integer requestId) {
+        this.requestId = requestId;
+    }
+
+    public Integer getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
+
+    public Integer getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(Integer providerId) {
+        this.providerId = providerId;
+    }
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public void setRating(Integer rating) {
+        this.rating = rating;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
